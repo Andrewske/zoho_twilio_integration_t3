@@ -12,7 +12,7 @@ export default function Home() {
   }
   return (
     <main className={styles.main}>
-      <button onClick={doSomething}>Get Messages</button>
+      <button onClick={doSomething}>Get Messages Now</button>
       <p>{data}</p>
     </main>
   )
