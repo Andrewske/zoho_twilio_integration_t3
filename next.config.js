@@ -3,7 +3,7 @@ const nextConfig = {
     output: 'export',
     rewrites: async () => [
         {
-            source: "/zoho",
+            source: "/index",
             destination: "/",
         },
     ],

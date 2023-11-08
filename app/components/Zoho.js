@@ -1,6 +1,7 @@
 'use client'
 import Script from 'next/script'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { getMessages } from '../actions/twilio'
 const zohoSDKurl = 'https://live.zwidgets.com/js-sdk/1.2/ZohoEmbededAppSDK.min.js'
 
 
@@ -27,6 +28,7 @@ const Zoho = ({ children }) => {
                     // } else {
                     //     console.log("Couldn't find the lead's phone number")
                     // }
+                    getMessages()
                 });
             }
 
