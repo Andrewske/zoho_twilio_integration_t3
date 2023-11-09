@@ -2,18 +2,18 @@
 import Image from 'next/image'
 import styles from './page.module.css'
 import { getMessages } from './actions/twilio'
-import { useState } from 'react'
+
+
+import { leadPhoneNumber, studioPhoneNumber } from '~/utils/signals'
+
 
 export default function Home() {
-  const [data, setData] = useState('')
-  async function doSomething() {
-    const res = await getMessages()
-    setData(res)
-  }
+
   return (
     <main className={styles.main}>
-      <button onClick={doSomething}>Get Messages Now</button>
-      <p>{data}</p>
+      {/* <button onClick={doSomething}>Get Messages No</button> */}
+      <p>{leadPhoneNumber.value}</p>
+      <p>{studioPhoneNumber.value}</p>
     </main>
   )
 }
