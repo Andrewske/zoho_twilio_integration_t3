@@ -3,7 +3,11 @@ import Script from 'next/script'
 import { useEffect, useState } from 'react'
 import { getMessages } from '../actions/twilio'
 const zohoSDKurl = 'https://live.zwidgets.com/js-sdk/1.2/ZohoEmbededAppSDK.min.js'
+import { leadPhoneNumber, studioPhoneNumber } from '~/utils/signals'
+// import { signal } from '@preact/signals-react'
 
+// export const leadPhoneNumber = signal(null)
+// export const studioPhoneNumber = signal(null)
 
 const Zoho = ({ children }) => {
     useEffect(() => {
@@ -19,6 +23,7 @@ const Zoho = ({ children }) => {
                     const phone = response?.data[0]?.Phone;
                     console.log('phone', phone);
                     console.log('description', description);
+                    leadPhoneNumber.value = phone || description
                     // if (phone) {
                     //     setLeadPhoneNumber(phone);
                     // } else if (description) {
@@ -28,12 +33,12 @@ const Zoho = ({ children }) => {
                     // } else {
                     //     console.log("Couldn't find the lead's phone number")
                     // }
-                    getMessages()
                 });
             }
 
             ZOHO.CRM.CONFIG.getCurrentUser().then((response) => {
                 console.log('current user', response);
+                studioPhoneNumber.value = response?.users[0]?.phone;
                 // setUserPhoneNumber(response?.users[0]?.phone);
             });
         };
@@ -41,6 +46,7 @@ const Zoho = ({ children }) => {
         ZOHO.embeddedApp.on('PageLoad', handlePageLoad);
         ZOHO.embeddedApp.init();
     }, [])
+
 
     return <>
         {/* eslint-disable-next-line @next/next/no-before-interactive-script-outside-document */}
