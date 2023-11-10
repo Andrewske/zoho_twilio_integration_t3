@@ -48,13 +48,14 @@ const ChatWindow = ({
       to: leadPhoneNumber,
       from: userPhoneNumber,
     };
-    try {
-      sendMessage(body);
+
+    const sent = await sendMessage(body);
+
+    if (sent) {
       setNewMessage('');
       sendSuccess('Message sent!');
       getMessages();
-    } catch (error) {
-      console.error('Error sending message:', error);
+    } else {
       sendError('Error sending the message! Try refreshing the page.');
     }
     setIsSending(false);
