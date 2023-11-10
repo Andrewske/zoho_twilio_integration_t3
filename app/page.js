@@ -6,11 +6,15 @@ import { useContext, useState, useEffect } from 'react'
 import { ZohoContext } from '../providers/ZohoProvider'
 import ChatWindow from '../components/ChatWindow'
 import { Comment } from 'react-loader-spinner'
+import useToast from '~/hooks/useToast'
+
 
 
 export default function Home() {
   const { leadPhoneNumber, studioPhoneNumber } = useContext(ZohoContext);
   const [messages, setMessages] = useState(null)
+  const toast = useToast();
+  const { container: ToastContainer } = toast;
 
 
   useEffect(() => {
@@ -23,6 +27,7 @@ export default function Home() {
 
   return (
     <main className={styles.main}>
+      <ToastContainer />
       {!messages ? (
         <Comment
           visible={true}
@@ -35,7 +40,7 @@ export default function Home() {
           backgroundColor="#F4442E"
         />
       ) : (
-        <ChatWindow messages={messages} />
+        <ChatWindow leadPhoneNumber={leadPhoneNumber} studioPhoneNumber={studioPhoneNumber} messages={messages} toast={toast} />
       )}
     </main>
   )

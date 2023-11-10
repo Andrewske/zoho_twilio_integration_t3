@@ -5,19 +5,8 @@ import { logError } from '~/utils/rollbar';
 // const { MessagingResponse } = twilio.twiml;
 
 export const getMessages = async ({ leadPhoneNumber }) => {
-
-    console.log('getting messages')
-    // const { accessToken } = await prisma.account.findFirst({ where: { platform: 'zoho' }, select: { accessToken: true } })
-    // console.log('account', accessToken)
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const authToken = process.env.TWILIO_AUTH_TOKEN;
-
-    if (accountSid && authToken) {
-        console.log('we have accountSid and authToken')
-    } else {
-        console.log({ accountSid, authToken })
-    }
-
 
     try {
         const client = twilio(accountSid, authToken);
@@ -28,9 +17,6 @@ export const getMessages = async ({ leadPhoneNumber }) => {
                 to: leadPhoneNumber,
             })
 
-        if (responseToContact.length > 0) {
-            console.log('responseToContact', responseToContact)
-        }
 
 
         const messagesToContact = responseToContact.map(message => ({
@@ -46,9 +32,6 @@ export const getMessages = async ({ leadPhoneNumber }) => {
                 from: leadPhoneNumber,
             })
 
-        if (responseFromContact.length > 0) {
-            console.log('responseFromContact', responseFromContact)
-        }
 
         const messagesFromContact = responseFromContact.map(message => ({
             to: message.to,
@@ -74,7 +57,9 @@ export const getMessages = async ({ leadPhoneNumber }) => {
 export const sendMessage = async ({ to, from, message }) => {
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const authToken = process.env.TWILIO_AUTH_TOKEN;
-
+    if (process.env.NODE_ENV === 'development') {
+        from = '8559191285'
+    }
     try {
         const client = twilio(accountSid, authToken);
 
