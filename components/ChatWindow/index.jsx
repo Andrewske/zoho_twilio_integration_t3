@@ -2,9 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import styles from './styles.module.css';
 import PropTypes from 'prop-types';
 import { format } from 'date-fns';
-import axios from 'axios';
-import { serverUrl } from '~/config';
 import useToast from '~/hooks/useToast';
+import { sendMessage } from '~/actions/twilio';
 
 const ChatWindow = ({
   leadPhoneNumber,
@@ -50,7 +49,7 @@ const ChatWindow = ({
       from: userPhoneNumber,
     };
     try {
-      await axios.post(serverUrl + '/api/twilio/send', body);
+      sendMessage(body);
       setNewMessage('');
       sendSuccess('Message sent!');
       getMessages();
