@@ -1,20 +1,21 @@
+'use client';
 import { useState, useRef, useEffect } from 'react';
 import styles from './styles.module.css';
 import PropTypes from 'prop-types';
 import { format } from 'date-fns';
-import useToast from '~/hooks/useToast';
-import { sendMessage } from '~/actions/twilio';
+
+import { getMessages, sendMessage } from '~/actions/twilio';
 
 const ChatWindow = ({
   leadPhoneNumber,
-  userPhoneNumber,
+  studioPhoneNumber,
   messages,
-  getMessages,
+  toast,
 }) => {
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef(null);
-  const { sendError, sendSuccess } = useToast();
+  const { sendError, sendSuccess } = toast;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -27,26 +28,12 @@ const ChatWindow = ({
   // TODO: Enter should submit the form
   const handleSubmit = async (event) => {
     event.preventDefault();
-
-    if (!leadPhoneNumber) {
-      sendError(
-        "Couldn't find the leads phone number, Try refreshing the page."
-      );
-      return;
-    }
-
-    if (!userPhoneNumber) {
-      sendError(
-        "Couldn't find the studios phone number, Try refreshing the page."
-      );
-      return;
-    }
-
     setIsSending(true);
+
     const body = {
       message: newMessage,
       to: leadPhoneNumber,
-      from: userPhoneNumber,
+      from: studioPhoneNumber,
     };
 
     const sent = await sendMessage(body);
@@ -54,7 +41,7 @@ const ChatWindow = ({
     if (sent) {
       setNewMessage('');
       sendSuccess('Message sent!');
-      getMessages();
+      getMessages({ leadPhoneNumber });
     } else {
       sendError('Error sending the message! Try refreshing the page.');
     }
