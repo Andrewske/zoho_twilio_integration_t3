@@ -12,6 +12,10 @@ export const getMessages = async ({ leadPhoneNumber }) => {
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const authToken = process.env.TWILIO_AUTH_TOKEN;
 
+    if (accountSid && authToken) {
+        console.log('we have accountSid and authToken')
+    }
+
 
     try {
         const client = twilio(accountSid, authToken);
@@ -21,6 +25,10 @@ export const getMessages = async ({ leadPhoneNumber }) => {
             .list({
                 to: leadPhoneNumber,
             })
+
+        if (responseToContact.length > 0) {
+            console.log('responseToContact', responseToContact)
+        }
 
 
         const messagesToContact = responseToContact.map(message => ({
@@ -35,6 +43,10 @@ export const getMessages = async ({ leadPhoneNumber }) => {
             .list({
                 from: leadPhoneNumber,
             })
+
+        if (responseFromContact.length > 0) {
+            console.log('responseFromContact', responseFromContact)
+        }
 
         const messagesFromContact = responseFromContact.map(message => ({
             to: message.to,

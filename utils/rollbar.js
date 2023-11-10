@@ -13,6 +13,7 @@ var rollbar = new Rollbar(rollbarConfig)
 
 export const logError = (error) => {
     if (process.env.NODE_ENV === 'production') {
+        console.error(error.message)
         rollbar.error(error);
     } else {
         console.error('Error Message:', error.message);
