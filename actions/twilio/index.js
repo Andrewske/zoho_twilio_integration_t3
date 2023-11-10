@@ -14,6 +14,8 @@ export const getMessages = async ({ leadPhoneNumber }) => {
 
     if (accountSid && authToken) {
         console.log('we have accountSid and authToken')
+    } else {
+        console.log({ accountSid, authToken })
     }
 
 
