@@ -57,9 +57,7 @@ export const getMessages = async ({ leadPhoneNumber }) => {
 export const sendMessage = async ({ to, from, message }) => {
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const authToken = process.env.TWILIO_AUTH_TOKEN;
-    if (process.env.NODE_ENV === 'development') {
-        from = '8559191285'
-    }
+
     try {
         const client = twilio(accountSid, authToken);
 
