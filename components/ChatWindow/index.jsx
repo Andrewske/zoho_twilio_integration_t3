@@ -18,7 +18,15 @@ const ChatWindow = ({
   const { sendError, sendSuccess } = toast;
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messages) {
+      if (messagesEndRef.current?.scrollIntoView) {
+        setTimeout(() => {
+          messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }, 1000);
+      } else {
+        console.log('scrollIntoView method is not supported');
+      }
+    }
   }, [messages]);
 
   const handleNewMessage = (event) => {
@@ -50,22 +58,19 @@ const ChatWindow = ({
 
   return (
     <div className={styles.wrapper}>
-      <div
-        className={styles.messageContainer}
-        ref={messagesEndRef}
-      >
+      <div className={styles.messageContainer}>
         {messages &&
           messages.map((message, index) => (
             <div
               key={`message-${index}`}
               className={styles.messageWrapper}
+              ref={index === messages.length - 1 ? messagesEndRef : null}
             >
               <span
                 key={index}
                 className={`${styles.message} ${
                   message.fromStudio ? styles.to : ''
                 }`}
-                ref={index === messages.length - 1 ? messagesEndRef : null}
               >
                 {message.body}
               </span>

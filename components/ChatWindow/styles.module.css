@@ -1,109 +1,108 @@
 .wrapper {
-    min-width: min(600px, 100vw);
-    background-color: white;
-    height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-  }
-  
-  .messageContainer {
-    flex: 1;
-    color: black;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: flex-end;
-    gap: 0.5rem;
-    padding: 0.5rem;
-    padding-top: 0;
-    overflow-y: auto;
-    width: 100%;
-    position: relative;
-    box-sizing: border-box;
-  
-    /* new styles to hide scrollbar */
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
-  }
-  
-  .messageContainer::-webkit-scrollbar {
-    display: none;
-  }
-  
-  .messageWrapper {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-  }
-  
-  .message {
-    background-color: #3d1152;
-    color: white;
-    width: 300px;
-    overflow: hidden;
-    text-align: left;
-    border-radius: 0.5rem;
-    padding: 0.25rem 0.5rem;
-    display: flex;
-    flex-direction: column;
-    align-self: flex-start;
-    flex-shrink: 0;
-  }
-  
-  .message.to {
-    align-self: flex-end;
-    background-color: #242424;
-    color: white;
-  }
-  
-  .subText {
-    font-size: 0.65rem;
-    color: #242424;
-    align-self: flex-start;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .subText.to {
-    align-self: flex-end;
-    align-items: flex-end;
-  }
-  
-  .inputContainer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: white;
-    border-top: 2px solid #242424;
-    padding: 0.75rem 0.5rem;
-    gap: 0.75rem;
-  }
-  
-  .inputContainer .input {
-    flex: 4;
-    height: 80px;
-    padding: 0.5rem 1rem;
-    border: none;
-    overflow: auto;
-    resize: none;
-    background: none;
-    color: #242424;
-  }
-  
-  .inputContainer .button {
-    flex: 1;
-    padding: 0.5rem 1rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: #ffd200;
-    color: #242424;
-    text-align: center;
-    border-radius: 0.5rem;
-    font-size: 1.25rem;
-    height: 50px;
-    cursor: pointer;
-  }
-  
+  min-width: min(600px, 100vw);
+  background-color: white;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.messageContainer {
+  flex: 1;
+  color: black;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-end;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  padding-top: 0;
+  overflow-y: auto;
+  width: 100%;
+  position: relative;
+  box-sizing: border-box;
+
+  /* new styles to hide scrollbar */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.messageContainer::-webkit-scrollbar {
+  display: none;
+}
+
+.messageWrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.message {
+  background-color: #3d1152;
+  color: white;
+  width: 300px;
+  overflow: hidden;
+  text-align: left;
+  border-radius: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-self: flex-start;
+  flex-shrink: 0;
+}
+
+.message.to {
+  align-self: flex-end;
+  background-color: #242424;
+  color: white;
+}
+
+.subText {
+  font-size: 0.65rem;
+  color: #242424;
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.subText.to {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.inputContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: white;
+  border-top: 2px solid #242424;
+  padding: 0.75rem 0.5rem;
+  gap: 0.75rem;
+}
+
+.inputContainer .input {
+  flex: 4;
+  height: 80px;
+  padding: 0.5rem 1rem;
+  border: none;
+  overflow: auto;
+  resize: none;
+  background: none;
+  color: #242424;
+}
+
+.inputContainer .button {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #ffd200;
+  color: #242424;
+  text-align: center;
+  border-radius: 0.5rem;
+  font-size: 1.25rem;
+  height: 50px;
+  cursor: pointer;
+}
