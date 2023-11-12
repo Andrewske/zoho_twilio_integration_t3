@@ -2,17 +2,18 @@
 import axios from 'axios';
 import rollbar, { logError } from '../../utils/rollbar.js';
 
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '~/utils/prisma.js';
 
 // Sandbox
-const apiDomain = 'https://sandbox.zohoapis.com';
 const platform = 'dev';
 
 // Prod
 // const apiDomain = process.env.NODE_ENV === 'production' ? 'https://www.zohoapis.com' : 'https://sandbox.zohoapis.com';
 // const platform = 'zoho';
+
+const apiDomain = (sandbox = false) => {
+  return sandbox ? 'https://sandbox.zohoapis.com' : 'https://www.zohoapis.com';
+};
 
 export const getAccessToken = async () => {
   let { accessToken, expiresIn, updatedAt } = await prisma.account.findFirst({
@@ -61,6 +62,23 @@ export const refreshAccessToken = async () => {
   }
 };
 
+export const getStudioData = async (user) => {
+  const { id } = user;
+
+  try {
+    const studio = await prisma.studio.findUnique({
+      where: {
+        zohoId: id,
+      },
+    });
+
+    return studio;
+  } catch (error) {
+    console.error({ message: 'Could not find studio', user });
+    logError({ message: 'Could not find studio', user });
+  }
+};
+
 export const getStudioId = async (number) => {
   console.log(number);
   const { zohoId } = await prisma.studio.findUnique({
@@ -72,15 +90,16 @@ export const getStudioId = async (number) => {
 
 // `https://www.zohoapis.com/crm/v5/Leads/search?criteria=Mobile:equals:${number}`
 // `https://www.zohoapis.com/crm/v5/Contacts/search?phone=${number}`
-export const lookupLead = async (from) => {
-  console.log('lookupLead', { from });
+export const lookupLead = async (from, sandbox = false) => {
+  console.log('lookupLead', { from, sandbox });
 
   const accessToken = await getAccessToken();
   const headers = {
     Authorization: 'Bearer ' + accessToken,
   };
+  const apiUrl = apiDomain(sandbox);
 
-  const url = `${apiDomain}/crm/v5/Leads/search?criteria=Mobile:equals:${from}`;
+  const url = `${apiUrl}/crm/v5/Leads/search?criteria=Mobile:equals:${from}`;
 
   try {
     const { data } = await axios.get(url, { headers }).then((res) => res.data);
@@ -99,7 +118,12 @@ export const lookupLead = async (from) => {
   }
 };
 
-export const createTask = async ({ studioId, lead = null, message }) => {
+export const createTask = async ({
+  studioId,
+  lead = null,
+  message,
+  sandbox = false,
+}) => {
   console.log('createTask', { studioId, lead, message });
   const { to, from, msg } = message;
   const { leadId = null, leadName = null } = lead ?? {};
@@ -125,7 +149,9 @@ export const createTask = async ({ studioId, lead = null, message }) => {
     data.data[0]['$se_module'] = 'Leads';
   }
 
-  const url = `${apiDomain}/crm/v5/Tasks`;
+  const apiUrl = apiDomain(sandbox);
+
+  const url = `${apiUrl}/crm/v5/Tasks`;
 
   const accessToken = await getAccessToken();
   const headers = {

@@ -1,34 +1,40 @@
-'use client'
-import styles from './page.module.css'
-import { getMessages } from '../actions/twilio'
-import { useContext, useState, useEffect } from 'react'
+'use client';
+import styles from './page.module.css';
+import { getMessages } from '../actions/twilio';
+import { useContext, useState, useEffect } from 'react';
 
-import { ZohoContext } from '../providers/ZohoProvider'
-import ChatWindow from '../components/ChatWindow'
-import { Comment } from 'react-loader-spinner'
-import useToast from '~/hooks/useToast'
-
-
+import { ZohoContext } from '../providers/ZohoProvider';
+import ChatWindow from '../components/ChatWindow';
+import { Comment } from 'react-loader-spinner';
+import useToast from '~/hooks/useToast';
 
 export default function Home() {
-  const { leadPhoneNumber, studioPhoneNumber } = useContext(ZohoContext);
-  const [messages, setMessages] = useState(null)
+  const { leadPhoneNumber, studio } = useContext(ZohoContext);
+  const [messages, setMessages] = useState(null);
   const toast = useToast();
   const { container: ToastContainer } = toast;
 
+  useEffect(() => {
+    if (leadPhoneNumber) {
+      getMessages({ leadPhoneNumber }).then((messages) => {
+        setMessages(messages);
+      });
+    }
+  }, [leadPhoneNumber]);
 
   useEffect(() => {
-    if (leadPhoneNumber && studioPhoneNumber) {
-      getMessages({ leadPhoneNumber, studioPhoneNumber }).then((messages) => {
-        setMessages(messages)
-      })
+    if (!studio?.active) {
+      toast.sendError(
+        `Hi ${studio?.name}, this feature is currently still in development. Please check back soon!`,
+        { autoClose: false }
+      );
     }
-  }, [leadPhoneNumber, studioPhoneNumber])
+  }, [studio, toast]);
 
   return (
     <main className={styles.main}>
       <ToastContainer />
-      {!messages ? (
+      {!messages || !studio?.active ? (
         <Comment
           visible={true}
           height="80"
@@ -40,8 +46,13 @@ export default function Home() {
           backgroundColor="#F4442E"
         />
       ) : (
-        <ChatWindow leadPhoneNumber={leadPhoneNumber} studioPhoneNumber={studioPhoneNumber} messages={messages} toast={toast} />
+        <ChatWindow
+          leadPhoneNumber={leadPhoneNumber}
+          studioPhoneNumber={studio?.phone}
+          messages={messages}
+          toast={toast}
+        />
       )}
     </main>
-  )
+  );
 }

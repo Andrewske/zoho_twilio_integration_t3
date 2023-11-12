@@ -1,5 +1,4 @@
 'use server';
-
 import twilio from 'twilio';
 import { logError } from '~/utils/rollbar';
 // const { MessagingResponse } = twilio.twiml;
@@ -52,12 +51,7 @@ export const getMessages = async ({ leadPhoneNumber }) => {
 };
 
 // Create a route to send a new text message
-export const sendMessage = async ({ to, /* from,*/ message }) => {
-  const from =
-    process.env.NODE_ENV === 'production'
-      ? process.env.TWILIO_NUMBER_FADS
-      : process.env.TWILIO_NUMBER_KEV;
-
+export const sendMessage = async ({ to, from, message }) => {
   try {
     const client = twilio(accountSid, authToken);
 
