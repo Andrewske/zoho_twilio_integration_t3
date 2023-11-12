@@ -15,12 +15,12 @@ export default function Home() {
   const { container: ToastContainer } = toast;
 
   useEffect(() => {
-    if (leadPhoneNumber) {
-      getMessages({ leadPhoneNumber }).then((messages) => {
+    if (leadPhoneNumber && studio) {
+      getMessages({ leadPhoneNumber, studio }).then((messages) => {
         setMessages(messages);
       });
     }
-  }, [leadPhoneNumber]);
+  }, [leadPhoneNumber, studio]);
 
   useEffect(() => {
     if (!studio?.active) {
