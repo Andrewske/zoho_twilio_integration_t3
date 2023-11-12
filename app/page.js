@@ -17,10 +17,15 @@ export default function Home() {
   useEffect(() => {
     if (leadPhoneNumber && studio) {
       getMessages({ leadPhoneNumber, studio }).then((messages) => {
+        if (messages.length > 0) {
+          toast.sendError(
+            `There are no messages to or from this lead. Be the first to send one!`
+          );
+        }
         setMessages(messages);
       });
     }
-  }, [leadPhoneNumber, studio]);
+  }, [leadPhoneNumber, studio, toast]);
 
   useEffect(() => {
     if (!studio?.active) {
@@ -29,7 +34,7 @@ export default function Home() {
         { autoClose: false }
       );
     }
-  }, [studio, toast]);
+  }, [studio, toast, messages]);
 
   return (
     <main className={styles.main}>
