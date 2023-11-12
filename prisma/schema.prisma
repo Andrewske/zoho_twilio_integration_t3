@@ -20,6 +20,7 @@ model Account {
   authCode     String?  @db.Text
   expiresIn    Int?
   scope        String?
+  StudioAccount StudioAccount[]
 }
 
 model Studio {
@@ -27,5 +28,17 @@ model Studio {
   zohoId String @unique
   name   String
   phone  String
-  active Boolean @default(false) 
+  active Boolean @default(false)
+  StudioAccount StudioAccount[]
+}
+
+model StudioAccount {
+  studioId String
+  accountId String
+  Studio   Studio   @relation(fields: [studioId], references: [id])
+  Account  Account  @relation(fields: [accountId], references: [id])
+
+  @@id([studioId, accountId])
+  @@index([studioId])
+  @@index([accountId])
 }

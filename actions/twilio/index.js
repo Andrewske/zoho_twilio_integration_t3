@@ -1,68 +1,99 @@
 'use server';
 import twilio from 'twilio';
 import { logError } from '~/utils/rollbar';
+import prisma from '~/utils/prisma';
 // const { MessagingResponse } = twilio.twiml;
 
-const accountSid =
-  process.env.NODE_ENV === 'production'
-    ? process.env.TWILIO_ACCOUNT_SID_FADS
-    : process.env.TWILIO_ACCOUNT_SID_KEV;
-const authToken =
-  process.env.NODE_ENV === 'production'
-    ? process.env.TWILIO_AUTH_TOKEN_FADS
-    : process.env.TWILIO_AUTH_TOKEN_KEV;
+// const accountSid =
+//   process.env.NODE_ENV === 'production'
+//     ? process.env.TWILIO_ACCOUNT_SID_FADS
+//     : process.env.TWILIO_ACCOUNT_SID_KEV;
+// const authToken =
+//   process.env.NODE_ENV === 'production'
+//     ? process.env.TWILIO_AUTH_TOKEN_FADS
+//     : process.env.TWILIO_AUTH_TOKEN_KEV;
 
-export const getMessages = async ({ leadPhoneNumber }) => {
-  try {
-    const client = twilio(accountSid, authToken);
+export const getTwilioAccount = async (id) => {
+  const studioAccounts = await prisma.studioAccount.findMany({
+    where: {
+      studioId: id,
+    },
+    include: {
+      Account: true,
+    },
+  });
 
-    const responseToContact = await client.messages.list({
-      to: leadPhoneNumber,
-    });
+  const twilioAccount = studioAccounts
+    .map((sa) => sa.Account)
+    .find((account) => account.platform === 'twilio');
 
-    const messagesToContact = responseToContact.map((message) => ({
-      to: message.to,
-      from: message.from,
-      body: message.body,
-      date: message.dateSent,
-      fromStudio: true,
-    }));
+  return twilioAccount;
+};
 
-    const responseFromContact = await client.messages.list({
-      from: leadPhoneNumber,
-    });
+export const getMessages = async ({ leadPhoneNumber, studio }) => {
+  const twilioAccount = await getTwilioAccount(studio.id);
 
-    const messagesFromContact = responseFromContact.map((message) => ({
-      to: message.to,
-      from: message.from,
-      body: message.body,
-      date: message.dateSent,
-      fromStudio: false,
-    }));
+  if (twilioAccount) {
+    const { clientId, clientSecret } = twilioAccount;
+    try {
+      const client = twilio(clientId, clientSecret);
 
-    const messages = [...messagesToContact, ...messagesFromContact].sort(
-      (a, b) => new Date(a.date) - new Date(b.date)
-    );
-    return messages;
-  } catch (error) {
-    logError(error);
+      const responseToContact = await client.messages.list({
+        to: leadPhoneNumber,
+      });
+
+      const messagesToContact = responseToContact.map((message) => ({
+        to: message.to,
+        from: message.from,
+        body: message.body,
+        date: message.dateSent,
+        fromStudio: true,
+      }));
+
+      const responseFromContact = await client.messages.list({
+        from: leadPhoneNumber,
+      });
+
+      const messagesFromContact = responseFromContact.map((message) => ({
+        to: message.to,
+        from: message.from,
+        body: message.body,
+        date: message.dateSent,
+        fromStudio: false,
+      }));
+
+      const messages = [...messagesToContact, ...messagesFromContact].sort(
+        (a, b) => new Date(a.date) - new Date(b.date)
+      );
+      return messages;
+    } catch (error) {
+      logError(error);
+      return null;
+    }
+  } else {
+    logError('Cound not find twilio account');
     return null;
   }
 };
 
 // Create a route to send a new text message
-export const sendMessage = async ({ to, from, message }) => {
-  try {
-    const client = twilio(accountSid, authToken);
+export const sendMessage = async ({ to, from, message, studio }) => {
+  const twilioAccount = await getTwilioAccount(studio.id);
 
-    await client.messages.create({
-      body: message,
-      from,
-      to,
-    });
-    return true;
-  } catch (error) {
-    logError(error);
-    return false;
+  if (studio) {
+    const { clientId, clientSecret } = twilioAccount;
+    try {
+      const client = twilio(clientId, clientSecret);
+
+      await client.messages.create({
+        body: message,
+        from,
+        to,
+      });
+      return true;
+    } catch (error) {
+      logError(error);
+      return false;
+    }
   }
 };
