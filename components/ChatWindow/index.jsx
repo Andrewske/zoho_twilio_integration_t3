@@ -56,6 +56,12 @@ const ChatWindow = ({
     setIsSending(false);
   };
 
+  const handleKeyDown = (event) => {
+    if (event.ctrlKey && event.key === 'Enter') {
+      handleSubmit(event);
+    }
+  };
+
   return (
     <div className={styles.wrapper}>
       <div className={styles.messageContainer}>
@@ -96,6 +102,7 @@ const ChatWindow = ({
           onChange={handleNewMessage}
           placeholder="Type your message here..."
           className={styles.input}
+          onKeyDown={handleKeyDown}
         ></textarea>
         <button
           type="submit"
