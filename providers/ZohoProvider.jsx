@@ -2,19 +2,28 @@
 /* global ZOHO */
 import { createContext, useEffect, useState } from 'react';
 import useToast from '~/hooks/useToast';
+import { getStudioData } from '~/actions/zoho';
+
 // Create a context
 export const ZohoContext = createContext();
 
 // Create a provider component
 export function ZohoProvider({ children }) {
   const [leadPhoneNumber, setLeadPhoneNumber] = useState(null);
-  const [studioPhoneNumber, setStudioPhoneNumber] = useState(null);
+  const [studio, setStudio] = useState(null);
   const [error, setError] = useState(false);
 
   const { sendError } = useToast();
 
   useEffect(() => {
     const handlePageLoad = (data) => {
+      // const params = new URLSearchParams(window.location.search);
+      // const origin = params.get('frameorigin');
+      // console.log({ origin, sandbox: origin.includes('sandbox') });
+
+      // params.forEach((value, key) => {
+      //   console.log(`${key}: ${value}`);
+      // });
       if (data?.Entity) {
         ZOHO.CRM.API.getRecord({
           Entity: data.Entity,
@@ -39,14 +48,15 @@ export function ZohoProvider({ children }) {
         });
       }
 
-      ZOHO.CRM.CONFIG.getCurrentUser().then((response) => {
+      ZOHO.CRM.CONFIG.getCurrentUser().then(async (response) => {
         console.log('current user', response);
-        const phone = response?.users[0]?.phone;
-        if (phone) {
-          setStudioPhoneNumber(phone);
+        const user = response?.users[0];
+        if (user) {
+          const studio = await getStudioData(user);
+          setStudio(studio);
         } else {
           sendError(
-            'Oops, we cant find a phone number for the current user. Try refreshing the page'
+            'Oops, we cant find a user for the current user. Try refreshing the page'
           );
           setError(true);
         }
@@ -57,7 +67,7 @@ export function ZohoProvider({ children }) {
     ZOHO.embeddedApp.init();
   }, []);
 
-  const value = { leadPhoneNumber, studioPhoneNumber, error };
+  const value = { leadPhoneNumber, studio, error };
 
   return <ZohoContext.Provider value={value}>{children}</ZohoContext.Provider>;
 }

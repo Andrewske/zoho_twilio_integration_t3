@@ -26,5 +26,6 @@ model Studio {
   id     String @id @default(cuid())
   zohoId String @unique
   name   String
-  phone  String @unique
+  phone  String
+  active Boolean @default(false) 
 }
