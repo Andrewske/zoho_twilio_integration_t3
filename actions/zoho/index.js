@@ -205,7 +205,7 @@ export const createTask = async ({
   console.log('Task data:', data);
 
   const { apiDomain, accessToken } = await getZohoAccount(studioId);
-
+  console.log({ apiDomain, accessToken });
   const url = `${apiDomain}/crm/v5/Tasks`;
 
   const headers = {
@@ -219,7 +219,7 @@ export const createTask = async ({
       .then((res) => res.data);
     console.log('Task created:', data);
   } catch (error) {
-    console.error('Error creating task:', error.message);
-    throw error;
+    console.error('Could not create task');
+    logError(error);
   }
 };
