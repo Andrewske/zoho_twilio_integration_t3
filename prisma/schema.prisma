@@ -20,6 +20,7 @@ model Account {
   authCode     String?  @db.Text
   expiresIn    Int?
   scope        String?
+  apiDomain    String?
   StudioAccount StudioAccount[]
 }
 
