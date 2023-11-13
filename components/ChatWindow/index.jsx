@@ -6,12 +6,7 @@ import { format } from 'date-fns';
 
 import { getMessages, sendMessage } from '~/actions/twilio';
 
-const ChatWindow = ({
-  leadPhoneNumber,
-  studioPhoneNumber,
-  messages,
-  toast,
-}) => {
+const ChatWindow = ({ leadPhoneNumber, studio, messages, toast }) => {
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef(null);
@@ -36,12 +31,22 @@ const ChatWindow = ({
   // TODO: Enter should submit the form
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+    if (!studio) {
+      toast.sendError(
+        `We can't find which studio you are. Please refresh the page`,
+        { autoClose: false }
+      );
+      return;
+    }
+
     setIsSending(true);
 
     const body = {
       message: newMessage,
       to: leadPhoneNumber,
-      from: studioPhoneNumber,
+      from: studio?.phone,
+      studio,
     };
 
     const sent = await sendMessage(body);
@@ -61,7 +66,6 @@ const ChatWindow = ({
       handleSubmit(event);
     }
   };
-
   return (
     <div className={styles.wrapper}>
       <div className={styles.messageContainer}>

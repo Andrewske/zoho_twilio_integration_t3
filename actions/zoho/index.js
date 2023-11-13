@@ -71,7 +71,7 @@ export const getStudioData = async (user) => {
         zohoId: id,
       },
     });
-
+    console.log({ studio });
     return studio;
   } catch (error) {
     console.error({ message: 'Could not find studio', user });

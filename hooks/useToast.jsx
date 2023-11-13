@@ -3,11 +3,11 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const useToast = () => {
-  const sendError = (message, options = {}) => {
+  const sendError = (message, options = null) => {
     toast.error(message, options);
   };
 
-  const sendSuccess = (message = null, options = {}) => {
+  const sendSuccess = (message = null, options = null) => {
     toast.success(message ?? 'Message sent!', options);
   };
 
