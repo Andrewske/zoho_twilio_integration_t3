@@ -219,7 +219,9 @@ export const createTask = async ({
       .then((res) => res.data);
     console.log('Task created:', data);
   } catch (error) {
-    console.error('Could not create task');
+    console.error(error);
     logError(error);
   }
+
+  return;
 };
