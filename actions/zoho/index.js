@@ -8,11 +8,13 @@ import prisma from '~/utils/prisma.js';
 // const apiDomain = process.env.NODE_ENV === 'production' ? 'https://www.zohoapis.com' : 'https://sandbox.zohoapis.com';
 // const platform = 'zoho';
 
-const apiDomain = (sandbox = false) => {
-  return sandbox ? 'https://sandbox.zohoapis.com' : 'https://www.zohoapis.com';
-};
+export const getZohoAccount = async (studioId) => {
+  console.log('Getting Zoho account for studio:', studioId);
 
-const getZohoAccount = async (studioId) => {
+  if (!studioId) {
+    return null;
+  }
+
   const studioAccounts = await prisma.studioAccount.findMany({
     where: {
       studioId: studioId,
@@ -21,62 +23,101 @@ const getZohoAccount = async (studioId) => {
       Account: true,
     },
   });
-  let { id, accessToken, expiresIn, updatedAt, clientId, clientSecret } =
-    studioAccounts
-      .map((sa) => sa.Account)
-      .find((account) => account.platform === 'zoho');
-  console.log({
+
+  let account = studioAccounts
+    .map((sa) => sa.Account)
+    .find((account) => account.platform === 'zoho');
+
+  if (!account) {
+    console.error('No Zoho account found for studio:', studioId);
+    return null;
+  }
+
+  let {
     id,
     accessToken,
     expiresIn,
     updatedAt,
+    apiDomain,
+    refreshToken,
     clientId,
     clientSecret,
-  });
-  return { id, accessToken, expiresIn, updatedAt, clientId, clientSecret };
-};
-
-export const getAccessToken = async (studioId) => {
-  console.log('getting access token', studioId);
-  let { accessToken, expiresIn, updatedAt } = await getZohoAccount(studioId);
+  } = account;
 
   let updatedAtDate = new Date(updatedAt);
   updatedAtDate.setTime(updatedAtDate.getTime() + expiresIn * 1000);
-  console.log({ accessToken, updatedAtDate });
 
   if (updatedAtDate < new Date()) {
-    accessToken = await refreshAccessToken(studioId);
+    accessToken = await refreshAccessToken({
+      id,
+      refreshToken,
+      clientId,
+      clientSecret,
+    });
   }
-  return accessToken;
+
+  return { id, accessToken, expiresIn, updatedAt, apiDomain };
 };
+
+// export const getAccessToken = async (studioId) => {
+//   console.log('getting access token', studioId);
+//   let { accessToken, expiresIn, updatedAt } = await getZohoAccount(studioId);
+
+//   let updatedAtDate = new Date(updatedAt);
+//   updatedAtDate.setTime(updatedAtDate.getTime() + expiresIn * 1000);
+//   console.log({ accessToken, updatedAtDate });
+
+//   if (updatedAtDate < new Date()) {
+//     accessToken = await refreshAccessToken(studioId);
+//   }
+//   return accessToken;
+// };
 
 // https://www.zoho.com/crm/developer/docs/api/v5/refresh.html
 // https://accounts.zoho.com/oauth/v2/token?refresh_token={refresh_token}&client_id={client_id}&client_secret={client_secret}&grant_type=refresh_token
-export const refreshAccessToken = async (studioId) => {
-  console.log('refreshing token', studioId);
-  let { id, refreshToken, clientId, clientSecret } = getZohoAccount(studioId);
-  console.log({ id, refreshToken, clientId, clientSecret });
+export const refreshAccessToken = async ({
+  id,
+  refreshToken,
+  clientId,
+  clientSecret,
+}) => {
+  console.log('Refreshing token for account:', id);
 
-  const url = `https://accounts.zoho.com/oauth/v2/token?refresh_token=${refreshToken}&client_id=${clientId}&client_secret=${clientSecret}&grant_type=refresh_token`;
+  const params = new URLSearchParams({
+    refresh_token: refreshToken,
+    client_id: clientId,
+    client_secret: clientSecret,
+    grant_type: 'refresh_token',
+  });
+
+  const url = `https://accounts.zoho.com/oauth/v2/token?${params.toString()}`;
+
   try {
-    const {
-      data: { access_token, expires_in },
-    } = await axios.post(url);
-    if (access_token) {
-      await prisma.account.update({
-        where: { id },
-        data: { accessToken: access_token, expiresIn: expires_in },
-      });
-      return access_token;
+    const data = await axios.post(url).then((res) => res.data);
+    const { access_token, expires_in, api_domain } = data;
+
+    if (!access_token) {
+      console.log(data);
+      throw new Error('Access token not received');
     }
+
+    await prisma.account.update({
+      where: { id },
+      data: {
+        accessToken: access_token,
+        expiresIn: expires_in,
+        apiDomain: api_domain,
+      },
+    });
+
+    return access_token;
   } catch (error) {
-    logError(error);
+    console.error('Error refreshing access token:', error.message);
+    throw error;
   }
 };
 
-export const getStudioData = async ({ user, phone = null }) => {
-  const { id: zohoId } = user ?? { id: null };
-
+export const getStudioData = async ({ zohoId, phone = null }) => {
   const where = phone ? { phone } : { zohoId };
   console.log({ where });
   try {
@@ -86,44 +127,37 @@ export const getStudioData = async ({ user, phone = null }) => {
     console.log({ studio });
     return studio;
   } catch (error) {
-    console.error({ message: 'Could not find studio', user });
-    logError({ message: 'Could not find studio', user });
+    console.error({ message: 'Could not find studio', zohoId });
+    logError({ message: 'Could not find studio', zohoId });
   }
-};
-
-export const getStudioId = async (number) => {
-  const { id, zohoId } = await prisma.studio.findFirst({
-    where: { phone: number.replace('+1', '') },
-    select: { id: true, zohoId: true },
-  });
-  return { id, zohoId };
 };
 
 // `https://www.zohoapis.com/crm/v5/Leads/search?criteria=Mobile:equals:${number}`
 // `https://www.zohoapis.com/crm/v5/Contacts/search?phone=${number}`
-export const lookupLead = async ({ from, studioId, sandbox = false }) => {
-  console.log('lookupLead', { from, studioId, sandbox });
+export const lookupLead = async ({ from, studioId }) => {
+  console.log('Looking up lead for studio:', studioId, 'from:', from);
 
-  const accessToken = await getAccessToken(studioId);
-  console.log({ accessToken });
+  const { accessToken, apiDomain } = await getZohoAccount(studioId);
   const headers = {
     Authorization: 'Bearer ' + accessToken,
   };
-  const apiUrl = apiDomain(sandbox);
-  console.log({ apiUrl });
-  const url = `${apiUrl}/crm/v5/Leads/search?criteria=Mobile:equals:${from}`;
-  console.log(url);
+  const url = `${apiDomain}/crm/v5/Leads/search?criteria=Mobile:equals:${from}`;
+
   try {
     const { data } = await axios.get(url, { headers }).then((res) => res.data);
-    const numberOfLeads = data?.length;
-    let leadId = data[0]?.id;
-    let leadName = data[0]?.Full_Name;
-    if (numberOfLeads > 1) {
+    let leadId, leadName;
+    if (data && Array.isArray(data) && data.length > 0) {
+      leadId = data[0]?.id;
+      leadName = data[0]?.Full_Name;
+    }
+
+    if (data?.length > 1) {
       rollbar.log('Found multiple leads with this phone number', {
         number: from,
       });
     }
 
+    console.log('Found lead:', leadId, 'name:', leadName);
     return { leadId, leadName };
   } catch (error) {
     console.error({ message: 'Could not find lead', from });
@@ -133,40 +167,47 @@ export const lookupLead = async ({ from, studioId, sandbox = false }) => {
 
 export const createTask = async ({
   studioId,
+  zohoId,
   lead = null,
   message,
-  sandbox = false,
 }) => {
-  console.log('createTask', { studioId, lead, message });
   const { to, from, msg } = message;
   const { leadId = null, leadName = null } = lead ?? {};
 
-  const data = {
-    data: [
-      {
-        Owner: {
-          id: studioId, // studioId
-        },
-        Status: 'Not Started',
-        Send_Notification_Email: false, // Maybe?
-        Description: `TO: ${to} FROM: ${from} MSG: ${msg}`,
-        Priority: 'Low',
-        send_notification: true,
-        Subject: 'New SMS Message',
-      },
-    ],
+  console.log(
+    'Creating task for studio:',
+    studioId,
+    'lead:',
+    leadId,
+    'name:',
+    leadName
+  );
+
+  const taskData = {
+    Owner: {
+      id: zohoId,
+    },
+    Status: 'Not Started',
+    Send_Notification_Email: false,
+    Description: `TO: ${to} FROM: ${from} MSG: ${msg}`,
+    Priority: 'Low',
+    send_notification: true,
+    Subject: 'New SMS Message',
   };
 
   if (leadId && leadName) {
-    data.data[0]['What_Id'] = { id: leadId, name: leadName };
-    data.data[0]['$se_module'] = 'Leads';
+    taskData['What_Id'] = { id: leadId, name: leadName };
+    taskData['$se_module'] = 'Leads';
   }
 
-  const apiUrl = apiDomain(sandbox);
+  const data = { data: [taskData] };
 
-  const url = `${apiUrl}/crm/v5/Tasks`;
+  console.log('Task data:', data);
 
-  const accessToken = await getAccessToken();
+  const { apiDomain, accessToken } = await getZohoAccount(studioId);
+
+  const url = `${apiDomain}/crm/v5/Tasks`;
+
   const headers = {
     Authorization: 'Bearer ' + accessToken,
     'Content-Type': 'application/json',
@@ -175,6 +216,7 @@ export const createTask = async ({
   try {
     await axios.post(url, data, { headers });
   } catch (error) {
-    logError(error);
+    console.error('Error creating task:', error.message);
+    throw error;
   }
 };

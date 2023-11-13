@@ -45,7 +45,8 @@ export function ZohoProvider({ children }) {
         console.log('current user', response);
         const user = response?.users[0];
         if (user) {
-          const studio = await getStudioData(user);
+          const zohoId = user?.id;
+          const studio = await getStudioData({ zohoId });
           setStudio(studio);
         } else {
           sendError(
