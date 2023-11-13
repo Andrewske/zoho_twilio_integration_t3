@@ -4,13 +4,7 @@ import rollbar, { logError } from '../../utils/rollbar.js';
 
 import prisma from '~/utils/prisma.js';
 
-// Prod
-// const apiDomain = process.env.NODE_ENV === 'production' ? 'https://www.zohoapis.com' : 'https://sandbox.zohoapis.com';
-// const platform = 'zoho';
-
 export const getZohoAccount = async (studioId) => {
-  console.log('Getting Zoho account for studio:', studioId);
-
   if (!studioId) {
     return null;
   }
@@ -29,7 +23,7 @@ export const getZohoAccount = async (studioId) => {
     .find((account) => account.platform === 'zoho');
 
   if (!account) {
-    console.error('No Zoho account found for studio:', studioId);
+    logError({ message: 'No Zoho account found for studio' });
     return null;
   }
 
@@ -58,20 +52,6 @@ export const getZohoAccount = async (studioId) => {
 
   return { id, accessToken, expiresIn, updatedAt, apiDomain };
 };
-
-// export const getAccessToken = async (studioId) => {
-//   console.log('getting access token', studioId);
-//   let { accessToken, expiresIn, updatedAt } = await getZohoAccount(studioId);
-
-//   let updatedAtDate = new Date(updatedAt);
-//   updatedAtDate.setTime(updatedAtDate.getTime() + expiresIn * 1000);
-//   console.log({ accessToken, updatedAtDate });
-
-//   if (updatedAtDate < new Date()) {
-//     accessToken = await refreshAccessToken(studioId);
-//   }
-//   return accessToken;
-// };
 
 // https://www.zoho.com/crm/developer/docs/api/v5/refresh.html
 // https://accounts.zoho.com/oauth/v2/token?refresh_token={refresh_token}&client_id={client_id}&client_secret={client_secret}&grant_type=refresh_token
@@ -112,22 +92,18 @@ export const refreshAccessToken = async ({
 
     return access_token;
   } catch (error) {
-    console.error('Error refreshing access token:', error.message);
-    throw error;
+    logError(error);
   }
 };
 
 export const getStudioData = async ({ zohoId, phone = null }) => {
   const where = phone ? { phone } : { zohoId };
-  console.log({ where });
   try {
     const studio = await prisma.studio.findFirst({
       where: where,
     });
-    console.log({ studio });
     return studio;
   } catch (error) {
-    console.error({ message: 'Could not find studio', zohoId });
     logError({ message: 'Could not find studio', zohoId });
   }
 };
@@ -135,8 +111,6 @@ export const getStudioData = async ({ zohoId, phone = null }) => {
 // `https://www.zohoapis.com/crm/v5/Leads/search?criteria=Mobile:equals:${number}`
 // `https://www.zohoapis.com/crm/v5/Contacts/search?phone=${number}`
 export const lookupLead = async ({ from, studioId }) => {
-  console.log('Looking up lead for studio:', studioId, 'from:', from);
-
   const { accessToken, apiDomain } = await getZohoAccount(studioId);
   const headers = {
     Authorization: 'Bearer ' + accessToken,
@@ -157,10 +131,8 @@ export const lookupLead = async ({ from, studioId }) => {
       });
     }
 
-    console.log('Found lead:', leadId, 'name:', leadName);
     return { leadId, leadName };
   } catch (error) {
-    console.error({ message: 'Could not find lead', from });
     logError(error);
   }
 };
@@ -173,15 +145,6 @@ export const createTask = async ({
 }) => {
   const { to, from, msg } = message;
   const { leadId = null, leadName = null } = lead ?? {};
-
-  console.log(
-    'Creating task for studio:',
-    studioId,
-    'lead:',
-    leadId,
-    'name:',
-    leadName
-  );
 
   const taskData = {
     Owner: {
@@ -202,10 +165,7 @@ export const createTask = async ({
 
   const postData = { data: [taskData] };
 
-  console.log('Task data:', postData);
-
   const { apiDomain, accessToken } = await getZohoAccount(studioId);
-  console.log({ apiDomain, accessToken });
   const url = `${apiDomain}/crm/v5/Tasks`;
 
   const headers = {
@@ -214,12 +174,8 @@ export const createTask = async ({
   };
 
   try {
-    const responseData = await axios
-      .post(url, postData, { headers })
-      .then((res) => res.data);
-    console.log('Task created:', responseData);
+    await axios.post(url, postData, { headers }).then((res) => res.data);
   } catch (error) {
-    console.error(error);
     logError(error);
   }
 
