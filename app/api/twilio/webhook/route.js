@@ -24,7 +24,7 @@ export async function POST(request) {
     if (studioId) {
       const lead = await lookupLead({ from, studioId });
       console.log({ lead });
-      createTask({ studioId, zohoId, lead, message: { to, from, msg } });
+      await createTask({ studioId, zohoId, lead, message: { to, from, msg } });
     }
   } catch (error) {
     logError(error);
