@@ -46,7 +46,7 @@ const ChatWindow = ({ leadPhoneNumber, studio, messages, toast }) => {
       message: newMessage,
       to: leadPhoneNumber,
       from: studio?.phone,
-      studio,
+      studioId: studio?.id,
     };
 
     const sent = await sendMessage(body);
@@ -54,7 +54,7 @@ const ChatWindow = ({ leadPhoneNumber, studio, messages, toast }) => {
     if (sent) {
       setNewMessage('');
       sendSuccess('Message sent!');
-      getMessages({ leadPhoneNumber });
+      getMessages({ leadPhoneNumber, studioId: studio?.id });
     } else {
       sendError('Error sending the message! Try refreshing the page.');
     }

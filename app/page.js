@@ -16,14 +16,16 @@ export default function Home() {
 
   useEffect(() => {
     if (leadPhoneNumber && studio) {
-      getMessages({ leadPhoneNumber, studio }).then((messages) => {
-        if (messages.length > 0) {
-          toast.sendError(
-            `There are no messages to or from this lead. Be the first to send one!`
-          );
+      getMessages({ leadPhoneNumber, studioId: studio?.id }).then(
+        (messages) => {
+          if (messages.length > 0) {
+            toast.sendError(
+              `There are no messages to or from this lead. Be the first to send one!`
+            );
+          }
+          setMessages(messages);
         }
-        setMessages(messages);
-      });
+      );
     }
   }, [leadPhoneNumber, studio, toast]);
 
