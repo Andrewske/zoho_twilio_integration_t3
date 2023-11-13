@@ -214,7 +214,10 @@ export const createTask = async ({
   };
 
   try {
-    await axios.post(url, data, { headers });
+    const data = await axios
+      .post(url, data, { headers })
+      .then((res) => res.data);
+    console.log('Task created:', data);
   } catch (error) {
     console.error('Error creating task:', error.message);
     throw error;
