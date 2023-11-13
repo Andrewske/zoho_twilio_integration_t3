@@ -200,9 +200,9 @@ export const createTask = async ({
     taskData['$se_module'] = 'Leads';
   }
 
-  const data = { data: [taskData] };
+  const postData = { data: [taskData] };
 
-  console.log('Task data:', data);
+  console.log('Task data:', postData);
 
   const { apiDomain, accessToken } = await getZohoAccount(studioId);
   console.log({ apiDomain, accessToken });
@@ -214,10 +214,10 @@ export const createTask = async ({
   };
 
   try {
-    const data = await axios
-      .post(url, data, { headers })
+    const responseData = await axios
+      .post(url, postData, { headers })
       .then((res) => res.data);
-    console.log('Task created:', data);
+    console.log('Task created:', responseData);
   } catch (error) {
     console.error(error);
     logError(error);
