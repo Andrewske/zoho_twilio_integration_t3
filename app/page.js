@@ -33,7 +33,7 @@ export default function Home() {
     if (!studio?.active) {
       toast.sendError(
         `Hi ${studio?.name}, this feature is currently still in development. Please check back soon!`,
-        { autoClose: false }
+        false
       );
     }
   }, [studio, toast, messages]);
