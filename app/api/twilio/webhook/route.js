@@ -1,4 +1,9 @@
-import { createTask, getStudioId, lookupLead } from '~/actions/zoho';
+import {
+  createTask,
+  getStudioData,
+  lookupLead,
+  getZohoAccount,
+} from '~/actions/zoho';
 import { logError } from '~/utils/rollbar';
 import { parse } from 'querystring';
 
@@ -8,18 +13,24 @@ export async function POST(request) {
   const body = await request.text();
   const res = parse(body);
   const { To: to, From: from, Body: msg } = res;
+  console.log('webhook hit', { to, from, msg });
 
   const sandbox = sandboxNumbers.includes(to);
 
   try {
-    const toStudio = await getStudioId(to);
-    console.log('toStudio', toStudio);
+    const { id: studioId } = await getStudioData({
+      phone: to.replace('+1', ''),
+    });
 
-    if (toStudio) {
-      const lead = await lookupLead(from, sandbox);
-      console.log('lead', lead);
-      createTask({ studioId: toStudio, lead, message: { to, from, msg } });
+    if (studioId) {
+      console.log('sudioId', studioId);
+      getZohoAccount(studioId);
     }
+    // if (studioId) {
+    //   const lead = await lookupLead({ from, sandbox, studioId });
+    //   console.log({ lead });
+    //   createTask({ studioId, lead, message: { to, from, msg } });
+    // }
   } catch (error) {
     logError(error);
   }

@@ -4,9 +4,6 @@ import rollbar, { logError } from '../../utils/rollbar.js';
 
 import prisma from '~/utils/prisma.js';
 
-// Sandbox
-const platform = 'dev';
-
 // Prod
 // const apiDomain = process.env.NODE_ENV === 'production' ? 'https://www.zohoapis.com' : 'https://sandbox.zohoapis.com';
 // const platform = 'zoho';
@@ -15,37 +12,52 @@ const apiDomain = (sandbox = false) => {
   return sandbox ? 'https://sandbox.zohoapis.com' : 'https://www.zohoapis.com';
 };
 
-export const getAccessToken = async () => {
-  let { accessToken, expiresIn, updatedAt } = await prisma.account.findFirst({
-    where: { platform: platform },
-    select: { accessToken: true, expiresIn: true, updatedAt: true },
+const getZohoAccount = async (studioId) => {
+  const studioAccounts = await prisma.studioAccount.findMany({
+    where: {
+      studioId: studioId,
+    },
+    include: {
+      Account: true,
+    },
   });
+  let { id, accessToken, expiresIn, updatedAt, clientId, clientSecret } =
+    studioAccounts
+      .map((sa) => sa.Account)
+      .find((account) => account.platform === 'zoho');
+  console.log({
+    id,
+    accessToken,
+    expiresIn,
+    updatedAt,
+    clientId,
+    clientSecret,
+  });
+  return { id, accessToken, expiresIn, updatedAt, clientId, clientSecret };
+};
+
+export const getAccessToken = async (studioId) => {
+  console.log('getting access token', studioId);
+  let { accessToken, expiresIn, updatedAt } = await getZohoAccount(studioId);
+
   let updatedAtDate = new Date(updatedAt);
   updatedAtDate.setTime(updatedAtDate.getTime() + expiresIn * 1000);
+  console.log({ accessToken, updatedAtDate });
 
   if (updatedAtDate < new Date()) {
-    console.log('updating access token');
-    accessToken = await refreshAccessToken();
+    accessToken = await refreshAccessToken(studioId);
   }
   return accessToken;
 };
 
 // https://www.zoho.com/crm/developer/docs/api/v5/refresh.html
 // https://accounts.zoho.com/oauth/v2/token?refresh_token={refresh_token}&client_id={client_id}&client_secret={client_secret}&grant_type=refresh_token
-export const refreshAccessToken = async () => {
-  let { id, refreshToken, clientId, clientSecret } =
-    await prisma.account.findFirst({
-      where: { platform: platform },
-      select: {
-        id: true,
-        refreshToken: true,
-        clientId: true,
-        clientSecret: true,
-      },
-    });
+export const refreshAccessToken = async (studioId) => {
+  console.log('refreshing token', studioId);
+  let { id, refreshToken, clientId, clientSecret } = getZohoAccount(studioId);
+  console.log({ id, refreshToken, clientId, clientSecret });
 
   const url = `https://accounts.zoho.com/oauth/v2/token?refresh_token=${refreshToken}&client_id=${clientId}&client_secret=${clientSecret}&grant_type=refresh_token`;
-
   try {
     const {
       data: { access_token, expires_in },
@@ -62,15 +74,16 @@ export const refreshAccessToken = async () => {
   }
 };
 
-export const getStudioData = async (user) => {
-  const { id } = user;
+export const getStudioData = async ({ user, phone = null }) => {
+  const { id: zohoId } = user ?? { id: null };
 
+  const where = phone ? { phone } : { zohoId };
+  console.log({ where });
   try {
-    const studio = await prisma.studio.findUnique({
-      where: {
-        zohoId: id,
-      },
+    const studio = await prisma.studio.findFirst({
+      where: where,
     });
+    console.log({ studio });
     return studio;
   } catch (error) {
     console.error({ message: 'Could not find studio', user });
@@ -79,27 +92,27 @@ export const getStudioData = async (user) => {
 };
 
 export const getStudioId = async (number) => {
-  console.log(number);
-  const { zohoId } = await prisma.studio.findUnique({
+  const { id, zohoId } = await prisma.studio.findFirst({
     where: { phone: number.replace('+1', '') },
-    select: { zohoId: true },
+    select: { id: true, zohoId: true },
   });
-  return zohoId;
+  return { id, zohoId };
 };
 
 // `https://www.zohoapis.com/crm/v5/Leads/search?criteria=Mobile:equals:${number}`
 // `https://www.zohoapis.com/crm/v5/Contacts/search?phone=${number}`
-export const lookupLead = async (from, sandbox = false) => {
-  console.log('lookupLead', { from, sandbox });
+export const lookupLead = async ({ from, studioId, sandbox = false }) => {
+  console.log('lookupLead', { from, studioId, sandbox });
 
-  const accessToken = await getAccessToken();
+  const accessToken = await getAccessToken(studioId);
+  console.log({ accessToken });
   const headers = {
     Authorization: 'Bearer ' + accessToken,
   };
   const apiUrl = apiDomain(sandbox);
-
+  console.log({ apiUrl });
   const url = `${apiUrl}/crm/v5/Leads/search?criteria=Mobile:equals:${from}`;
-
+  console.log(url);
   try {
     const { data } = await axios.get(url, { headers }).then((res) => res.data);
     const numberOfLeads = data?.length;
@@ -113,6 +126,7 @@ export const lookupLead = async (from, sandbox = false) => {
 
     return { leadId, leadName };
   } catch (error) {
+    console.error({ message: 'Could not find lead', from });
     logError(error);
   }
 };
