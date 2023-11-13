@@ -17,13 +17,6 @@ export function ZohoProvider({ children }) {
 
   useEffect(() => {
     const handlePageLoad = (data) => {
-      // const params = new URLSearchParams(window.location.search);
-      // const origin = params.get('frameorigin');
-      // console.log({ origin, sandbox: origin.includes('sandbox') });
-
-      // params.forEach((value, key) => {
-      //   console.log(`${key}: ${value}`);
-      // });
       if (data?.Entity) {
         ZOHO.CRM.API.getRecord({
           Entity: data.Entity,
