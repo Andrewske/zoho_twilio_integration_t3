@@ -78,7 +78,6 @@ export const getMessages = async ({ leadPhoneNumber, studioId }) => {
 
 // Create a route to send a new text message
 export const sendMessage = async ({ to, from, message, studioId }) => {
-  console.log({ to, from, message, studioId });
   const twilioAccount = await getTwilioAccount(studioId);
 
   if (twilioAccount) {
