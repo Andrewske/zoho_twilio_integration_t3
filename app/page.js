@@ -53,7 +53,7 @@ export default function Home() {
       ) : (
         <ChatWindow
           leadPhoneNumber={leadPhoneNumber}
-          studioPhoneNumber={studio?.phone}
+          studio={studio}
           messages={messages}
           toast={toast}
         />
