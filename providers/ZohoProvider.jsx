@@ -27,7 +27,6 @@ export function ZohoProvider({ children }) {
           const mobile = response?.data[0]?.Mobile;
 
           if (mobile ?? phone) {
-            sendSuccess(`Lead mobile: ${mobile}, Lead phone: ${phone}`);
             mobile ? setLeadPhoneNumber(mobile) : setLeadPhoneNumber(phone);
           } else {
             sendError(
@@ -42,8 +41,8 @@ export function ZohoProvider({ children }) {
       ZOHO.CRM.CONFIG.getCurrentUser().then(async (response) => {
         const user = response?.users[0];
         if (user?.id) {
-          const zohoId = user?.id;
-          const studio = await getStudioData({ zohoId });
+          console.log({ user });
+          const studio = await getStudioData({ zohoId: user.id });
           sendSuccess(`Zoho user: ${studio?.name}`);
           setStudio(studio);
         } else {
