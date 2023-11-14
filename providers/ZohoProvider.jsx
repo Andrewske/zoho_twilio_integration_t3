@@ -27,7 +27,9 @@ export function ZohoProvider({ children }) {
           const mobile = response?.data[0]?.Mobile;
 
           if (mobile ?? phone) {
-            mobile ? setLeadPhoneNumber(mobile) : setLeadPhoneNumber(phone);
+            mobile
+              ? setLeadPhoneNumber(mobile.replace('+1', ''))
+              : setLeadPhoneNumber(phone.replace('+1', ''));
           } else {
             sendError(
               'No lead found. Please make sure there is a valid lead for this page',
