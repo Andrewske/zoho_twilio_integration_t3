@@ -1,3 +1,4 @@
+'use server'
 import Rollbar from 'rollbar'
 
 export const logError = (error) => {
