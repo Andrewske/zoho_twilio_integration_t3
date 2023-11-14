@@ -30,7 +30,7 @@ export default function Home() {
   }, [leadPhoneNumber, studio, toast, messages]);
 
   useEffect(() => {
-    if (!studio?.active) {
+    if (studio && !studio?.active) {
       toast.sendError(
         `Hi ${studio?.name}, this feature is currently still in development. Please check back soon!`,
         false
