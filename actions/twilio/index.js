@@ -80,7 +80,7 @@ export const getMessages = async ({ leadPhoneNumber, studioId }) => {
 
 // Create a route to send a new text message
 export const sendMessage = async ({ to, from, message, studioId }) => {
-  logError('sendMessage not implemented');
+  throw new Error("Send message not implemented")
   // const twilioAccount = await getTwilioAccount(studioId);
 
   // if (twilioAccount) {
