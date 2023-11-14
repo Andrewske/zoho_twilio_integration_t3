@@ -17,7 +17,7 @@ export default function Error({
         'use server'
         import Rollbar from 'rollbar'
 
-        const rollbar = new Rollbar(process.env.ROLLBAR_POST_SERVER_ACCESS_TOKENR)
+        const rollbar = new Rollbar(process.env.ROLLBAR_POST_SERVER_ACCESS_TOKEN)
 
         rollbar.error(error, (rollbarError) => {
             if (rollbarError) {
