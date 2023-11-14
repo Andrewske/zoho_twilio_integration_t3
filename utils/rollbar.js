@@ -1,4 +1,4 @@
-// include and initialize the rollbar library with your access token
+'use server'
 import Rollbar from 'rollbar'
 
 
@@ -13,6 +13,7 @@ var rollbar = new Rollbar(rollbarConfig)
 
 
 export const logError = (error) => {
+    console.log({ error, env: process.env.NODE_ENV })
     if (process.env.NODE_ENV === 'production') {
         console.error(error.message)
         rollbar.error(error, (rollbarError) => {
