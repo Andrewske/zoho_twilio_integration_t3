@@ -1,34 +1,47 @@
-'use client'
-import styles from './page.module.css'
-import { getMessages } from '../actions/twilio'
-import { useContext, useState, useEffect } from 'react'
+'use client';
+import styles from './page.module.css';
+import { getMessages } from '../actions/twilio';
+import { useContext, useState, useEffect } from 'react';
 
-import { ZohoContext } from '../providers/ZohoProvider'
-import ChatWindow from '../components/ChatWindow'
-import { Comment } from 'react-loader-spinner'
-import useToast from '~/hooks/useToast'
-
-
+import { ZohoContext } from '../providers/ZohoProvider';
+import ChatWindow from '../components/ChatWindow';
+import { Comment } from 'react-loader-spinner';
+import useToast from '~/hooks/useToast';
+import ToastContainer from '~/components/ToastContainer';
 
 export default function Home() {
-  const { leadPhoneNumber, studioPhoneNumber } = useContext(ZohoContext);
-  const [messages, setMessages] = useState(null)
+  const { leadPhoneNumber, studio } = useContext(ZohoContext);
+  const [messages, setMessages] = useState(null);
   const toast = useToast();
-  const { container: ToastContainer } = toast;
-
 
   useEffect(() => {
-    if (leadPhoneNumber && studioPhoneNumber) {
-      getMessages({ leadPhoneNumber, studioPhoneNumber }).then((messages) => {
-        setMessages(messages)
-      })
+    if (!messages && leadPhoneNumber && studio) {
+      getMessages({ leadPhoneNumber, studioId: studio?.id }).then(
+        (messages) => {
+          if (messages.length === 0) {
+            toast.sendError(
+              `There are no messages to or from this lead. Be the first to send one!`
+            );
+          }
+          setMessages(messages);
+        }
+      );
     }
-  }, [leadPhoneNumber, studioPhoneNumber])
+  }, [leadPhoneNumber, studio, toast, messages]);
+
+  useEffect(() => {
+    if (messages && !studio?.active) {
+      toast.sendError(
+        `Hi ${studio?.name}, this feature is currently still in development. Please check back soon!`,
+        false
+      );
+    }
+  }, [studio, toast, messages]);
 
   return (
     <main className={styles.main}>
       <ToastContainer />
-      {!messages ? (
+      {!messages || !studio?.active ? (
         <Comment
           visible={true}
           height="80"
@@ -40,8 +53,13 @@ export default function Home() {
           backgroundColor="#F4442E"
         />
       ) : (
-        <ChatWindow leadPhoneNumber={leadPhoneNumber} studioPhoneNumber={studioPhoneNumber} messages={messages} toast={toast} />
+        <ChatWindow
+          leadPhoneNumber={leadPhoneNumber}
+          studio={studio}
+          messages={messages}
+          toast={toast}
+        />
       )}
     </main>
-  )
+  );
 }

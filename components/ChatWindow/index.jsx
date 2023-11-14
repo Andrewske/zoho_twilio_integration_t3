@@ -6,42 +6,53 @@ import { format } from 'date-fns';
 
 import { getMessages, sendMessage } from '~/actions/twilio';
 
-const ChatWindow = ({
-  leadPhoneNumber,
-  studioPhoneNumber,
-  messages,
-  toast,
-}) => {
+const ChatWindow = ({ leadPhoneNumber, studio, messages, toast }) => {
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [prevMessageCount, setPrevMessageCount] = useState(0);
   const messagesEndRef = useRef(null);
   const { sendError, sendSuccess } = toast;
 
-  useEffect(() => {
-    if (messages) {
-      if (messagesEndRef.current?.scrollIntoView) {
-        setTimeout(() => {
-          messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-        }, 1000);
-      } else {
-        console.log('scrollIntoView method is not supported');
-      }
+  const scrollToBottom = () => {
+    if (messagesEndRef?.current?.scrollIntoView) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages]);
+  };
+
+  useEffect(() => {
+    if (messages.length > prevMessageCount) {
+      scrollToBottom();
+      setPrevMessageCount(messages.length);
+    }
+  }, [messages.length, prevMessageCount]); // Depend on messages.length instead of messages
 
   const handleNewMessage = (event) => {
     setNewMessage(event.target.value);
   };
 
+  useEffect(() => {
+    console.log('messages rerender');
+  }, [messages]);
+
   // TODO: Enter should submit the form
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+    if (!studio) {
+      toast.sendError(
+        `We can't find which studio you are. Please refresh the page`,
+        { autoClose: false }
+      );
+      return;
+    }
+
     setIsSending(true);
 
     const body = {
       message: newMessage,
       to: leadPhoneNumber,
-      from: studioPhoneNumber,
+      from: studio?.phone,
+      studioId: studio?.id,
     };
 
     const sent = await sendMessage(body);
@@ -49,13 +60,18 @@ const ChatWindow = ({
     if (sent) {
       setNewMessage('');
       sendSuccess('Message sent!');
-      getMessages({ leadPhoneNumber });
+      getMessages({ leadPhoneNumber, studioId: studio?.id });
     } else {
       sendError('Error sending the message! Try refreshing the page.');
     }
     setIsSending(false);
   };
 
+  const handleKeyDown = (event) => {
+    if (event.ctrlKey && event.key === 'Enter') {
+      handleSubmit(event);
+    }
+  };
   return (
     <div className={styles.wrapper}>
       <div className={styles.messageContainer}>
@@ -64,7 +80,7 @@ const ChatWindow = ({
             <div
               key={`message-${index}`}
               className={styles.messageWrapper}
-              ref={index === messages.length - 1 ? messagesEndRef : null}
+              // ref={index === messages.length - 1 ? messagesEndRef : null}
             >
               <span
                 key={index}
@@ -86,6 +102,7 @@ const ChatWindow = ({
               </span>
             </div>
           ))}
+        <div ref={messagesEndRef} />
       </div>
       <form
         onSubmit={handleSubmit}
@@ -96,6 +113,7 @@ const ChatWindow = ({
           onChange={handleNewMessage}
           placeholder="Type your message here..."
           className={styles.input}
+          onKeyDown={handleKeyDown}
         ></textarea>
         <button
           type="submit"
