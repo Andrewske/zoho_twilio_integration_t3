@@ -9,35 +9,35 @@ datasource db {
 }
 
 model Account {
-  id           String   @id @default(cuid())
-  platform     String
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
-  clientId     String
-  clientSecret String
-  refreshToken String?  @db.Text
-  accessToken  String?  @db.Text
-  authCode     String?  @db.Text
-  expiresIn    Int?
-  scope        String?
-  apiDomain    String?
+  id            String          @id @default(cuid())
+  platform      String
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @default(now()) @updatedAt @map("updated_at")
+  clientId      String
+  clientSecret  String
+  refreshToken  String?         @db.Text
+  accessToken   String?         @db.Text
+  authCode      String?         @db.Text
+  expiresIn     Int?
+  scope         String?
+  apiDomain     String?
   StudioAccount StudioAccount[]
 }
 
 model Studio {
-  id     String @id @default(cuid())
-  zohoId String @unique
-  name   String
-  phone  String
-  active Boolean @default(false)
+  id            String          @id @default(cuid())
+  zohoId        String          @unique
+  name          String
+  phone         String
+  active        Boolean         @default(false)
   StudioAccount StudioAccount[]
 }
 
 model StudioAccount {
-  studioId String
+  studioId  String
   accountId String
-  Studio   Studio   @relation(fields: [studioId], references: [id])
-  Account  Account  @relation(fields: [accountId], references: [id])
+  Studio    Studio  @relation(fields: [studioId], references: [id])
+  Account   Account @relation(fields: [accountId], references: [id])
 
   @@id([studioId, accountId])
   @@index([studioId])

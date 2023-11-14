@@ -14,6 +14,7 @@ import prisma from '~/utils/prisma';
 //     : process.env.TWILIO_AUTH_TOKEN_KEV;
 
 export const getTwilioAccount = async (id) => {
+  console.log({ id })
   const studioAccounts = await prisma.studioAccount.findMany({
     where: {
       studioId: id,
@@ -31,6 +32,7 @@ export const getTwilioAccount = async (id) => {
 };
 
 export const getMessages = async ({ leadPhoneNumber, studioId }) => {
+  console.log({ leadPhoneNumber, studioId })
   const twilioAccount = await getTwilioAccount(studioId);
 
   if (twilioAccount) {

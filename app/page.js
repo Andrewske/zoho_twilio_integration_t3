@@ -15,7 +15,7 @@ export default function Home() {
   const toast = useToast();
 
   useEffect(() => {
-    if (!messages && leadPhoneNumber && studio) {
+    if (!messages && leadPhoneNumber && studio?.id) {
       getMessages({ leadPhoneNumber, studioId: studio?.id }).then(
         (messages) => {
           if (messages.length === 0) {
