@@ -105,6 +105,7 @@ export const getStudioData = async ({ zohoId, phone = null }) => {
     return studio;
   } catch (error) {
     logError({ message: 'Could not find studio', zohoId });
+    return null
   }
 };
 

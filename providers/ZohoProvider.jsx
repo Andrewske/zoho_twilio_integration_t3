@@ -23,11 +23,11 @@ export function ZohoProvider({ children }) {
           Entity: data.Entity,
           RecordID: data.EntityId,
         }).then((response) => {
-          console.log(response);
           const phone = response?.data[0]?.Phone;
           const mobile = response?.data[0]?.Mobile;
 
           if (mobile ?? phone) {
+            sendSuccess(`Lead mobile: ${mobile}, Lead phone: ${phone}`);
             mobile ? setLeadPhoneNumber(mobile) : setLeadPhoneNumber(phone);
           } else {
             sendError(
@@ -41,9 +41,10 @@ export function ZohoProvider({ children }) {
 
       ZOHO.CRM.CONFIG.getCurrentUser().then(async (response) => {
         const user = response?.users[0];
-        if (user) {
+        if (user?.id) {
           const zohoId = user?.id;
           const studio = await getStudioData({ zohoId });
+          sendSuccess(`Zoho user: ${studio?.name}`);
           setStudio(studio);
         } else {
           sendError('Cannot locate your Zoho user. Try refreshing the page');
