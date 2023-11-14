@@ -13,10 +13,11 @@ export function ZohoProvider({ children }) {
   const [studio, setStudio] = useState(null);
   const [error, setError] = useState(false);
 
-  const { sendError } = useToast();
+  const { sendError, sendSuccess } = useToast();
 
   useEffect(() => {
     const handlePageLoad = (data) => {
+      sendSuccess('Zoho CRM connected successfully');
       if (data?.Entity) {
         ZOHO.CRM.API.getRecord({
           Entity: data.Entity,
