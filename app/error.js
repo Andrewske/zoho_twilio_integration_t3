@@ -1,5 +1,5 @@
 'use client' // Error components must be Client Components
-
+import Rollbar from 'rollbar'
 import { useEffect } from 'react'
 
 
@@ -15,7 +15,7 @@ export default function Error({
 
     const logError = async () => {
         'use server'
-        import Rollbar from 'rollbar'
+
 
         const rollbar = new Rollbar(process.env.ROLLBAR_POST_SERVER_ACCESS_TOKEN)
 
