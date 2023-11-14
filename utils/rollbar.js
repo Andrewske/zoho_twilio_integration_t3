@@ -2,17 +2,19 @@
 import Rollbar from 'rollbar'
 
 
-const rollbarConfig = {
-    accessToken: process.env.ROLLBAR_POST_SERVER_ACCESS_TOKEN,
-    captureUncaught: true,
-    captureUnhandledRejections: true,
-    environment: 'production'
-}
 
-var rollbar = new Rollbar(rollbarConfig)
 
 
 export const logError = async (error) => {
+    const rollbarConfig = {
+        accessToken: process.env.ROLLBAR_POST_SERVER_ACCESS_TOKEN,
+        captureUncaught: true,
+        captureUnhandledRejections: true,
+        environment: 'production'
+    }
+
+    const rollbar = new Rollbar(rollbarConfig)
+
     console.log({ error, env: process.env.NODE_ENV })
     if (process.env.NODE_ENV === 'production') {
         console.error(error.message)
