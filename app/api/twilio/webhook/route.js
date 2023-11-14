@@ -1,5 +1,5 @@
 import { createTask, lookupLead } from '~/actions/zoho';
-import { logError } from '~/utils/rollbar';
+
 import { parse } from 'querystring';
 import prisma from '~/utils/prisma';
 
@@ -29,7 +29,7 @@ export async function POST(request) {
       await createTask({ studioId, zohoId, lead, message: { to, from, msg } });
     }
   } catch (error) {
-    logError(error);
+    console.error(error);
   }
   return new Response(null, { status: 200 });
 }
