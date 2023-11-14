@@ -3,7 +3,7 @@ import { Provider, ErrorBoundary } from '@rollbar/react'; // <-- Provider import
 
 // same configuration you would create for the Rollbar.js SDK
 const rollbarConfig = {
-  accessToken: process.env.NEXT_APP_ROLLBAR_POST_CLIENT_ACCESS_TOKEN,
+  accessToken: process.env.NEXT_PUBLIC_ROLLBAR_POST_CLIENT_ACCESS_TOKEN,
   captureUncaught: true,
   captureUnhandledRejections: true,
   environment: 'production',
