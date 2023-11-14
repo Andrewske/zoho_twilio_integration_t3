@@ -30,7 +30,6 @@ export default function Home() {
   }, [leadPhoneNumber, studio, toast, messages]);
 
   useEffect(() => {
-    console.log('Rollbar client token:', process.env.NEXT_PUBLIC_ROLLBAR_POST_CLIENT_ACCESS_TOKEN);
     if (studio && !studio?.active) {
       toast.sendError(
         `Hi ${studio?.name}, this feature is currently still in development. Please check back soon!`,

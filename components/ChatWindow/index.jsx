@@ -63,6 +63,7 @@ const ChatWindow = ({ leadPhoneNumber, studio, messages, toast }) => {
       getMessages({ leadPhoneNumber, studioId: studio?.id });
     } else {
       sendError('Error sending the message! Try refreshing the page.');
+      throw new Error('Error sending the message! Try refreshing the page.');
     }
     setIsSending(false);
   };
