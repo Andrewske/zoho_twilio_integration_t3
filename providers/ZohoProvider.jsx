@@ -2,13 +2,15 @@
 /* global ZOHO */
 import { createContext, useEffect, useState } from 'react';
 import useToast from '~/hooks/useToast';
+import { getStudioData } from '~/actions/zoho';
+
 // Create a context
 export const ZohoContext = createContext();
 
 // Create a provider component
 export function ZohoProvider({ children }) {
   const [leadPhoneNumber, setLeadPhoneNumber] = useState(null);
-  const [studioPhoneNumber, setStudioPhoneNumber] = useState(null);
+  const [studio, setStudio] = useState(null);
   const [error, setError] = useState(false);
 
   const { sendError } = useToast();
@@ -20,34 +22,30 @@ export function ZohoProvider({ children }) {
           Entity: data.Entity,
           RecordID: data.EntityId,
         }).then((response) => {
-          console.log('response', response);
-          const description = response?.data[0]?.Description;
+          console.log(response);
           const phone = response?.data[0]?.Phone;
-          if (phone) {
-            console.log('phone', phone);
-            setLeadPhoneNumber(phone);
-          } else if (description) {
-            console.log('description', description);
-            const { to } = parseDescription(description);
-            setLeadPhoneNumber(to);
+          const mobile = response?.data[0]?.Mobile;
+
+          if (mobile ?? phone) {
+            mobile ? setLeadPhoneNumber(mobile) : setLeadPhoneNumber(phone);
           } else {
             sendError(
-              'Oops, we cant find a phone number for this lead. Please make sure their phone/mobile field is filled out'
+              'No lead found. Please make sure there is a valid lead for this page',
+              false
             );
             setError(true);
           }
         });
       }
 
-      ZOHO.CRM.CONFIG.getCurrentUser().then((response) => {
-        console.log('current user', response);
-        const phone = response?.users[0]?.phone;
-        if (phone) {
-          setStudioPhoneNumber(phone);
+      ZOHO.CRM.CONFIG.getCurrentUser().then(async (response) => {
+        const user = response?.users[0];
+        if (user) {
+          const zohoId = user?.id;
+          const studio = await getStudioData({ zohoId });
+          setStudio(studio);
         } else {
-          sendError(
-            'Oops, we cant find a phone number for the current user. Try refreshing the page'
-          );
+          sendError('Cannot locate your Zoho user. Try refreshing the page');
           setError(true);
         }
       });
@@ -57,26 +55,7 @@ export function ZohoProvider({ children }) {
     ZOHO.embeddedApp.init();
   }, []);
 
-  const value = { leadPhoneNumber, studioPhoneNumber, error };
+  const value = { leadPhoneNumber, studio, error };
 
   return <ZohoContext.Provider value={value}>{children}</ZohoContext.Provider>;
 }
-
-const parseDescription = (str) => {
-  const toIndex = str.indexOf('TO:');
-  const fromIndex = str.indexOf(' FROM:');
-  const msgIndex = str.indexOf(' MSG:');
-
-  // If any of the required fields are not found, return null
-  if (toIndex === -1 || fromIndex === -1 || msgIndex === -1) {
-    return null;
-  }
-
-  const result = {
-    to: str.substring(toIndex + 3, fromIndex),
-    from: str.substring(fromIndex + 6, msgIndex),
-    msg: str.substring(msgIndex + 5),
-  };
-
-  return result;
-};

@@ -20,11 +20,26 @@ model Account {
   authCode     String?  @db.Text
   expiresIn    Int?
   scope        String?
+  apiDomain    String?
+  StudioAccount StudioAccount[]
 }
 
 model Studio {
   id     String @id @default(cuid())
   zohoId String @unique
   name   String
-  phone  String @unique
+  phone  String
+  active Boolean @default(false)
+  StudioAccount StudioAccount[]
+}
+
+model StudioAccount {
+  studioId String
+  accountId String
+  Studio   Studio   @relation(fields: [studioId], references: [id])
+  Account  Account  @relation(fields: [accountId], references: [id])
+
+  @@id([studioId, accountId])
+  @@index([studioId])
+  @@index([accountId])
 }
