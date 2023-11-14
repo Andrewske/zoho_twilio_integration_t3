@@ -16,7 +16,7 @@ export const metadata = {
 
 
 export default function RootLayout({ children }) {
-  console.log('Rollbar client token:', process.env.NEXT_APP_ROLLBAR_POST_CLIENT_ACCESS_TOKEN);
+
   return (
     <html lang="en">
       <body className={inter.className}>
