@@ -1,18 +1,17 @@
 'use client' // Error components must be Client Components
-
+import { useRollbar } from '@rollbar/react';
 import { useEffect } from 'react'
-import { logError } from '~/utils/rollbar'
 
 
 export default function Error({
     error,
     reset,
 }) {
+    const rollbar = useRollbar();
     useEffect(() => {
         // Log the error to an error reporting service
-        logError()
-        console.error(error)
-    }, [error])
+        rollbar.error(error)
+    }, [error, rollbar])
 
 
     return (
