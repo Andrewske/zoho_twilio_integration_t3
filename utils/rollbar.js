@@ -12,7 +12,7 @@ export const rollbarConfig = {
 var rollbar = new Rollbar(rollbarConfig)
 
 
-export const logError = (error) => {
+export const logError = async (error) => {
     console.log({ error, env: process.env.NODE_ENV })
     if (process.env.NODE_ENV === 'production') {
         console.error(error.message)
