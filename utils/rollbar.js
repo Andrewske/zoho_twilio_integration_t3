@@ -2,7 +2,7 @@
 import Rollbar from 'rollbar'
 
 
-export const rollbarConfig = {
+const rollbarConfig = {
     accessToken: process.env.ROLLBAR_POST_SERVER_ACCESS_TOKEN,
     captureUncaught: true,
     captureUnhandledRejections: true,
@@ -32,7 +32,3 @@ export const logError = async (error) => {
         }
     }
 }
-
-
-
-export default rollbar
