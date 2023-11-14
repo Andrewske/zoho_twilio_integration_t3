@@ -55,17 +55,17 @@ const ChatWindow = ({ leadPhoneNumber, studio, messages, toast }) => {
       studioId: studio?.id,
     };
 
-    const sent = await sendMessage(body);
-
-    if (sent) {
+    try {
+      await sendMessage(body);
       setNewMessage('');
       sendSuccess('Message sent!');
       getMessages({ leadPhoneNumber, studioId: studio?.id });
-    } else {
+    } catch (error) {
       sendError('Error sending the message! Try refreshing the page.');
-      throw new Error('Error sending the message! Try refreshing the page.');
+      throw new Error(error);
+    } finally {
+      setIsSending(false);
     }
-    setIsSending(false);
   };
 
   const handleKeyDown = (event) => {
