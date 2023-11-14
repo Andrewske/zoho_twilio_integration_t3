@@ -30,13 +30,13 @@ export default function Home() {
   }, [leadPhoneNumber, studio, toast, messages]);
 
   useEffect(() => {
-    if (messages && !studio?.active) {
+    if (!studio?.active) {
       toast.sendError(
         `Hi ${studio?.name}, this feature is currently still in development. Please check back soon!`,
         false
       );
     }
-  }, [studio, toast, messages]);
+  }, [studio, toast]);
 
   return (
     <main className={styles.main}>
