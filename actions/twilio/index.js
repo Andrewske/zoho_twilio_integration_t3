@@ -1,17 +1,7 @@
 'use server';
 import twilio from 'twilio';
-import { logError } from '~/utils/rollbar';
 import prisma from '~/utils/prisma';
-// const { MessagingResponse } = twilio.twiml;
 
-// const accountSid =
-//   process.env.NODE_ENV === 'production'
-//     ? process.env.TWILIO_ACCOUNT_SID_FADS
-//     : process.env.TWILIO_ACCOUNT_SID_KEV;
-// const authToken =
-//   process.env.NODE_ENV === 'production'
-//     ? process.env.TWILIO_AUTH_TOKEN_FADS
-//     : process.env.TWILIO_AUTH_TOKEN_KEV;
 
 export const getTwilioAccount = async (id) => {
   console.log({ id })
@@ -69,11 +59,11 @@ export const getMessages = async ({ leadPhoneNumber, studioId }) => {
       );
       return messages;
     } catch (error) {
-      logError(error);
+      console.error(error);
       return null;
     }
   } else {
-    logError('Cound not find twilio account');
+    console.error('Cound not find twilio account');
     return null;
   }
 };
@@ -94,7 +84,7 @@ export const sendMessage = async ({ to, from, message, studioId }) => {
       });
       return true;
     } catch (error) {
-      logError(error);
+      console.error(error);
       return false;
     }
   }
