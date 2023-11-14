@@ -1,7 +1,7 @@
 'use server';
 import twilio from 'twilio';
 import prisma from '~/utils/prisma';
-
+import * as Sentry from "@sentry/nextjs";
 
 export const getTwilioAccount = async (id) => {
   console.log({ id })
@@ -68,6 +68,7 @@ export const getMessages = async ({ leadPhoneNumber, studioId }) => {
   }
 };
 
+
 // Create a route to send a new text message
 export const sendMessage = async ({ to, from, message, studioId }) => {
   const twilioAccount = await getTwilioAccount(studioId);
@@ -82,8 +83,9 @@ export const sendMessage = async ({ to, from, message, studioId }) => {
         from,
         to,
       });
-      return true;
+      return;
     } catch (error) {
+      Sentry.captureException(error);
       throw new Error(error);
     }
   }
