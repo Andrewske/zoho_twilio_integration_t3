@@ -1,6 +1,5 @@
 'use server';
 import axios from 'axios';
-import rollbar, { logError } from '../../utils/rollbar.js';
 
 import prisma from '~/utils/prisma.js';
 
@@ -23,7 +22,7 @@ export const getZohoAccount = async (studioId) => {
     .find((account) => account.platform === 'zoho');
 
   if (!account) {
-    logError({ message: 'No Zoho account found for studio' });
+    console.error({ message: 'No Zoho account found for studio' });
     return null;
   }
 
@@ -92,7 +91,7 @@ export const refreshAccessToken = async ({
 
     return access_token;
   } catch (error) {
-    logError(error);
+    console.error(error);
   }
 };
 
@@ -104,7 +103,7 @@ export const getStudioData = async ({ zohoId, phone = null }) => {
     });
     return studio;
   } catch (error) {
-    logError({ message: 'Could not find studio', zohoId });
+    console.error({ message: 'Could not find studio', zohoId });
     return null
   }
 };
@@ -126,15 +125,15 @@ export const lookupLead = async ({ from, studioId }) => {
       leadName = data[0]?.Full_Name;
     }
 
-    if (data?.length > 1) {
-      rollbar.log('Found multiple leads with this phone number', {
-        number: from,
-      });
-    }
+    // if (data?.length > 1) {
+    //   rollbar.log('Found multiple leads with this phone number', {
+    //     number: from,
+    //   });
+    // }
 
     return { leadId, leadName };
   } catch (error) {
-    logError(error);
+    console.error(error);
   }
 };
 
@@ -177,7 +176,7 @@ export const createTask = async ({
   try {
     await axios.post(url, postData, { headers }).then((res) => res.data);
   } catch (error) {
-    logError(error);
+    console.error(error);
   }
 
   return;
