@@ -29,7 +29,6 @@ export async function POST(request) {
       await createTask({ studioId, zohoId, lead, message: { to, from, msg } });
     }
   } catch (error) {
-    console.log('here', error);
     logError(error);
   }
   return new Response(null, { status: 200 });
