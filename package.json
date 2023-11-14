@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.5.2",
+    "@rollbar/react": "^0.11.2",
     "axios": "^1.6.1",
     "date-fns": "^2.30.0",
     "next": "14.0.1",
