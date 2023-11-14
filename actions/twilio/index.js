@@ -84,8 +84,7 @@ export const sendMessage = async ({ to, from, message, studioId }) => {
       });
       return true;
     } catch (error) {
-      console.error(error);
-      return false;
+      throw new Error(error);
     }
   }
 };
