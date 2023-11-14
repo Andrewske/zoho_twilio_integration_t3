@@ -1,12 +1,11 @@
 import { createTask, lookupLead } from '~/actions/zoho';
 import { logError } from '~/utils/rollbar';
 import { parse } from 'querystring';
+import prisma from '~/utils/prisma';
 
-import { PrismaClient } from '@prisma/client';
+
 
 export async function POST(request) {
-  const prisma = new PrismaClient();
-
   // Get the body information from the request
   const body = await request.text();
   const res = parse(body);
@@ -33,6 +32,5 @@ export async function POST(request) {
     console.log('here', error);
     logError(error);
   }
-  await prisma.$disconnect();
   return new Response(null, { status: 200 });
 }
