@@ -1,7 +1,9 @@
 import { createTask, lookupLead } from '~/actions/zoho';
 import { logError } from '~/utils/rollbar';
 import { parse } from 'querystring';
-import prisma from '~/utils/prisma';
+
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 
 export async function POST(request) {
   // Get the body information from the request
