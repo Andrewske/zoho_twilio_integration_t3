@@ -24,7 +24,6 @@ global.Response = function (body, init) {
         status: init?.status
     };
 };
-// jest.mock('other-module', () => /* Mock implementation */);
 
 describe('POST function', () => {
     let consoleLog;

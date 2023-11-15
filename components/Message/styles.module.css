@@ -16,12 +16,11 @@
   flex-direction: column;
   align-self: flex-start;
   flex-shrink: 0;
+  box-shadow: rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px;
 }
 
 .to {
   align-self: flex-end;
-  background-color: var(--black-color);
-  color: var(--white-color);
 }
 
 .subText {
@@ -31,6 +30,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  margin-top: 0.25rem;
 }
 
 .subText.to {
