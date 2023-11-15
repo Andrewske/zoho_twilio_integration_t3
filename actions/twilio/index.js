@@ -4,7 +4,6 @@ import prisma from '~/utils/prisma';
 import * as Sentry from "@sentry/nextjs";
 
 export const getTwilioAccount = async (id) => {
-  console.log({ id })
   const studioAccounts = await prisma.studioAccount.findMany({
     where: {
       studioId: id,
@@ -21,51 +20,45 @@ export const getTwilioAccount = async (id) => {
   return twilioAccount;
 };
 
+const getTwilioClient = ({ clientId, clientSecret }) => twilio(clientId, clientSecret);
+
+export const getMessagesToContact = async (client, leadPhoneNumber) => {
+  const response = await client.messages.list({ to: leadPhoneNumber });
+  return response.map((message) => ({
+    to: message.to,
+    from: message.from,
+    body: message.body,
+    date: message.dateSent,
+    fromStudio: true,
+  }));
+};
+
+export const getMessagesFromContact = async (client, leadPhoneNumber) => {
+  const response = await client.messages.list({ from: leadPhoneNumber });
+  return response.map((message) => ({
+    to: message.to,
+    from: message.from,
+    body: message.body,
+    date: message.dateSent,
+    fromStudio: false,
+  }));
+};
+
 export const getMessages = async ({ leadPhoneNumber, studioId }) => {
-  console.log({ leadPhoneNumber, studioId })
   const twilioAccount = await getTwilioAccount(studioId);
 
-  if (twilioAccount) {
-    const { clientId, clientSecret } = twilioAccount;
-    try {
-      const client = twilio(clientId, clientSecret);
-
-      const responseToContact = await client.messages.list({
-        to: leadPhoneNumber,
-      });
-
-      const messagesToContact = responseToContact.map((message) => ({
-        to: message.to,
-        from: message.from,
-        body: message.body,
-        date: message.dateSent,
-        fromStudio: true,
-      }));
-
-      const responseFromContact = await client.messages.list({
-        from: leadPhoneNumber,
-      });
-
-      const messagesFromContact = responseFromContact.map((message) => ({
-        to: message.to,
-        from: message.from,
-        body: message.body,
-        date: message.dateSent,
-        fromStudio: false,
-      }));
-
-      const messages = [...messagesToContact, ...messagesFromContact].sort(
-        (a, b) => new Date(a.date) - new Date(b.date)
-      );
-      return messages;
-    } catch (error) {
-      console.error(error);
-      return null;
-    }
-  } else {
-    console.error('Cound not find twilio account');
-    return null;
+  if (!twilioAccount) {
+    throw new Error('Could not find Twilio account');
   }
+
+  const client = getTwilioClient(twilioAccount);
+
+  const messagesToContact = await getMessagesToContact(client, leadPhoneNumber);
+  const messagesFromContact = await getMessagesFromContact(client, leadPhoneNumber);
+
+  return [...messagesToContact, ...messagesFromContact].sort(
+    (a, b) => new Date(a.date) - new Date(b.date)
+  );
 };
 
 
@@ -73,20 +66,21 @@ export const getMessages = async ({ leadPhoneNumber, studioId }) => {
 export const sendMessage = async ({ to, from, message, studioId }) => {
   const twilioAccount = await getTwilioAccount(studioId);
 
-  if (twilioAccount) {
-    const { clientId, clientSecret } = twilioAccount;
-    try {
-      const client = twilio(clientId, clientSecret);
+  if (!twilioAccount) {
+    console.error('Could not find Twilio account');
+    return;
+  }
 
-      await client.messages.create({
-        body: message,
-        from,
-        to,
-      });
-      return;
-    } catch (error) {
-      Sentry.captureException(error);
-      throw new Error(error);
-    }
+  const client = getTwilioClient(twilioAccount);
+
+  try {
+    await client.messages.create({
+      body: message,
+      from,
+      to,
+    });
+  } catch (error) {
+    Sentry.captureException(error);
+    throw error;
   }
 };
