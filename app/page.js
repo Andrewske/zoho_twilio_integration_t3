@@ -6,20 +6,20 @@ import { useContext, useState, useEffect } from 'react';
 import { ZohoContext } from '../providers/ZohoProvider';
 import ChatWindow from '../components/ChatWindow';
 import { Comment } from 'react-loader-spinner';
-import useToast from '~/hooks/useToast';
+import { sendError } from '~/utils/toast';
 import ToastContainer from '~/components/ToastContainer';
 
 export default function Home() {
   const { leadPhoneNumber, studio } = useContext(ZohoContext);
   const [messages, setMessages] = useState(null);
-  const toast = useToast();
+
 
   useEffect(() => {
     if (!messages && leadPhoneNumber && studio?.id) {
       getMessages({ leadPhoneNumber, studioId: studio?.id }).then(
         (messages) => {
           if (messages.length === 0) {
-            toast.sendError(
+            sendError(
               `There are no messages to or from this lead. Be the first to send one!`
             );
           }
@@ -27,16 +27,16 @@ export default function Home() {
         }
       );
     }
-  }, [leadPhoneNumber, studio, toast, messages]);
+  }, [leadPhoneNumber, studio, messages]);
 
   useEffect(() => {
     if (studio && !studio?.active) {
-      toast.sendError(
+      sendError(
         `Hi ${studio?.name}, this feature is currently still in development. Please check back soon!`,
         false
       );
     }
-  }, [studio, toast]);
+  }, [studio]);
 
   return (
     <main className={styles.main}>
@@ -57,7 +57,6 @@ export default function Home() {
           leadPhoneNumber={leadPhoneNumber}
           studio={studio}
           messages={messages}
-          toast={toast}
         />
       )}
     </main>

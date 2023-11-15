@@ -1,0 +1,39 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.container {
+  background-color: var(--primary-color);
+  color: var(--white-color);
+  width: 300px;
+  overflow: hidden;
+  text-align: left;
+  border-radius: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-self: flex-start;
+  flex-shrink: 0;
+}
+
+.to {
+  align-self: flex-end;
+  background-color: var(--black-color);
+  color: var(--white-color);
+}
+
+.subText {
+  font-size: 0.65rem;
+  color: var(--black-color);
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.subText.to {
+  align-self: flex-end;
+  align-items: flex-end;
+}
