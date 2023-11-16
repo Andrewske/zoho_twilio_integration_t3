@@ -36,6 +36,7 @@ const MessageForm = ({ leadPhoneNumber, studio }) => {
       await sendMessage(body);
       setNewMessage('');
       sendSuccess('Message sent!');
+      // TODO: see why this is not working
       getMessages({ leadPhoneNumber, studioId: studio?.id });
     } catch (error) {
       sendError('Error sending the message! Try refreshing the page.');
