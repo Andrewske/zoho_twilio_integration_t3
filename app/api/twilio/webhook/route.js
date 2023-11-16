@@ -21,6 +21,7 @@ export async function POST(request) {
     console.log({ studioInfo })
     if (studioInfo) {
       const lead = await lookupLead({ from, studioId: studioInfo.id });
+      // TODO if there is not a lead look for a student
       await createTask({ studioId: studioInfo.id, zohoId: studioInfo.zohoId, lead, message: { to, from, msg } });
     }
   } catch (error) {
