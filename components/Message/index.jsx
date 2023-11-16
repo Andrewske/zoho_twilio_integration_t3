@@ -14,10 +14,8 @@ const Message = ({ message }) => (
     <span
       className={`${styles.subText} ${message.fromStudio ? styles.to : ''}`}
     >
-      <span>
-        {message.from} {format(new Date(message.date), 'MMM do h:m aaa ')}
-      </span>
-      <span></span>
+      <span>{message.from}</span>
+      <span>{format(new Date(message.date), 'MMM do h:mm aaa')}</span>
     </span>
   </div>
 );
