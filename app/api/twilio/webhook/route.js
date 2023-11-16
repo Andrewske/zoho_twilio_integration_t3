@@ -3,6 +3,7 @@ import { createTask } from '~/actions/zoho/tasks';
 import { lookupLead } from '~/actions/zoho/leads';
 import { parse } from 'querystring';
 import prisma from '~/utils/prisma';
+import * as Sentry from '@sentry/nextjs';
 
 export async function POST(request) {
   try {
@@ -36,7 +37,9 @@ export async function POST(request) {
       });
     }
   } catch (error) {
-    console.error('Error processing request:', error);
+    // TODO: check for an id, or at least log the message so that it doesn't get lost
+    Sentry.captureException(error, request);
+    console.error('Webhook error:', error.message, request);
   }
   return new Response(null, { status: 200 });
 }
