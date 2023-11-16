@@ -1,31 +1,38 @@
-'use server'
+'use server';
 import { createTask } from '~/actions/zoho/tasks';
 import { lookupLead } from '~/actions/zoho/leads';
 import { parse } from 'querystring';
 import prisma from '~/utils/prisma';
-
-
+import * as Sentry from '@sentry/nextjs';
 
 export async function POST(request) {
   try {
     const message = await parseRequest(request);
     if (!isValidMessage(message)) {
-      console.error('Invalid message:', message)
+      console.error('Invalid message:', message);
       return new Response(null, { status: 200 });
     }
 
-    const { To: to, From: from, Body: msg } = message;
+    let { To: to, From: from, Body: msg } = message;
     console.log('webhook hit', { to, from, msg });
+    if (to.startsWith('+1')) {
+      to = to.substring(2);
+    }
+    if (from.startsWith('+1')) {
+      from = from.substring(2);
+    }
 
     const studioInfo = await getStudioInfo(to);
-    console.log({ studioInfo })
+
     if (studioInfo) {
       const lead = await lookupLead({ from, studioId: studioInfo.id });
       // TODO if there is not a lead look for a student
       await createTask({ studioId: studioInfo.id, zohoId: studioInfo.zohoId, lead, message: { to, from, msg } });
     }
   } catch (error) {
-    console.error('Error processing request:', error);
+    // TODO: check for an id, or at least log the message so that it doesn't get lost
+    Sentry.captureException(error, request);
+    console.error('Webhook error:', error.message, request);
   }
   return new Response(null, { status: 200 });
 }
