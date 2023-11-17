@@ -10,18 +10,18 @@ export const fetchAndSetLeadPhoneNumber = async ({
   try {
     const response = await getZohoRecord(entity, entityId);
 
-    let phoneNumber;
+    let phoneNumber = null;
     if (entity === 'Tasks') {
       const description = response?.data[0]?.Description;
       phoneNumber = parseDescription(description);
     } else {
       const phone = response?.data[0]?.Phone;
       const mobile = response?.data[0]?.Mobile;
-      phoneNumber = (mobile ?? phone).replace('+1', '');
+      phoneNumber = mobile ?? phone;
     }
 
     if (phoneNumber) {
-      setLeadPhoneNumber(phoneNumber);
+      setLeadPhoneNumber(phoneNumber.replace('+1', ''));
     } else {
       sendError(
         'No phone number found. Please make sure there is a valid number for this lead',
