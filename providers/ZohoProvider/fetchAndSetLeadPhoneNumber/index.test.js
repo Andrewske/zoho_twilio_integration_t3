@@ -101,6 +101,28 @@ describe('fetchAndSetLeadPhoneNumber', () => {
             false
         );
     });
+    it('should call setLeadPhoneNumber with the correct phone number when entity is Tasks', async () => {
+        getZohoRecord.mockResolvedValue({
+            data: [
+                {
+                    Description: 'FROM: 1234567890',
+                },
+            ],
+        });
+
+        const setLeadPhoneNumber = jest.fn();
+        const sendError = jest.fn();
+
+        await fetchAndSetLeadPhoneNumber({
+            entity: 'Tasks',
+            entityId: '1',
+            setLeadPhoneNumber,
+            sendError,
+        });
+
+        expect(setLeadPhoneNumber).toHaveBeenCalledWith('1234567890');
+        expect(sendError).not.toHaveBeenCalled();
+    });
 
     it('should send an error message if an error occurs while fetching the lead', async () => {
         const consoleError = console.error;
