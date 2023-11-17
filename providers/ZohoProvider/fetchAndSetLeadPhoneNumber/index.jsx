@@ -9,12 +9,18 @@ export const fetchAndSetLeadPhoneNumber = async ({
 }) => {
   try {
     const response = await getZohoRecord(entity, entityId);
-    console.log({ response });
-    const phone = response?.data[0]?.Phone;
-    const mobile = response?.data[0]?.Mobile;
 
-    if (mobile ?? phone) {
-      const phoneNumber = (mobile ?? phone).replace('+1', '');
+    let phoneNumber;
+    if (entity === 'Tasks') {
+      const description = response?.data[0]?.Description;
+      phoneNumber = parseDescription(description);
+    } else {
+      const phone = response?.data[0]?.Phone;
+      const mobile = response?.data[0]?.Mobile;
+      phoneNumber = (mobile ?? phone).replace('+1', '');
+    }
+
+    if (phoneNumber) {
       setLeadPhoneNumber(phoneNumber);
     } else {
       sendError(
@@ -29,4 +35,9 @@ export const fetchAndSetLeadPhoneNumber = async ({
     );
     console.error(error); // Log the error for debugging purposes
   }
+};
+
+export const parseDescription = (description) => {
+  const fromNumberMatch = description.match(/FROM: (\d+)/);
+  return fromNumberMatch ? fromNumberMatch[1] : null;
 };
