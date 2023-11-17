@@ -2,9 +2,10 @@
 import axios from 'axios';
 import { getZohoAccount } from "..";
 
-export const createTaskData = ({ zohoId, message, lead }) => {
+export const createTaskData = ({ zohoId, message, lead, student }) => {
     const { to, from, msg } = message;
     const { leadId = null, leadName = null } = lead ?? {};
+    const { studentId = null, studentName = null } = student ?? {};
 
     const taskData = {
         Owner: { id: zohoId },
@@ -21,7 +22,10 @@ export const createTaskData = ({ zohoId, message, lead }) => {
         taskData['$se_module'] = 'Leads';
     }
 
-    // TODO if there is a student, add them to the task
+    if (studentId && studentName) {
+        taskData['What_Id'] = { id: studentId, name: studentName };
+        taskData['$se_module'] = 'Contacts';
+    }
 
     return taskData;
 };

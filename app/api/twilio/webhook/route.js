@@ -1,6 +1,7 @@
 'use server';
 import { createTask } from '~/actions/zoho/tasks';
 import { lookupLead } from '~/actions/zoho/leads';
+import { lookupStudent } from '~/actions/zoho/students';
 import { parse } from 'querystring';
 import prisma from '~/utils/prisma';
 import * as Sentry from '@sentry/nextjs';
@@ -26,8 +27,9 @@ export async function POST(request) {
 
     if (studioInfo) {
       const lead = await lookupLead({ from, studioId: studioInfo.id });
-      // TODO if there is not a lead look for a student
-      await createTask({ studioId: studioInfo.id, zohoId: studioInfo.zohoId, lead, message: { to, from, msg } });
+      const student = await lookupStudent({ from, studioId: studioInfo.id });
+
+      await createTask({ studioId: studioInfo.id, zohoId: studioInfo.zohoId, lead, student, message: { to, from, msg } });
     }
   } catch (error) {
     // TODO: check for an id, or at least log the message so that it doesn't get lost

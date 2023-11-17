@@ -57,6 +57,7 @@ export default function Home() {
           leadPhoneNumber={leadPhoneNumber}
           studio={studio}
           messages={messages}
+          setMessages={setMessages}
         />
       )}
     </main>
