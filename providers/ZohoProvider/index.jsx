@@ -16,6 +16,7 @@ export function ZohoProvider({ children }) {
   // Updated handlePageLoad function
   const handlePageLoad = async (data) => {
     sendSuccess('Zoho CRM connected successfully');
+    console.log(data);
     const { Entity: entity, EntityId: entityId } = data;
     if (entity && entityId) {
       await fetchAndSetLeadPhoneNumber({

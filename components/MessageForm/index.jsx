@@ -5,7 +5,7 @@ import { getMessages, sendMessage } from '~/actions/twilio';
 import * as Sentry from '@sentry/react';
 import { sendError, sendSuccess } from '~/utils/toast';
 
-const MessageForm = ({ leadPhoneNumber, studio }) => {
+const MessageForm = ({ leadPhoneNumber, studio, setMessages }) => {
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
 
@@ -36,8 +36,15 @@ const MessageForm = ({ leadPhoneNumber, studio }) => {
       await sendMessage(body);
       setNewMessage('');
       sendSuccess('Message sent!');
-      // TODO: see why this is not working
-      getMessages({ leadPhoneNumber, studioId: studio?.id });
+
+      const messages = await getMessages({
+        leadPhoneNumber,
+        studioId: studio?.id,
+      });
+
+      if (messages.length > 0) {
+        setMessages(messages);
+      }
     } catch (error) {
       sendError('Error sending the message! Try refreshing the page.');
       Sentry.captureException(error);
