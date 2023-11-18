@@ -7,7 +7,7 @@
 .container {
   background-color: var(--primary-color);
   color: var(--white-color);
-  width: 300px;
+  width: calc(min(400px, 100vw));
   overflow: hidden;
   text-align: left;
   border-radius: 0.5rem;
