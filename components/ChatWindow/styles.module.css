@@ -1,5 +1,5 @@
 .wrapper {
-  min-width: min(600px, 100vw);
+  min-width: min(800px, 100vw);
   background-color: var(--white-color);
   height: 100dvh;
   display: flex;
