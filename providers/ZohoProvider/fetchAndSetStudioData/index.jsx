@@ -8,6 +8,7 @@ export const fetchAndSetStudioData = async ({ setStudio }) => {
   try {
     const userResponse = await getCurrentUser();
     const user = userResponse?.users?.[0];
+    console.log({ user });
 
     if (user?.id) {
       const studio = await getStudioData({ zohoId: user.id });
