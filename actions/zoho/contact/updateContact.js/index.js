@@ -1,15 +1,14 @@
-'use server';
 import axios from 'axios';
-import { getZohoAccount } from '..';
+import { getZohoAccount } from '~/actions/zoho/index.js';
 
-export const lookupLead = async ({ from, studioId }) => {
+export const updateContact = async ({ studioId, student, lead }) => {
   const account = await getZohoAccount({ studioId });
-  console.log({ account });
 
   try {
     const { data } = await axios
-      .get(
-        `https://www.zohoapis.com/crm/v5/Leads/search?fields=id,Full_Name,Mobile,SMS_Opt_Out&criteria=(Mobile:equals:${from})`,
+      .put(
+        `https://www.zohoapis.com/crm/v5/Leads`,
+        {},
         {
           headers: { Authorization: `Zoho-oauthtoken ${account.accessToken}` },
         }

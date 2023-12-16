@@ -4,6 +4,7 @@ import { createContext, useEffect, useState } from 'react';
 import { sendSuccess } from '~/utils/toast';
 import { fetchAndSetLeadPhoneNumber } from './fetchAndSetLeadPhoneNumber';
 import { fetchAndSetStudioData } from './fetchAndSetStudioData';
+import { lookupLead } from '~/actions/zoho/leads';
 
 // Create a context
 export const ZohoContext = createContext();
@@ -35,6 +36,16 @@ export function ZohoProvider({ children }) {
       ZOHO.embeddedApp.init();
     }
   }, []);
+
+  useEffect(() => {
+    if (leadPhoneNumber && studio) {
+      console.log({ leadPhoneNumber, studio });
+      lookupLead({
+        studioId: studio.id,
+        from: leadPhoneNumber,
+      });
+    }
+  });
 
   const value = { leadPhoneNumber, studio };
   return <ZohoContext.Provider value={value}>{children}</ZohoContext.Provider>;

@@ -7,6 +7,7 @@ import prisma from '~/utils/prisma';
 import * as Sentry from '@sentry/nextjs';
 
 export async function POST(request) {
+  var STOP = false;
   try {
     const message = await parseRequest(request);
     if (!isValidMessage(message)) {
@@ -23,13 +24,29 @@ export async function POST(request) {
       from = from.substring(2);
     }
 
+    if (msg.toLowerCase().includes('stop')) {
+      console.log('Contact Unsubscribed', { to, from, msg });
+      // TODO: Write API Call to Zoho to update contact sms_opt_out
+      STOP = true;
+      return new Response(null, { status: 200 });
+    }
+
     const studioInfo = await getStudioInfo(to);
 
     if (studioInfo) {
       const lead = await lookupLead({ from, studioId: studioInfo.id });
       const student = await lookupStudent({ from, studioId: studioInfo.id });
 
-      await createTask({ studioId: studioInfo.id, zohoId: studioInfo.zohoId, lead, student, message: { to, from, msg } });
+      if (STOP) {
+        updateContact(lead, student);
+      }
+      await createTask({
+        studioId: studioInfo.id,
+        zohoId: studioInfo.zohoId,
+        lead,
+        student,
+        message: { to, from, msg },
+      });
     }
   } catch (error) {
     // TODO: check for an id, or at least log the message so that it doesn't get lost
