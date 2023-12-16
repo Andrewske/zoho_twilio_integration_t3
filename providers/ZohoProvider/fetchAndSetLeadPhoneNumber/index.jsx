@@ -9,7 +9,7 @@ export const fetchAndSetLeadPhoneNumber = async ({
 }) => {
   try {
     const response = await getZohoRecord(entity, entityId);
-    console.log({ response });
+    // console.log({ response });
     let phoneNumber = null;
     if (entity === 'Tasks') {
       const description = response?.data[0]?.Description;
