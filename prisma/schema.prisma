@@ -28,9 +28,12 @@ model Studio {
   id            String          @id @default(cuid())
   zohoId        String          @unique
   name          String
-  phone         String
+  smsPhone      String
+  callPhone     String?
   active        Boolean         @default(false)
   StudioAccount StudioAccount[]
+  ZohoWebhook   ZohoWebhook[]
+  TwilioMessage TwilioMessage[]
 }
 
 model StudioAccount {
@@ -42,4 +45,36 @@ model StudioAccount {
   @@id([studioId, accountId])
   @@index([studioId])
   @@index([accountId])
+}
+
+
+
+model ZohoWebhook {
+  id                      String   @id @default(cuid())
+  studioZohoId            String?
+  contactId               String?
+  firstName               String?
+  mobile                  String?
+  body                    Json
+  twilioMessageId         String?
+  sentWelcomeMessage      Boolean  @default(false)
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @default(now()) @updatedAt @map("updated_at")
+  Studio                  Studio?   @relation(fields: [studioZohoId], references: [zohoId])
+  @@index([studioZohoId])
+}
+
+
+model TwilioMessage {
+  id                      String    @id @default(cuid())
+  studioId                String?
+  contactId               String?
+  from                    String
+  to                      String
+  message                 String
+  twilioMessageId         String
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @default(now()) @updatedAt @map("updated_at")
+  Studio                  Studio?   @relation(fields: [studioId], references: [id])
+  @@index([studioId])
 }

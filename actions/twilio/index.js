@@ -1,7 +1,6 @@
 'use server';
 import twilio from 'twilio';
 import prisma from '~/utils/prisma';
-import * as Sentry from "@sentry/nextjs";
 
 export const getTwilioAccount = async (id) => {
   const studioAccounts = await prisma.studioAccount.findMany({
@@ -74,13 +73,15 @@ export const sendMessage = async ({ to, from, message, studioId }) => {
   const client = getTwilioClient(twilioAccount);
 
   try {
-    await client.messages.create({
+    const sendRecord = await client.messages.create({
       body: message,
       from,
       to,
     });
+    console.log(sendRecord)
+    return sendRecord.sid
   } catch (error) {
-    Sentry.captureException(error);
+    console.error('Error sending message:', { to, from, message, studioId })
     throw error;
   }
 };

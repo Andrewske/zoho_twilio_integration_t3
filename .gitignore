@@ -39,3 +39,10 @@ next-env.d.ts
 certificates
 # Sentry Config File
 .sentryclirc
+
+
+# Todo Files
+TODO.md
+
+# Sentry Config File
+.sentryclirc
