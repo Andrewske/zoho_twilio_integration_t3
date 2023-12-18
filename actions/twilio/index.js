@@ -68,9 +68,9 @@ export const getMessages = async ({ leadPhoneNumber, studioId }) => {
     if (!twilioAccount) {
       throw new Error('Could not find Twilio account');
     }
-
+    console.log(twilioAccount)
     const client = getTwilioClient(twilioAccount);
-
+    console.log(client)
     const messagesToContact = await getMessagesToContact(client, leadPhoneNumber);
     const messagesFromContact = await getMessagesFromContact(client, leadPhoneNumber);
 
