@@ -28,7 +28,7 @@ const MessageForm = ({ leadPhoneNumber, studio, setMessages }) => {
     const body = {
       message: newMessage,
       to: leadPhoneNumber,
-      from: studio?.phone,
+      from: studio?.smsPhone,
       studioId: studio?.id,
     };
 
