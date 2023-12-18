@@ -5,7 +5,7 @@ import {
   refreshAccessToken,
 } from './index'; // replace 'yourFile' with the actual file name
 import axios from 'axios';
-import prisma from '@prisma/client';
+import prisma from '~/utils/prisma';
 
 jest.mock('axios');
 jest.mock('@prisma/client', () => ({

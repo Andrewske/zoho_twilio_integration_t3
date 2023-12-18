@@ -1,22 +1,21 @@
 'use server';
 import { createTask } from '~/actions/zoho/tasks';
-import { lookupLead } from '~/actions/zoho/leads';
-import { lookupStudent } from '~/actions/zoho/students';
 import { parse } from 'querystring';
 import prisma from '~/utils/prisma';
-import * as Sentry from '@sentry/nextjs';
+import { smsOptOut } from '~/actions/zoho/contact/smsOptOut';
+import { lookupContact } from '~/actions/zoho/contact/lookupContact';
 
 export async function POST(request) {
   var STOP = false;
   try {
-    const message = await parseRequest(request);
+    let message = await parseRequest(request);
+
     if (!isValidMessage(message)) {
-      console.error('Invalid message:', message);
-      return new Response(null, { status: 200 });
+      throw new Error('Invalid Twilio Webhook Message');
     }
 
     let { To: to, From: from, Body: msg } = message;
-    console.log('webhook hit', { to, from, msg });
+
     if (to.startsWith('+1')) {
       to = to.substring(2);
     }
@@ -25,21 +24,26 @@ export async function POST(request) {
     }
 
     if (msg.toLowerCase().includes('stop')) {
-      console.log('Contact Unsubscribed', { to, from, msg });
-      // TODO: Write API Call to Zoho to update contact sms_opt_out
       STOP = true;
-      return new Response(null, { status: 200 });
     }
 
     const studioInfo = await getStudioInfo(to);
 
-    if (studioInfo) {
-      const lead = await lookupLead({ from, studioId: studioInfo.id });
-      const student = await lookupStudent({ from, studioId: studioInfo.id });
+    if (!studioInfo) {
+      throw new Error('Could not find studio');
+    }
 
-      if (STOP) {
-        updateContact(lead, student);
-      }
+    const lead = await lookupContact({ mobile: from, studioId: studioInfo.id, zohoModule: 'Leads' });
+    const student = await lookupContact({ mobile: from, studioId: studioInfo.id, zohoModule: 'Contacts' });
+
+
+    await postWebhookData({ message, studioId: studioInfo.id, contactId: lead?.id ?? student?.id })
+
+
+    if (STOP) {
+      await smsOptOut({ studio: studioInfo, student, lead });
+    } else {
+      // TODO: Give create task different task titles based on the task
       await createTask({
         studioId: studioInfo.id,
         zohoId: studioInfo.zohoId,
@@ -48,12 +52,25 @@ export async function POST(request) {
         message: { to, from, msg },
       });
     }
+
+
   } catch (error) {
-    // TODO: check for an id, or at least log the message so that it doesn't get lost
-    Sentry.captureException(error, request);
-    console.error('Webhook error:', error.message, request);
+    console.error('Webhook error:', error.message);
   }
   return new Response(null, { status: 200 });
+}
+
+async function postWebhookData({ message, studioId, contactId }) {
+  return prisma.twilioMessage.create({
+    data: {
+      studioId,
+      contactId,
+      from: message.From,
+      to: message.To,
+      message: message.Body,
+      twilioMessageId: message.MessageSid,
+    },
+  }).then(({ id }) => id);
 }
 
 export async function parseRequest(request) {
@@ -70,9 +87,10 @@ export async function isValidMessage(message) {
 }
 
 export async function getStudioInfo(to) {
+
   try {
     return await prisma.studio.findFirst({
-      where: { phone: to.replace('+1', '') },
+      where: { smsPhone: to.replace('+1', '') },
       select: { id: true, zohoId: true },
     });
   } catch (error) {
