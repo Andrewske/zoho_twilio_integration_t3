@@ -2,7 +2,7 @@
 import prisma from '~/utils/prisma.js';
 
 export const getStudioData = async ({ zohoId, phone = null }) => {
-  const where = phone ? { phone, active: true } : { zohoId };
+  const where = phone ? { smsPhone: phone, active: true } : { zohoId };
   try {
     const studio = await prisma.studio.findFirst({
       where: where,
