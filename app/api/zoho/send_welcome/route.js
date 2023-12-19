@@ -55,8 +55,8 @@ function formatMobileNumber(mobile) {
   return mobile;
 }
 
-function createMessage(first_name, { name: studioName, callPhone }) {
-  return `Hi ${first_name}, it's Fred at ` +
+function createMessage(first_name, { name: studioName, callPhone, managerName }) {
+  return `Hi ${first_name}, it's ${managerName} at ` +
     `Fred Astaire Dance Studios - ${studioName}. ` +
     `Would you like to schedule your 2 Intro Lessons? ` +
     `If you would like to schedule a lesson, reply "YES" ` +
@@ -107,7 +107,7 @@ export async function getStudioFromZohoId(owner_id) {
   try {
     const studio = await prisma.studio.findFirst({
       where: { zohoId: owner_id },
-      select: { id: true, zohoId: true, smsPhone: true, callPhone: true, name: true },
+      select: { id: true, zohoId: true, smsPhone: true, callPhone: true, name: true, managerName: true },
     });
     return studio;
   } catch (error) {
