@@ -88,11 +88,11 @@ export const sendMessage = async ({ to, from, message, studioId, contact }) => {
   const twilioAccount = await getTwilioAccount(studioId);
 
   if (contact.SMS_Opt_Out) {
-    return { error: 'Contact has opted out of SMS' }
+    throw new Error('Contact has opted out of SMS');
   }
 
   if (!twilioAccount) {
-    return { error: 'Could not find Twilio account' }
+    throw new Error('Could not find Twilio account')
   }
 
   const client = getTwilioClient(twilioAccount);
@@ -105,7 +105,7 @@ export const sendMessage = async ({ to, from, message, studioId, contact }) => {
     });
 
     if (!sendRecord.sid) {
-      return { error: 'Could not send message' }
+      throw new Error('Could not send message')
     }
 
     await recordTwilioMessage({ to, from, message, studioId, contactId: contact.id, twilioMessageId: sendRecord.sid })
@@ -114,7 +114,12 @@ export const sendMessage = async ({ to, from, message, studioId, contact }) => {
 
   } catch (error) {
     console.error('Error sending message:', { to, from, message, studioId })
-    throw error;
+
+    if (error.code === 21610) {
+      return { error: 'The recipient has unsubscribed from receiving SMS.' };
+    }
+
+    return { error: error.message };
   }
 };
 
