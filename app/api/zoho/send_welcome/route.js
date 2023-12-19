@@ -3,6 +3,7 @@ import { parse } from 'querystring';
 import prisma from '~/utils/prisma';
 import { sendMessage } from '~/actions/twilio';
 import { lookupContact } from '~/actions/zoho/contact/lookupContact';
+import * as Sentry from '@sentry/node';
 
 
 export async function POST(request) {
@@ -32,8 +33,8 @@ export async function POST(request) {
 
     return new Response(null, { status: 200 });
   } catch (error) {
-    console.error('Webhook error:', error.message);
-    return new Response(null, { status: 200 });
+    Sentry.captureException(error);
+    return new Response(null, { status: 200 })
   }
 }
 
@@ -90,6 +91,7 @@ export async function parseRequest(request) {
     return parse(body);
   } catch (error) {
     console.error('Error parsing request:', error);
+    throw new Error('Error parsing request');
   }
 }
 
@@ -112,6 +114,6 @@ export async function getStudioFromZohoId(owner_id) {
     return studio;
   } catch (error) {
     console.error({ message: 'Could not find studio', owner_id });
-    console.error(error.message);
+    throw new Error('Could not find studio');
   }
 }

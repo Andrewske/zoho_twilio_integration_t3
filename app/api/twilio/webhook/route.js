@@ -55,6 +55,7 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('Webhook error:', error.message);
+    throw new Error('Webhook error', error.message)
   }
   return new Response(null, { status: 200 });
 }
@@ -78,6 +79,7 @@ export async function parseRequest(request) {
     return parse(body);
   } catch (error) {
     console.error('Error parsing request:', error);
+    throw new Error('Error parsing request')
   }
 }
 
@@ -94,5 +96,6 @@ export async function getStudioInfo(to) {
     });
   } catch (error) {
     console.error({ message: 'Could not find studio', to });
+    throw new Error('Could not find studio')
   }
 }
