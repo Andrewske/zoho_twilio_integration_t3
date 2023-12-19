@@ -28,6 +28,7 @@ model Studio {
   id            String          @id @default(cuid())
   zohoId        String          @unique
   name          String
+  managerName   String?
   smsPhone      String     
   callPhone     String?
   active        Boolean         @default(false)
