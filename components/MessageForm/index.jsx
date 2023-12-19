@@ -5,7 +5,7 @@ import { getMessages, sendMessage } from '~/actions/twilio';
 import * as Sentry from '@sentry/react';
 import { sendError, sendSuccess } from '~/utils/toast';
 
-const MessageForm = ({ leadPhoneNumber, studio, setMessages }) => {
+const MessageForm = ({ contact, studio, setMessages }) => {
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
 
@@ -27,9 +27,10 @@ const MessageForm = ({ leadPhoneNumber, studio, setMessages }) => {
 
     const body = {
       message: newMessage,
-      to: leadPhoneNumber,
+      to: contact.Mobile,
       from: studio?.smsPhone,
       studioId: studio?.id,
+      contactId: contact.id,
     };
 
     try {
@@ -38,7 +39,7 @@ const MessageForm = ({ leadPhoneNumber, studio, setMessages }) => {
       sendSuccess('Message sent!');
 
       const messages = await getMessages({
-        leadPhoneNumber,
+        contactMobile: contact.Mobile,
         studioId: studio?.id,
       });
 

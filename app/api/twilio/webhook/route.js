@@ -33,22 +33,21 @@ export async function POST(request) {
       throw new Error('Could not find studio');
     }
 
-    const lead = await lookupContact({ mobile: from, studioId: studioInfo.id, zohoModule: 'Leads' });
-    const student = await lookupContact({ mobile: from, studioId: studioInfo.id, zohoModule: 'Contacts' });
+    const contact = await lookupContact({ mobile: from, studioId: studioInfo.id });
 
 
-    await postWebhookData({ message, studioId: studioInfo.id, contactId: lead?.id ?? student?.id })
+
+    await postWebhookData({ message, studioId: studioInfo.id, contactId: contact.id })
 
 
     if (STOP) {
-      await smsOptOut({ studio: studioInfo, student, lead });
+      await smsOptOut({ studio: studioInfo, contact });
     } else {
       // TODO: Give create task different task titles based on the task
       await createTask({
         studioId: studioInfo.id,
         zohoId: studioInfo.zohoId,
-        lead,
-        student,
+        contact,
         message: { to, from, msg },
       });
     }

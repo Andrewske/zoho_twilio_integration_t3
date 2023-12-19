@@ -27,9 +27,9 @@ export const getTwilioAccount = async (id) => {
 
 const getTwilioClient = ({ clientId, clientSecret }) => twilio(clientId, clientSecret);
 
-export const getMessagesToContact = async (client, leadPhoneNumber) => {
+export const getMessagesToContact = async (client, contactMobile) => {
   try {
-    const response = await client.messages.list({ to: leadPhoneNumber });
+    const response = await client.messages.list({ to: contactMobile });
     return response.map((message) => ({
       to: message.to,
       from: message.from,
@@ -44,9 +44,9 @@ export const getMessagesToContact = async (client, leadPhoneNumber) => {
 
 };
 
-export const getMessagesFromContact = async (client, leadPhoneNumber) => {
+export const getMessagesFromContact = async (client, contactMobile) => {
   try {
-    const response = await client.messages.list({ from: leadPhoneNumber });
+    const response = await client.messages.list({ from: contactMobile });
     return response.map((message) => ({
       to: message.to,
       from: message.from,
@@ -61,7 +61,7 @@ export const getMessagesFromContact = async (client, leadPhoneNumber) => {
 
 };
 
-export const getMessages = async ({ leadPhoneNumber, studioId }) => {
+export const getMessages = async ({ contactMobile, studioId }) => {
   try {
     const twilioAccount = await getTwilioAccount(studioId);
 
@@ -71,14 +71,14 @@ export const getMessages = async ({ leadPhoneNumber, studioId }) => {
     console.log(twilioAccount)
     const client = getTwilioClient(twilioAccount);
     console.log(client)
-    const messagesToContact = await getMessagesToContact(client, leadPhoneNumber);
-    const messagesFromContact = await getMessagesFromContact(client, leadPhoneNumber);
+    const messagesToContact = await getMessagesToContact(client, contactMobile);
+    const messagesFromContact = await getMessagesFromContact(client, contactMobile);
 
     return [...messagesToContact, ...messagesFromContact].sort(
       (a, b) => new Date(a.date) - new Date(b.date)
     );
   } catch (error) {
-    console.error('Error getting messages:', { leadPhoneNumber, studioId });
+    console.error('Error getting messages:', { contactMobile, studioId });
     throw error;
   }
 
@@ -86,8 +86,10 @@ export const getMessages = async ({ leadPhoneNumber, studioId }) => {
 
 
 // Create a route to send a new text message
-export const sendMessage = async ({ to, from, message, studioId }) => {
+export const sendMessage = async ({ to, from, message, studioId, contactId }) => {
   const twilioAccount = await getTwilioAccount(studioId);
+  // TODO: Add a TwilioMessage record in the DB
+  // const contactId = lookupContact({ mobile: to, studioId, zohoModule: 'Contacts' })
 
   if (!twilioAccount) {
     console.error('Could not find Twilio account');
@@ -102,10 +104,29 @@ export const sendMessage = async ({ to, from, message, studioId }) => {
       from,
       to,
     });
-    console.log(sendRecord)
+    if (!sendRecord.sid) {
+      throw new Error('Could not send message');
+    }
+
+    await recordTwilioMessage({ to, from, message, studioId, contactId, twilioMessageId: sendRecord.sid })
+
     return sendRecord.sid
+
   } catch (error) {
     console.error('Error sending message:', { to, from, message, studioId })
     throw error;
   }
 };
+
+async function recordTwilioMessage({ to, from, message, twilioMessageId, studioId, contactId }) {
+  return prisma.twilioMessage.create({
+    data: {
+      studioId,
+      contactId,
+      from,
+      to,
+      message,
+      twilioMessageId,
+    },
+  }).then(({ id }) => id);
+}
