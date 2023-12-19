@@ -88,13 +88,11 @@ export const sendMessage = async ({ to, from, message, studioId, contact }) => {
   const twilioAccount = await getTwilioAccount(studioId);
 
   if (contact.SMS_Opt_Out) {
-    console.log('Contact opted out of SMS')
-    return null;
+    return { error: 'Contact has opted out of SMS' }
   }
 
   if (!twilioAccount) {
-    console.error('Could not find Twilio account');
-    return null;
+    return { error: 'Could not find Twilio account' }
   }
 
   const client = getTwilioClient(twilioAccount);
@@ -107,12 +105,12 @@ export const sendMessage = async ({ to, from, message, studioId, contact }) => {
     });
 
     if (!sendRecord.sid) {
-      throw new Error('Error: client.messages.create did not return a message ID');
+      return { error: 'Could not send message' }
     }
 
     await recordTwilioMessage({ to, from, message, studioId, contactId: contact.id, twilioMessageId: sendRecord.sid })
 
-    return sendRecord.sid
+    return { twilioMessageId: sendRecord.sid }
 
   } catch (error) {
     console.error('Error sending message:', { to, from, message, studioId })

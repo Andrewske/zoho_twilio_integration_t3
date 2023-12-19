@@ -65,7 +65,7 @@ function createMessage(first_name, { name: studioName, callPhone }) {
 }
 
 async function sendAndLogMessage(mobile, { smsPhone, id: studioId }, message, zohoWebhookId, contact) {
-  const messageId = await sendMessage({
+  const response = await sendMessage({
     to: mobile,
     from: smsPhone,
     message,
@@ -73,14 +73,14 @@ async function sendAndLogMessage(mobile, { smsPhone, id: studioId }, message, zo
     contact
   });
 
-  if (!messageId) {
-    console.log("No message Id", { messageId })
-    throw new Error('Could not send message');
+  if (response?.error) {
+    console.log("No message Id", response.error)
+    throw new Error(response.error);
   }
 
   await prisma.zohoWebhook.update({
     where: { id: zohoWebhookId },
-    data: { twilioMessageId: messageId, sentWelcomeMessage: true },
+    data: { twilioMessageId: response?.twilioMessageId, sentWelcomeMessage: true },
   });
 }
 
