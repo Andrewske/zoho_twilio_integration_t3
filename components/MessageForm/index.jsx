@@ -34,9 +34,16 @@ const MessageForm = ({ contact, studio, setMessages }) => {
     };
 
     try {
-      await sendMessage(body);
+      const response = await sendMessage(body);
       setNewMessage('');
-      sendSuccess('Message sent!');
+
+      if (response?.error) {
+        sendError(response.error);
+        throw new Error(response.error);
+      }
+      if (response?.twilioMessageId) {
+        sendSuccess('Message sent!');
+      }
 
       const messages = await getMessages({
         contactMobile: contact.Mobile,
