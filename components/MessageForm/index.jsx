@@ -30,7 +30,7 @@ const MessageForm = ({ contact, studio, setMessages }) => {
       to: contact.Mobile,
       from: studio?.smsPhone,
       studioId: studio?.id,
-      contactId: contact.id,
+      contact,
     };
 
     try {

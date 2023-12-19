@@ -16,6 +16,7 @@ export default function Home() {
 
   useEffect(() => {
     if (!messages && contact && studio?.id) {
+      console.log({ contact, studio })
       getMessages({ contactMobile: contact.Mobile, studioId: studio?.id }).then(
         (messages) => {
           if (messages.length === 0) {
