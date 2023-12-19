@@ -2,9 +2,11 @@
 import { parse } from 'querystring';
 import prisma from '~/utils/prisma';
 import { sendMessage } from '~/actions/twilio';
+import { lookupContact } from '~/actions/zoho/contact/lookupContact';
 
 
 export async function POST(request) {
+
   try {
     const body = await parseRequest(request);
 
@@ -19,10 +21,11 @@ export async function POST(request) {
     mobile = formatMobileNumber(mobile);
 
     const studio = await getStudioFromZohoId(ownerId);
+    const contact = await lookupContact({ mobile, studioId: studio.id });
 
     if (studio.smsPhone) {
       const message = createMessage(firstName, studio);
-      await sendAndLogMessage(mobile, studio, message, zohoWebhookId);
+      await sendAndLogMessage(mobile, studio, message, zohoWebhookId, contact);
     } else {
       throw new Error('Can find studio sms phone')
     }
@@ -30,7 +33,7 @@ export async function POST(request) {
     return new Response(null, { status: 200 });
   } catch (error) {
     console.error('Webhook error:', error.message);
-    return new Response(null, { status: 500 });
+    return new Response(null, { status: 200 });
   }
 }
 
@@ -40,8 +43,7 @@ async function postWebhookData(body) {
       contactId: body.leadId,
       studioZohoId: body.ownerId,
       firstName: body.firstName,
-      mobile: body.mobile,
-      body: JSON.stringify(body),
+      mobile: body.mobile
     },
   }).then(({ id }) => id);
 }
@@ -54,7 +56,7 @@ function formatMobileNumber(mobile) {
 }
 
 function createMessage(first_name, { name: studioName, callPhone }) {
-  return `Hi ${first_name}, it's Kevin at ` +
+  return `Hi ${first_name}, it's Fred at ` +
     `Fred Astaire Dance Studios - ${studioName}. ` +
     `Would you like to schedule your 2 Intro Lessons? ` +
     `If you would like to schedule a lesson, reply "YES" ` +
@@ -62,15 +64,17 @@ function createMessage(first_name, { name: studioName, callPhone }) {
     `If you need to opt-out, reply "STOP"`;
 }
 
-async function sendAndLogMessage(mobile, { smsPhone, id: studioId }, message, zohoWebhookId) {
+async function sendAndLogMessage(mobile, { smsPhone, id: studioId }, message, zohoWebhookId, contact) {
   const messageId = await sendMessage({
     to: mobile,
     from: smsPhone,
     message,
     studioId,
+    contact
   });
 
   if (!messageId) {
+    console.log("No message Id", { messageId })
     throw new Error('Could not send message');
   }
 
@@ -105,7 +109,6 @@ export async function getStudioFromZohoId(owner_id) {
       where: { zohoId: owner_id },
       select: { id: true, zohoId: true, smsPhone: true, callPhone: true, name: true },
     });
-    console.log({ studio })
     return studio;
   } catch (error) {
     console.error({ message: 'Could not find studio', owner_id });

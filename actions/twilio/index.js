@@ -68,9 +68,7 @@ export const getMessages = async ({ contactMobile, studioId }) => {
     if (!twilioAccount) {
       throw new Error('Could not find Twilio account');
     }
-    console.log(twilioAccount)
     const client = getTwilioClient(twilioAccount);
-    console.log(client)
     const messagesToContact = await getMessagesToContact(client, contactMobile);
     const messagesFromContact = await getMessagesFromContact(client, contactMobile);
 
@@ -86,14 +84,17 @@ export const getMessages = async ({ contactMobile, studioId }) => {
 
 
 // Create a route to send a new text message
-export const sendMessage = async ({ to, from, message, studioId, contactId }) => {
+export const sendMessage = async ({ to, from, message, studioId, contact }) => {
   const twilioAccount = await getTwilioAccount(studioId);
-  // TODO: Add a TwilioMessage record in the DB
-  // const contactId = lookupContact({ mobile: to, studioId, zohoModule: 'Contacts' })
+
+  if (contact.SMS_Opt_Out) {
+    console.log('Contact opted out of SMS')
+    return null;
+  }
 
   if (!twilioAccount) {
     console.error('Could not find Twilio account');
-    return;
+    return null;
   }
 
   const client = getTwilioClient(twilioAccount);
@@ -104,11 +105,12 @@ export const sendMessage = async ({ to, from, message, studioId, contactId }) =>
       from,
       to,
     });
+
     if (!sendRecord.sid) {
-      throw new Error('Could not send message');
+      throw new Error('Error: client.messages.create did not return a message ID');
     }
 
-    await recordTwilioMessage({ to, from, message, studioId, contactId, twilioMessageId: sendRecord.sid })
+    await recordTwilioMessage({ to, from, message, studioId, contactId: contact.id, twilioMessageId: sendRecord.sid })
 
     return sendRecord.sid
 

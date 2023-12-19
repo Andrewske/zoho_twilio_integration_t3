@@ -28,7 +28,7 @@ model Studio {
   id            String          @id @default(cuid())
   zohoId        String          @unique
   name          String
-  smsPhone      String
+  smsPhone      String     
   callPhone     String?
   active        Boolean         @default(false)
   StudioAccount StudioAccount[]
@@ -55,7 +55,6 @@ model ZohoWebhook {
   contactId               String?
   firstName               String?
   mobile                  String?
-  body                    Json
   twilioMessageId         String?
   sentWelcomeMessage      Boolean  @default(false)
   createdAt     DateTime        @default(now()) @map("created_at")
@@ -71,7 +70,7 @@ model TwilioMessage {
   contactId               String?
   from                    String
   to                      String
-  message                 String
+  message                 String?   @db.Text
   twilioMessageId         String
   createdAt               DateTime  @default(now()) @map("created_at")
   updatedAt               DateTime  @default(now()) @updatedAt @map("updated_at")
