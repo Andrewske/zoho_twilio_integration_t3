@@ -2,9 +2,9 @@
 import { updateContact } from '~/actions/zoho/contact/updateContact';
 
 
-export const smsOptOut = async ({ studio, student, lead }) => {
-    const contact = lead ?? student;
-    const zohoModule = lead ? 'Leads' : 'Contacts';
+export const smsOptOut = async ({ studio, contact }) => {
+
+    const zohoModule = contact.isLead ? 'Leads' : 'Contacts';
 
     if (!contact.SMS_Opt_Out) {
         const data = {

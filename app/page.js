@@ -10,13 +10,13 @@ import { sendError } from '~/utils/toast';
 import ToastContainer from '~/components/ToastContainer';
 
 export default function Home() {
-  const { leadPhoneNumber, studio } = useContext(ZohoContext);
+  const { studio, contact } = useContext(ZohoContext);
   const [messages, setMessages] = useState(null);
 
 
   useEffect(() => {
-    if (!messages && leadPhoneNumber && studio?.id) {
-      getMessages({ leadPhoneNumber, studioId: studio?.id }).then(
+    if (!messages && contact && studio?.id) {
+      getMessages({ contactMobile: contact.Mobile, studioId: studio?.id }).then(
         (messages) => {
           if (messages.length === 0) {
             sendError(
@@ -27,7 +27,7 @@ export default function Home() {
         }
       );
     }
-  }, [leadPhoneNumber, studio, messages]);
+  }, [contact, studio, messages]);
 
   useEffect(() => {
     if (studio && !studio?.active) {
@@ -54,7 +54,7 @@ export default function Home() {
         />
       ) : (
         <ChatWindow
-          leadPhoneNumber={leadPhoneNumber}
+          contact={contact}
           studio={studio}
           messages={messages}
           setMessages={setMessages}

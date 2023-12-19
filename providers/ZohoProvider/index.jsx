@@ -2,16 +2,15 @@
 /* global ZOHO */
 import { createContext, useEffect, useState } from 'react';
 import { sendSuccess } from '~/utils/toast';
-import { fetchAndSetLeadPhoneNumber } from './fetchAndSetLeadPhoneNumber';
 import { fetchAndSetStudioData } from './fetchAndSetStudioData';
-import { lookupLead } from '~/actions/zoho/leads';
+import { fetchAndSetContact } from './fetchAndSetContact';
 
 // Create a context
 export const ZohoContext = createContext();
 
 // Create a provider component
 export function ZohoProvider({ children }) {
-  const [leadPhoneNumber, setLeadPhoneNumber] = useState(null);
+  const [contact, setContact] = useState(null);
   const [studio, setStudio] = useState(null);
 
   // Updated handlePageLoad function
@@ -20,10 +19,10 @@ export function ZohoProvider({ children }) {
 
     const { Entity: entity, EntityId: entityId } = data;
     if (entity && entityId) {
-      await fetchAndSetLeadPhoneNumber({
+      await fetchAndSetContact({
         entity,
         entityId,
-        setLeadPhoneNumber,
+        setContact,
       });
     }
 
@@ -37,16 +36,6 @@ export function ZohoProvider({ children }) {
     }
   }, []);
 
-  useEffect(() => {
-    if (leadPhoneNumber && studio) {
-      console.log({ leadPhoneNumber, studio });
-      lookupLead({
-        studioId: studio.id,
-        from: leadPhoneNumber,
-      });
-    }
-  });
-
-  const value = { leadPhoneNumber, studio };
+  const value = { contact, studio };
   return <ZohoContext.Provider value={value}>{children}</ZohoContext.Provider>;
 }

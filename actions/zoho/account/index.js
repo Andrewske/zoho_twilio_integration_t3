@@ -15,6 +15,16 @@ export const getStudioAccounts = async ({ studioId }) => {
     });
 };
 
+export const getStudioFromZohoId = async (zohoId) => {
+    if (!zohoId) {
+        throw new Error('Zoho ID is required');
+    }
+
+    return await prisma.studio.findFirst({
+        where: { zohoId },
+    });
+}
+
 export const getZohoAccountFromAccounts = (studioAccounts) => {
     const account = studioAccounts
         .map(({ Account }) => Account)

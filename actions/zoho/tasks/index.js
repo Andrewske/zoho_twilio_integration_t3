@@ -2,17 +2,16 @@
 import axios from 'axios';
 import { getZohoAccount } from "..";
 
-export const createTaskData = ({ zohoId, message, lead, student }) => {
+export const createTaskData = ({ zohoId, message, contact }) => {
     const { to, from, msg } = message;
-    const contact = lead ?? student;
-    const se_module = lead ? 'Leads' : 'Contacts';
+    const se_module = contact.isLead ? 'Leads' : 'Contacts';
 
     const taskData = {
         Owner: { id: zohoId },
         Status: 'Not Started',
         Description: `TO: ${to} FROM: ${from} MSG: ${msg}`,
         Priority: 'Low',
-        Subject: `NEW SMS: From ${lead ? 'Lead' : 'Student'} - ${contact.Full_Name}`
+        Subject: `NEW SMS: From ${contact.isLead ? 'Lead' : 'Student'} - ${contact.Full_Name}`
     };
 
     taskData['What_id'] = { id: contact.id, name: contact.Full_Name };
@@ -44,14 +43,14 @@ export const postTaskToZoho = async ({ apiDomain, accessToken, taskData }) => {
     }
 };
 
-export const createTask = async ({ studioId, zohoId, lead, student, message }) => {
+export const createTask = async ({ studioId, zohoId, contact, message }) => {
     try {
-        const taskData = createTaskData({ zohoId, message, lead, student, });
+        const taskData = createTaskData({ zohoId, message, contact, });
 
         const { apiDomain, accessToken } = await getZohoAccount({ studioId });
 
         await postTaskToZoho({ apiDomain, accessToken, taskData });
     } catch (error) {
-        console.error('Error creating task:', error.message, { studioId, zohoId, lead, student, message });
+        console.error('Error creating task:', error.message, { studioId, zohoId,contact, message });
     }
 };
