@@ -23,7 +23,6 @@ const axiosGetContact = async ({ mobile, account, zohoModule }) => {
         ...data[0],
         isLead: zohoModule === 'Leads',
     }
-
     return contact;
 };
 
