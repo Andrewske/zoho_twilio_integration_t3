@@ -13,8 +13,7 @@ const MessageList = ({ messages }) => {
       setPrevMessageLength(messages.length);
     }
   }, [messages.length, prevMessageLength]);
-  // TODO: ADD scroll inside
-  // Fix Scroll into view
+
   return (
     <div className={styles.wrapper}>
       {messages &&
