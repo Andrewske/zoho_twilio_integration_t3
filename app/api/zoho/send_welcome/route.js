@@ -63,11 +63,12 @@ function formatMobileNumber(mobile) {
 }
 
 function createMessage(first_name, { name: studioName, callPhone, managerName }) {
-  return `Hi ${first_name}, it's ${managerName} at ` +
+  return `Hi ${first_name}! This is ${managerName} with ` +
     `Fred Astaire Dance Studios - ${studioName}. ` +
-    `Would you like to schedule your 2 Intro Lessons? ` +
-    `If you would like to schedule a lesson, reply "YES" ` +
-    `or call us at ${callPhone ?? ''}. ` +
+    `We woud love to get you scheduled for your introductory Program! ` +
+    `We have limited space for new clients. ` +
+    `Reply "YES" to book your first lesson! ` +
+    `Or call us at ${callPhone ?? ''}.` +
     `If you need to opt-out, reply "STOP"`;
 }
 
