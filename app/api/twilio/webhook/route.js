@@ -43,7 +43,6 @@ export async function POST(request) {
     if (STOP) {
       await smsOptOut({ studio: studioInfo, contact });
     } else {
-      // TODO: Give create task different task titles based on the task
       await createTask({
         studioId: studioInfo.id,
         zohoId: studioInfo.zohoId,
