@@ -2,8 +2,8 @@
 import { parse } from 'querystring';
 import prisma from '~/utils/prisma';
 import { sendMessage } from '~/actions/twilio';
-import { lookupContact } from '~/actions/zoho/contact/lookupContact';
 import * as Sentry from '@sentry/node';
+
 
 
 export async function POST(request) {
@@ -17,12 +17,18 @@ export async function POST(request) {
 
     const zohoWebhookId = await postWebhookData(body);
 
-    let { ownerId, mobile, firstName } = body;
+    let { leadId, ownerId, mobile, firstName } = body;
 
     mobile = formatMobileNumber(mobile);
 
     const studio = await getStudioFromZohoId(ownerId);
-    const contact = await lookupContact({ mobile, studioId: studio.id });
+    const contact = {
+      id: leadId,
+      fullName: firstName,
+      mobile,
+      smsOptOut: false,
+      isLead: true,
+    };
 
     if (studio.smsPhone) {
       const message = createMessage(firstName, studio);
