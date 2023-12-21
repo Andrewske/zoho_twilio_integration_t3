@@ -8,6 +8,8 @@ export const fetchAndSetContact = async ({ entity, entityId, setContact }) => {
   try {
     const response = await getZohoRecord(entity, entityId);
 
+    console.log(response?.data);
+
     if (response && response.data && response.data[0]) {
       const {
         Mobile: mobile,
@@ -44,6 +46,7 @@ export const fetchAndSetContact = async ({ entity, entityId, setContact }) => {
       false
     );
     console.error(error); // Log the error for debugging purposes
+    throw new Error(error);
   }
 };
 
