@@ -14,6 +14,8 @@ export const createTaskData = ({ zohoId, message, contact }) => {
         Subject: `NEW SMS: From ${contact.isLead ? 'Lead' : 'Student'} - ${contact.Full_Name}`
     };
 
+    // TODO: Find out why this is not working. Might be the Full_Name?
+
     taskData['What_id'] = { id: contact.id, name: contact.Full_Name };
     taskData['$se_module'] = se_module;
 
@@ -51,6 +53,6 @@ export const createTask = async ({ studioId, zohoId, contact, message }) => {
 
         await postTaskToZoho({ apiDomain, accessToken, taskData });
     } catch (error) {
-        console.error('Error creating task:', error.message, { studioId, zohoId,contact, message });
+        console.error('Error creating task:', error.message, { studioId, zohoId, contact, message });
     }
 };

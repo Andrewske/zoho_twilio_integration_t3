@@ -65,7 +65,7 @@ function formatMobileNumber(mobile) {
 function createMessage(first_name, { name: studioName, callPhone, managerName }) {
   return `Hi ${first_name}! This is ${managerName} with ` +
     `Fred Astaire Dance Studios - ${studioName}. ` +
-    `We woud love to get you scheduled for your introductory Program! ` +
+    `We would love to get you scheduled for your introductory Program! ` +
     `We have limited space for new clients. ` +
     `Reply "YES" to book your first lesson! ` +
     `Or call us at ${callPhone ?? ''}.` +

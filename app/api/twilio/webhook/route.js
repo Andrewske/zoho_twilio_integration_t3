@@ -35,7 +35,7 @@ export async function POST(request) {
 
     const contact = await lookupContact({ mobile: from, studioId: studioInfo.id });
 
-
+    // TODO: If contact.status IS new change to "Contacted, Not Booked"
 
     await postWebhookData({ message, studioId: studioInfo.id, contactId: contact.id })
 
