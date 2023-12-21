@@ -15,6 +15,8 @@ const MessageList = ({ messages }) => {
     }
   }, [messages.length, prevMessageLength]);
 
+  // TODO: Write a function to check the database for any messages from the contact that are more recent than the last message in the list
+
   return (
     <div className={styles.wrapper}>
       {messages &&
