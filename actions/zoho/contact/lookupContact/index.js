@@ -1,6 +1,7 @@
 'use server';
 import axios from 'axios';
 import { getZohoAccount } from '~/actions/zoho';
+import { retryOperation } from '~/utils/retryOperation';
 
 const axiosGetContact = async ({ mobile, account, zohoModule }) => {
     const response = await axios.get(
@@ -34,20 +35,8 @@ const getContact = async ({ mobile, account, zohoModule }) => {
     }
 };
 
-export const lookupContact = async ({ mobile, studioId }) => {
-    const account = await getZohoAccount({ studioId });
-
-    if (!account) {
-        throw new Error('Could not find Zoho account');
-    }
-
-    if (!mobile) {
-        throw new Error('No number provided');
-    }
-
-    const zohoModules = ['Leads', 'Contacts'];
-
-    for (const zohoModule of zohoModules) {
+const getContactFromModules = async ({ mobile, account, modules }) => {
+    for (const zohoModule of modules) {
         try {
             const contact = await getContact({ mobile, account, zohoModule });
             if (contact) {
@@ -57,6 +46,34 @@ export const lookupContact = async ({ mobile, studioId }) => {
             console.error(`Error looking up contact in ${module}:`, error);
         }
     }
+    return null;
+};
 
-    throw new Error('No contact found');
+export const lookupContact = async ({ mobile, studioId, retry = false }) => {
+    if (!mobile) {
+        throw new Error('No number provided');
+    }
+
+    const account = await getZohoAccount({ studioId });
+
+    if (!account) {
+        throw new Error('Could not find Zoho account');
+    }
+
+    const zohoModules = ['Leads', 'Contacts'];
+    const operation = () => getContactFromModules({ mobile, account, modules: zohoModules });
+
+    if (retry) {
+        const contact = await retryOperation(operation, 30000, 5);
+        if (!contact) {
+            throw new Error('No contact found after 5 retries');
+        }
+        return contact;
+    }
+
+    const contact = await operation();
+    if (!contact) {
+        throw new Error('No contact found');
+    }
+    return contact;
 };
