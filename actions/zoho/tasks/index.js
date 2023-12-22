@@ -16,8 +16,8 @@ export const createTaskData = ({ zohoId, message, contact }) => {
 
     // TODO: Find out why this is not working. Might be the Full_Name?
 
-    taskData['What_id'] = { id: contact.id, name: contact.Full_Name };
-    taskData['$se_module'] = se_module;
+    taskData['What_Id'] = { id: contact.id, name: contact.Full_Name };
+    taskData["$se_module"] = se_module;
 
     return taskData;
 };
@@ -47,8 +47,8 @@ export const postTaskToZoho = async ({ apiDomain, accessToken, taskData }) => {
 
 export const createTask = async ({ studioId, zohoId, contact, message }) => {
     try {
-        const taskData = createTaskData({ zohoId, message, contact, });
-
+        const taskData = createTaskData({ zohoId, message, contact });
+        console.log('taskData', taskData)
         const { apiDomain, accessToken } = await getZohoAccount({ studioId });
 
         await postTaskToZoho({ apiDomain, accessToken, taskData });
