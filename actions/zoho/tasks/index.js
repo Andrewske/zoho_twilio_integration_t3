@@ -14,7 +14,6 @@ export const createTaskData = ({ zohoId, message, contact }) => {
         Subject: `NEW SMS: From ${contact.isLead ? 'Lead' : 'Student'} - ${contact.Full_Name}`
     };
 
-    // TODO: Find out why this is not working. Might be the Full_Name?
 
     taskData['What_Id'] = { id: contact.id, name: contact.Full_Name };
     taskData["$se_module"] = se_module;

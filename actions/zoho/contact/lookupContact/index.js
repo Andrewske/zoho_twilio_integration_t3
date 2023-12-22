@@ -3,9 +3,15 @@ import axios from 'axios';
 import { getZohoAccount } from '~/actions/zoho';
 import { retryOperation } from '~/utils/retryOperation';
 
+const formatMobile = (mobile) => {
+    return mobile.replace(/\D/g, '');
+};
+
 const axiosGetContact = async ({ mobile, account, zohoModule }) => {
+    const fields = 'id,Full_Name,Mobile,SMS_Opt_Out,Lead_Status';
+    const criteria = `(Mobile:equals:${formatMobile(mobile)})`;
     const response = await axios.get(
-        `https://www.zohoapis.com/crm/v5/${zohoModule}/search?fields=id,Full_Name,Mobile,SMS_Opt_Out,Lead_Status&criteria=(Mobile:equals:${mobile})`,
+        `https://www.zohoapis.com/crm/v5/${zohoModule}/search?fields=${fields}&criteria=${criteria}`,
         {
             headers: { Authorization: `Zoho-oauthtoken ${account.accessToken}` },
         }
