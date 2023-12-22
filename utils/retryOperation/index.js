@@ -1,6 +1,6 @@
 
 
-
+// TODO: Fix this?
 export const retryOperation = (operation, delay, times) => new Promise((resolve, reject) => {
     return operation()
         .then(resolve)
