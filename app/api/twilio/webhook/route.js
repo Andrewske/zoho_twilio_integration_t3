@@ -4,9 +4,11 @@ import { parse } from 'querystring';
 import prisma from '~/utils/prisma';
 import { smsOptOut } from '~/actions/zoho/contact/smsOptOut';
 import { lookupContact } from '~/actions/zoho/contact/lookupContact';
+import { updateStatus } from '~/actions/zoho/contact/updateStatus';
 
 export async function POST(request) {
   var STOP = false;
+
   try {
     let message = await parseRequest(request);
 
@@ -34,9 +36,12 @@ export async function POST(request) {
     }
 
     const contact = await lookupContact({ mobile: from, studioId: studioInfo.id });
-    console.info('webhook', { contact })
+
 
     // TODO: If contact.status IS new change to "Contacted, Not Booked"
+    if (contact.isLead && contact.Lead_Status == 'New' && msg.toLowerCase().includes('yes')) {
+      updateStatus({ studio: studioInfo, contact })
+    }
 
     await postWebhookData({ message, studioId: studioInfo.id, contactId: contact.id })
 
