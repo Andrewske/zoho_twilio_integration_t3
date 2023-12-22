@@ -4,7 +4,7 @@ import { getZohoAccount } from '~/actions/zoho';
 
 const axiosGetContact = async ({ mobile, account, zohoModule }) => {
     const response = await axios.get(
-        `https://www.zohoapis.com/crm/v5/${zohoModule}/search?fields=id,Full_Name,Mobile,SMS_Opt_Out&criteria=(Mobile:equals:${mobile})`,
+        `https://www.zohoapis.com/crm/v5/${zohoModule}/search?fields=id,Full_Name,Mobile,SMS_Opt_Out,Lead_Status&criteria=(Mobile:equals:${mobile})`,
         {
             headers: { Authorization: `Zoho-oauthtoken ${account.accessToken}` },
         }
