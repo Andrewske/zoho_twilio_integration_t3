@@ -35,10 +35,9 @@ export async function POST(request) {
       throw new Error('Could not find studio');
     }
 
-    const contact = await lookupContact({ mobile: from, studioId: studioInfo.id });
+    const contact = await lookupContact({ mobile: from, studioId: studioInfo.id, retry: true });
 
 
-    // TODO: If contact.status IS new change to "Contacted, Not Booked"
     if (contact.isLead && contact.Lead_Status == 'New' && msg.toLowerCase().includes('yes')) {
       updateStatus({ studio: studioInfo, contact })
     }
