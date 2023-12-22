@@ -22,6 +22,7 @@ export async function POST(request) {
     mobile = formatMobileNumber(mobile);
 
     const studio = await getStudioFromZohoId(ownerId);
+    if (!studio.active) return new Response(null, { status: 200 });
     const contact = {
       id: leadId,
       fullName: firstName,
@@ -116,7 +117,7 @@ export async function getStudioFromZohoId(owner_id) {
   try {
     const studio = await prisma.studio.findFirst({
       where: { zohoId: owner_id },
-      select: { id: true, zohoId: true, smsPhone: true, callPhone: true, name: true, managerName: true },
+      select: { id: true, zohoId: true, smsPhone: true, callPhone: true, name: true, managerName: true, active: true },
     });
     return studio;
   } catch (error) {
