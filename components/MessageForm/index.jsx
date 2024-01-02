@@ -14,7 +14,7 @@ const MessageForm = ({ contact, studio: studioProp, setMessages }) => {
     setNewMessage(event.target.value);
   };
 
-  const validateStudio = (studio) => {
+  const validateStudio = async (studio) => {
     if (!studio) {
       sendError(`We can't find which studio you are. Please refresh the page`, {
         autoClose: false,
@@ -23,8 +23,8 @@ const MessageForm = ({ contact, studio: studioProp, setMessages }) => {
     }
     if (studio.zohoId === process.env.NEXT_PUBLIC_ZOHO_ADMIN_ID) {
       console.log('Admin user, lookup studio', { contact, studio });
-      const actualStudio = getStudioData({ zohoId: contact.Owner.id });
-      console.log({ actualStudio });
+      const actualStudio = await getStudioData({ zohoId: contact.Owner.id });
+      console.log('Actual studio', actualStudio);
       setStudio(actualStudio);
     }
   };
