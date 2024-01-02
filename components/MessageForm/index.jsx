@@ -21,7 +21,7 @@ const MessageForm = ({ contact, studio: studioProp, setMessages }) => {
       });
       throw new Error({ contact, studio });
     }
-    if (studio.id === process.env.NEXT_PUBLIC_ADMIN_ID) {
+    if (studio.id === process.env.NEXT_PUBLIC_ZOHO_ADMIN_ID) {
       console.log('Admin user, lookup studio');
       setStudio(getStudioData({ zohoId: contact.Owner.id }));
     }
