@@ -8,7 +8,7 @@ const formatMobile = (mobile) => {
 };
 
 const axiosGetContact = async ({ mobile, account, zohoModule }) => {
-    const fields = 'id,Full_Name,Mobile,SMS_Opt_Out,Lead_Status';
+    const fields = 'id,Full_Name,Mobile,SMS_Opt_Out,Lead_Status,Owner';
     const criteria = `(Mobile:equals:${formatMobile(mobile)})`;
     const response = await axios.get(
         `https://www.zohoapis.com/crm/v5/${zohoModule}/search?fields=${fields}&criteria=${criteria}`,

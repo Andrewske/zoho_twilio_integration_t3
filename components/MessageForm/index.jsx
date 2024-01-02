@@ -3,10 +3,12 @@ import { useState } from 'react';
 import styles from './styles.module.css';
 import { getMessages, sendMessage } from '~/actions/twilio';
 import { sendError, sendSuccess } from '~/utils/toast';
+import { getStudioData } from '~/actions/zoho/studio';
 
-const MessageForm = ({ contact, studio, setMessages }) => {
+const MessageForm = ({ contact, studio: studioProp, setMessages }) => {
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [studio, setStudio] = useState(studioProp);
 
   const handleNewMessage = (event) => {
     setNewMessage(event.target.value);
@@ -18,6 +20,10 @@ const MessageForm = ({ contact, studio, setMessages }) => {
         autoClose: false,
       });
       throw new Error({ contact, studio });
+    }
+    if (studio.id === process.env.NEXT_PUBLIC_ADMIN_ID) {
+      console.log('Admin user, lookup studio');
+      setStudio(getStudioData({ zohoId: contact.Owner.id }));
     }
   };
 
