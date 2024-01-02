@@ -7,6 +7,7 @@ export const getStudioData = async ({ zohoId, phone = null }) => {
     const studio = await prisma.studio.findFirst({
       where: where,
     });
+    console.log({ studio })
 
     return studio;
   } catch (error) {
