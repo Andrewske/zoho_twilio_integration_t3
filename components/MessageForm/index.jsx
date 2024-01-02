@@ -5,10 +5,9 @@ import { getMessages, sendMessage } from '~/actions/twilio';
 import { sendError, sendSuccess } from '~/utils/toast';
 import { getStudioData } from '~/actions/zoho/studio';
 
-const MessageForm = ({ contact, studio: studioProp, setMessages }) => {
+const MessageForm = ({ contact, studio, setMessages }) => {
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [studio, setStudio] = useState(studioProp);
 
   const handleNewMessage = (event) => {
     setNewMessage(event.target.value);
@@ -23,10 +22,9 @@ const MessageForm = ({ contact, studio: studioProp, setMessages }) => {
     }
     if (studio.zohoId === process.env.NEXT_PUBLIC_ZOHO_ADMIN_ID) {
       console.log('Admin user, lookup studio', { contact, studio });
-      const actualStudio = await getStudioData({ zohoId: contact.Owner.id });
-      console.log('Actual studio', actualStudio);
-      setStudio(actualStudio);
+      return await getStudioData({ zohoId: contact.Owner.id });
     }
+    return studio;
   };
 
   const createMessageBody = (newMessage, contact, studio) => ({
@@ -76,11 +74,11 @@ const MessageForm = ({ contact, studio: studioProp, setMessages }) => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    validateStudio(studio);
+    const validatedStudio = validateStudio(studio);
 
     setIsSending(true);
 
-    const body = createMessageBody(newMessage, contact, studio);
+    const body = createMessageBody(newMessage, contact, validatedStudio);
 
     await handleSendMessage(body);
     await handleGetMessages();
