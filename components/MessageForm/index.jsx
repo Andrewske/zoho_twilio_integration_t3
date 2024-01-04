@@ -75,7 +75,7 @@ const MessageForm = ({ contact, studio, setMessages }) => {
     event.preventDefault();
 
     const validatedStudio = await validateStudio(studio);
-    console.log({ validatedStudio });
+
     setIsSending(true);
 
     const body = createMessageBody(newMessage, contact, validatedStudio);
