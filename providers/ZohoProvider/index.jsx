@@ -8,6 +8,8 @@ import { fetchAndSetContact } from './fetchAndSetContact';
 // Create a context
 export const ZohoContext = createContext();
 
+// TODO: Instead of setting to the context try using the url params. Might be easier to follow errors
+
 // Create a provider component
 export function ZohoProvider({ children }) {
   const [contact, setContact] = useState(null);
