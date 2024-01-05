@@ -1,5 +1,6 @@
 import { lookupContact } from '~/actions/zoho/contact/lookupContact';
 import { getStudioFromZohoId } from '~/app/api/zoho/send_welcome/route';
+import { logError } from '~/utils/logError';
 import { sendError } from '~/utils/toast';
 import { getZohoRecord } from '~/utils/zohoApi';
 
@@ -51,6 +52,14 @@ export const fetchAndSetContact = async ({ entity, entityId, setContact }) => {
 };
 
 export const parseDescription = (description) => {
-  const fromNumberMatch = description.match(/FROM: (\d+)/);
-  return fromNumberMatch ? fromNumberMatch[1] : null;
+  try {
+    const fromNumberMatch = description.match(/FROM: (\d+)/);
+    return fromNumberMatch ? fromNumberMatch[1] : null;
+  } catch (error) {
+    logError({
+      error,
+      message: 'Error parsing description',
+      data: { description },
+    });
+  }
 };
