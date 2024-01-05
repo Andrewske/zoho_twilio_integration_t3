@@ -1,7 +1,7 @@
 'use server';
 import axios from 'axios';
 import { getZohoAccount } from '~/actions/zoho';
-import { retryOperation } from '~/utils/retryOperation';
+// import { retryOperation } from '~/utils/retryOperation';
 
 const formatMobile = (mobile) => {
     return mobile.replace(/\D/g, '');
@@ -70,7 +70,7 @@ export const lookupContact = async ({ mobile, studioId, retry = false }) => {
     const operation = () => getContactFromModules({ mobile, account, modules: zohoModules });
 
     if (retry) {
-        const contact = await retryOperation(operation, 30000, 5);
+        const contact = await retryOperation(operation, 2000, 5);
         if (!contact) {
             throw new Error('No contact found after 5 retries');
         }
@@ -82,4 +82,26 @@ export const lookupContact = async ({ mobile, studioId, retry = false }) => {
         throw new Error('No contact found');
     }
     return contact;
+};
+
+const retryOperation = async (operation, delay, maxRetries) => {
+    let attempts = 0;
+    while (attempts < maxRetries) {
+        try {
+            const result = await operation();
+            if (result) {
+                return result;
+            }
+            // If result is not found, throw an error to go to the catch block.
+            throw new Error('Result not found');
+        } catch (error) {
+            console.log(`Error in retryOperation, attempt: ${attempts}`)
+            if (attempts === maxRetries - 1) {
+                throw error;
+            }
+            await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, attempts)));
+            attempts++;
+        }
+    }
+    return null; // In case of max retries reached
 };
