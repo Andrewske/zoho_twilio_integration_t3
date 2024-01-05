@@ -125,6 +125,7 @@ async function sendFollowUpMessage({ contact, from, to, studioInfo }) {
       console.log('sent follow up message')
     }
   } catch (error) {
+    console.error('Error sending follow up message:', error);
     logError({ message: 'Error sending follow up message:', error, level: "warning", data: { contactId: contact?.id, from, to, studioId: studioInfo?.zohoId } })
   }
 }
