@@ -119,6 +119,7 @@ async function sendFollowUpMessage({ contact, from, to, studioInfo }) {
       const followUpMessage = "Great! We have a limited number spots for new clients each week. What day of the week Monday to Friday works best for you?"
       const response = await sendMessage({ to: from, from: to, message: followUpMessage, studioId: studioInfo.id, contact })
       if (response.error) {
+        console.log({ response })
         throw new Error(response.error)
       }
       console.log('sent follow up message')
