@@ -115,7 +115,10 @@ async function sendFollowUpMessage({ contact, from, to, studioInfo }) {
 
     if (!welcomeMessageRecord) {
       const followUpMessage = "Great! We have a limited number spots for new clients each week. What day of the week Monday to Friday works best for you?"
-      sendMessage({ to: from, from: to, message: followUpMessage, studioId: studioInfo.id, contact })
+      const response = await sendMessage({ to: from, from: to, message: followUpMessage, studioId: studioInfo.id, contact })
+      if (response.error) {
+        throw new Error(response.error)
+      }
     }
   } catch (error) {
     logError({ message: 'Error sending follow up message:', error, level: "warning", data: { contactId: contact?.id, from, to, studioId: studioInfo?.zohoId } })
