@@ -42,7 +42,6 @@ export async function POST(request) {
 
     if (contact.isLead && contact.Lead_Status == 'New' && msg.toLowerCase().includes('yes')) {
       updateStatus({ studio: studioInfo, contact })
-
       sendFollowUpMessage({ contact, from, to, studioInfo })
 
 
@@ -108,10 +107,13 @@ export async function getStudioInfo(to) {
 
 
 async function sendFollowUpMessage({ contact, from, to, studioInfo }) {
+  console.log('sending follow up message')
   try {
     const welcomeMessageRecord = await prisma.zohoWebhook.findFirst({
       where: { contactId: contact.id, sentWelcomeMessage: true }
     })
+
+    console.log({ welcomeMessageRecord })
 
     if (!welcomeMessageRecord) {
       const followUpMessage = "Great! We have a limited number spots for new clients each week. What day of the week Monday to Friday works best for you?"
@@ -119,9 +121,9 @@ async function sendFollowUpMessage({ contact, from, to, studioInfo }) {
       if (response.error) {
         throw new Error(response.error)
       }
+      console.log('sent follow up message')
     }
   } catch (error) {
     logError({ message: 'Error sending follow up message:', error, level: "warning", data: { contactId: contact?.id, from, to, studioId: studioInfo?.zohoId } })
   }
-  return;
 }
