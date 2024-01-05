@@ -33,7 +33,7 @@ function isValidErrorParams(message, error) {
 }
 
 function formatErrorData(data) {
-    return typeof data === 'object' && data !== null ? JSON.stringify(data) : data;
+    return typeof data === 'object' && data !== null ? JSON.stringify({ ...data }) : data;
 }
 
 function logToConsole(timestamp, message, errorData) {
