@@ -19,8 +19,13 @@ export const logError = ({ message, error, level = 'error', data }) => {
     const timestamp = new Date().toISOString();
     const errorData = formatErrorData(data);
 
-    logToConsole(timestamp, message, errorData, level);
-    reportToSentry(error, level, data);
+    try {
+        logToConsole(timestamp, message, errorData, level);
+        reportToSentry(error, level, data);
+    } catch (error) {
+        console.error('Error logging error:', error)
+    }
+
 };
 
 function isValidErrorParams(message, error) {
