@@ -43,7 +43,7 @@ export async function POST(request) {
     if (contact.isLead && contact.Lead_Status == 'New' && msg.toLowerCase().includes('yes')) {
       updateStatus({ studio: studioInfo, contact })
 
-      await sendFollowUpMessage({ contact, from, to, studioInfo })
+      sendFollowUpMessage({ contact, from, to, studioInfo })
 
 
     }
@@ -123,4 +123,5 @@ async function sendFollowUpMessage({ contact, from, to, studioInfo }) {
   } catch (error) {
     logError({ message: 'Error sending follow up message:', error, level: "warning", data: { contactId: contact?.id, from, to, studioId: studioInfo?.zohoId } })
   }
+  return;
 }
