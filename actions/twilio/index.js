@@ -123,7 +123,7 @@ export const sendMessage = async ({ to, from, message, studioId, contact }) => {
       return { error: 'The recipient has unsubscribed from receiving SMS.' };
     }
 
-    return { error: error.message };
+    throw error;
   }
 };
 
