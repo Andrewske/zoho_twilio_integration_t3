@@ -1,5 +1,6 @@
 'use server';
 import twilio from 'twilio';
+import { logError } from '~/utils/logError';
 import prisma from '~/utils/prisma';
 
 export const getTwilioAccount = async (id) => {
@@ -115,7 +116,8 @@ export const sendMessage = async ({ to, from, message, studioId, contact }) => {
     return { twilioMessageId: sendRecord.sid }
 
   } catch (error) {
-    console.error('Error sending message:', { to, from, message, studioId })
+
+    logError({ message: 'Error sending message:', error, level: "error", data: { to, from, message, studioId } })
 
     if (error.code === 21610) {
       return { error: 'The recipient has unsubscribed from receiving SMS.' };
