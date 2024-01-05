@@ -5,6 +5,8 @@ import prisma from '~/utils/prisma';
 import { smsOptOut } from '~/actions/zoho/contact/smsOptOut';
 import { lookupContact } from '~/actions/zoho/contact/lookupContact';
 import { updateStatus } from '~/actions/zoho/contact/updateStatus';
+import { sendMessage } from '~/actions/twilio';
+import { logError } from "~/utils/logError"
 
 export async function POST(request) {
   var STOP = false;
@@ -17,6 +19,7 @@ export async function POST(request) {
     }
 
     let { To: to, From: from, Body: msg } = message;
+    console.log({ to, from, msg })
 
     if (to.startsWith('+1')) {
       to = to.substring(2);
@@ -37,9 +40,12 @@ export async function POST(request) {
 
     const contact = await lookupContact({ mobile: from, studioId: studioInfo.id, retry: true });
 
-
     if (contact.isLead && contact.Lead_Status == 'New' && msg.toLowerCase().includes('yes')) {
       updateStatus({ studio: studioInfo, contact })
+
+      await sendFollowUpMessage({ contact, from, to, studioInfo })
+
+
     }
     // TODO: make sure cleaned to and from values are being sent to postWebhookData
     await postWebhookData({ message, studioId: studioInfo.id, contactId: contact.id })
@@ -55,11 +61,9 @@ export async function POST(request) {
         message: { to, from, msg },
       });
     }
-
-
   } catch (error) {
-    console.error('Webhook error:', error.message);
-    throw new Error('Webhook error', error.message)
+    console.error('Error in Twilio Webhook:', error);
+    throw new Error('Webhook error')
   }
   return new Response(null, { status: 200 });
 }
@@ -82,8 +86,7 @@ export async function parseRequest(request) {
     const body = await request.text();
     return parse(body);
   } catch (error) {
-    console.error('Error parsing request:', error);
-    throw new Error('Error parsing request')
+    logError({ message: 'Error parsing request:', error, level: "warning", data: { request } })
   }
 }
 
@@ -99,7 +102,22 @@ export async function getStudioInfo(to) {
       select: { id: true, zohoId: true },
     });
   } catch (error) {
-    console.error({ message: 'Could not find studio', to });
-    throw new Error('Could not find studio')
+    logError({ message: 'Could not find studio', error, level: "warning", data: { to } })
+  }
+}
+
+
+async function sendFollowUpMessage({ contact, from, to, studioInfo }) {
+  try {
+    const welcomeMessageRecord = await prisma.zohoWebhook.findUnique({
+      where: { contactId: contact.id, sentWelcomeMessage: true }
+    })
+
+    if (!welcomeMessageRecord) {
+      const followUpMessage = "Great! We have a limited number spots for new clients each week. What day of the week Monday to Friday works best for you?"
+      sendMessage({ to: from, from: to, message: followUpMessage, studioId: studioInfo.id, contact })
+    }
+  } catch (error) {
+    logError({ message: 'Error sending follow up message:', error, level: "warning", data: { contactId: contact?.id, from, to, studioId: studioInfo?.zohoId } })
   }
 }
