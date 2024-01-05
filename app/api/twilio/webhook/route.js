@@ -109,7 +109,7 @@ export async function getStudioInfo(to) {
 
 async function sendFollowUpMessage({ contact, from, to, studioInfo }) {
   try {
-    const welcomeMessageRecord = await prisma.zohoWebhook.findUnique({
+    const welcomeMessageRecord = await prisma.zohoWebhook.findFirst({
       where: { contactId: contact.id, sentWelcomeMessage: true }
     })
 
