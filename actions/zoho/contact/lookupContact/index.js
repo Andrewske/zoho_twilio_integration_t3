@@ -91,9 +91,8 @@ const retryOperation = async (operation, delay, maxRetries) => {
     while (attempts < maxRetries) {
         try {
             const result = await operation();
-            console.log(`Result found after ${attempts} attempts`);
-            console.log(result)
             if (result) {
+                console.log(`Result found after ${attempts} attempts`);
                 return result;
             }
             // If result is not found, throw an error to go to the catch block.
