@@ -2,6 +2,7 @@
 import axios from 'axios';
 import { getZohoAccount } from '~/actions/zoho';
 // import { retryOperation } from '~/utils/retryOperation';
+import { logError } from '~/utils/logError';
 
 const formatMobile = (mobile) => {
     return mobile.replace(/\D/g, '');
@@ -49,14 +50,13 @@ const getContactFromModules = async ({ mobile, account, modules }) => {
                 return contact;
             }
         } catch (error) {
-            console.error(`Error looking up contact in ${module}:`, error);
+            console.error(`Error looking up contact in ${module}:`);
         }
     }
     return null;
 };
 
 export const lookupContact = async ({ mobile, studioId, retry = false }) => {
-    console.log('lookup contact', { mobile, studioId, retry })
     if (!mobile) {
         throw new Error('No number provided');
     }
@@ -80,6 +80,7 @@ export const lookupContact = async ({ mobile, studioId, retry = false }) => {
 
     const contact = await operation();
     if (!contact) {
+        logError({ error: new Error('Not contact after 5 retries'), message: 'No contact found', data: { mobile, studioId }, level: 'warning' })
         throw new Error('No contact found');
     }
     return contact;
