@@ -8,7 +8,7 @@ export const fetchAndSetStudioData = async ({ setStudio }) => {
   try {
     const userResponse = await getCurrentUser();
     const user = userResponse?.users?.[0];
-    console.log({ user });
+    console.log(JSON.stringify({ user }));
 
     if (user?.id) {
       const studio = await getStudioData({ zohoId: user.id });
@@ -21,6 +21,6 @@ export const fetchAndSetStudioData = async ({ setStudio }) => {
     sendError(
       'An error occurred while fetching the studio data. Please try again.'
     );
-    console.error(error); // Log the error for debugging purposes
+    console.error(error.message); // Log the error for debugging purposes
   }
 };

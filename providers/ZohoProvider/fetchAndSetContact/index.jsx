@@ -9,8 +9,6 @@ export const fetchAndSetContact = async ({ entity, entityId, setContact }) => {
   try {
     const response = await getZohoRecord(entity, entityId);
 
-    console.log(response?.data);
-
     if (response && response.data && response.data[0]) {
       const {
         Mobile: mobile,
@@ -28,12 +26,13 @@ export const fetchAndSetContact = async ({ entity, entityId, setContact }) => {
 
       if (phoneNumber) {
         const studio = await getStudioFromZohoId(ownerId);
-        const contact = await lookupContact({
-          mobile: phoneNumber,
-          studioId: studio.id,
-        });
-        console.log(contact);
-        setContact(contact);
+        if (studio?.id) {
+          const contact = await lookupContact({
+            mobile: phoneNumber,
+            studioId: studio?.id,
+          });
+          setContact(contact);
+        }
       } else {
         sendError(
           'No phone number found. Please make sure there is a valid number for this lead',
@@ -46,8 +45,6 @@ export const fetchAndSetContact = async ({ entity, entityId, setContact }) => {
       'An error occurred while fetching the contact. Please try again.',
       false
     );
-    console.error(error); // Log the error for debugging purposes
-    throw new Error(error);
   }
 };
 

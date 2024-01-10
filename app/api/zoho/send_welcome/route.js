@@ -3,6 +3,7 @@ import { parse } from 'querystring';
 import prisma from '~/utils/prisma';
 import { sendMessage } from '~/actions/twilio';
 import * as Sentry from '@sentry/node';
+import { logError } from '~/utils/logError';
 
 
 
@@ -74,23 +75,24 @@ function createMessage(first_name, { name: studioName, callPhone, managerName })
 }
 
 async function sendAndLogMessage(mobile, { smsPhone, id: studioId }, message, zohoWebhookId, contact) {
-  const response = await sendMessage({
-    to: mobile,
-    from: smsPhone,
-    message,
-    studioId,
-    contact
-  });
 
-  if (response?.error) {
-    console.log("No message Id", response.error)
-    throw new Error(response.error);
+  try {
+    const response = await sendMessage({
+      to: mobile,
+      from: smsPhone,
+      message,
+      studioId,
+      contact
+    });
+
+    await prisma.zohoWebhook.update({
+      where: { id: zohoWebhookId },
+      data: { twilioMessageId: response?.twilioMessageId, sentWelcomeMessage: true },
+    });
+  } catch (error) {
+    logError({ message: 'Error sending message:', error, level: "error", data: { to: mobile, from: smsPhone, message, studioId } })
   }
 
-  await prisma.zohoWebhook.update({
-    where: { id: zohoWebhookId },
-    data: { twilioMessageId: response?.twilioMessageId, sentWelcomeMessage: true },
-  });
 }
 
 export async function parseRequest(request) {

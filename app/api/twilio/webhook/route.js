@@ -19,7 +19,7 @@ export async function POST(request) {
     }
 
     let { To: to, From: from, Body: msg } = message;
-    console.log({ to, from, msg })
+    console.log(JSON.stringify({ to, from, msg }))
 
     if (to.startsWith('+1')) {
       to = to.substring(2);
