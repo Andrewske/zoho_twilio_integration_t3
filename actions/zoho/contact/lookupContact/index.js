@@ -56,6 +56,7 @@ const getContactFromModules = async ({ mobile, account, modules }) => {
 };
 
 export const lookupContact = async ({ mobile, studioId, retry = false }) => {
+    console.log('lookup contact', { mobile, studioId, retry })
     if (!mobile) {
         throw new Error('No number provided');
     }
@@ -70,7 +71,7 @@ export const lookupContact = async ({ mobile, studioId, retry = false }) => {
     const operation = () => getContactFromModules({ mobile, account, modules: zohoModules });
 
     if (retry) {
-        const contact = await retryOperation(operation, 2000, 5);
+        const contact = await retryOperation(operation, 10000, 5);
         if (!contact) {
             throw new Error('No contact found after 5 retries');
         }
@@ -85,10 +86,13 @@ export const lookupContact = async ({ mobile, studioId, retry = false }) => {
 };
 
 const retryOperation = async (operation, delay, maxRetries) => {
+    console.log('retryOperation')
     let attempts = 0;
     while (attempts < maxRetries) {
         try {
             const result = await operation();
+            console.log(`Result found after ${attempts} attempts`);
+            console.log(result)
             if (result) {
                 return result;
             }
@@ -99,6 +103,7 @@ const retryOperation = async (operation, delay, maxRetries) => {
             if (attempts === maxRetries - 1) {
                 throw error;
             }
+            console.log(`Retrying in ${delay * Math.pow(2, attempts)} ms`);
             await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, attempts)));
             attempts++;
         }
