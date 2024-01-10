@@ -43,9 +43,8 @@ export async function POST(request) {
     if (contact.isLead && contact.Lead_Status == 'New' && msg.toLowerCase().includes('yes')) {
       updateStatus({ studio: studioInfo, contact })
       sendFollowUpMessage({ contact, from, to, studioInfo })
-    } else {
-      console.log('not a lead')
     }
+
     // TODO: make sure cleaned to and from values are being sent to postWebhookData
     await postWebhookData({ message, studioId: studioInfo.id, contactId: contact.id })
 
