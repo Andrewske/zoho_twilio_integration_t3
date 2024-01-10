@@ -69,7 +69,7 @@ function createMessage(first_name, { name: studioName, callPhone, managerName })
     `We would love to get you scheduled for your introductory Program! ` +
     `We have limited space for new clients. ` +
     `Reply "YES" to book your first lesson! ` +
-    `Or call us at ${callPhone ?? ''}.` +
+    `Or call us at ${callPhone ?? ''}. ` +
     `If you need to opt-out, reply "STOP"`;
 }
 
