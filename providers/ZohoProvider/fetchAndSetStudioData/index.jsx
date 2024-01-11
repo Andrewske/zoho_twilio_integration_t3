@@ -4,6 +4,8 @@ import { sendSuccess } from '~/utils/toast';
 import { getCurrentUser } from '~/utils/zohoApi';
 import { logError } from '~/utils/logError';
 
+// TODO: Look for the lead owner and then if that studio is not one of the active studios, show the error
+
 // Function to fetch and set the studio data
 export const fetchAndSetStudioData = async ({ setStudio }) => {
   try {

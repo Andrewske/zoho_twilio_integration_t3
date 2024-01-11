@@ -13,10 +13,9 @@ export default function Home() {
   const { studio, contact } = useContext(ZohoContext);
   const [messages, setMessages] = useState(null);
 
-
   useEffect(() => {
     if (!messages && contact && studio?.id) {
-      console.log(JSON.stringify({ contact, studio }))
+      console.log(JSON.stringify({ contact, studio }));
       getMessages({ contactMobile: contact.Mobile, studioId: studio?.id }).then(
         (messages) => {
           if (messages.length === 0) {
