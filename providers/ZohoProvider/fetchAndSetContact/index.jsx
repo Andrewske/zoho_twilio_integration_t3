@@ -41,6 +41,12 @@ export const fetchAndSetContact = async ({ entity, entityId, setContact }) => {
       }
     }
   } catch (error) {
+    logError({
+      error,
+      message: 'fetchAndSetContact',
+      level: 'warning',
+      data: { entity, entityId },
+    }); // Log the error for debugging purposes
     sendError(
       'An error occurred while fetching the contact. Please try again.',
       false
