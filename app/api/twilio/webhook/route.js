@@ -130,17 +130,19 @@ async function sendFollowUpMessage({ contact, from, to, studioInfo }) {
     const contactZohoRecord = await prisma.zohoWebhook.findFirst({
       where: {
         contactId: contact.id,
+        sentWelcomeMessage: true,
+        sentFollowUpMessage: false,
       },
     });
 
-    if (!contactZohoRecord?.sentFollowUpMessage) {
+    if (contactZohoRecord) {
       const followUpMessage =
         'Great! We have a limited number spots for new clients each week. What day of the week Monday to Friday works best for you?';
       const response = sendMessage({
         to: from,
         from: to,
         message: followUpMessage,
-        studioId: studioInfo.id,
+        studioId: studioInfo?.id,
         contact,
       });
 
