@@ -58,6 +58,7 @@ model ZohoWebhook {
   mobile                  String?
   twilioMessageId         String?
   sentWelcomeMessage      Boolean  @default(false)
+  sentFollowUpMessage     Boolean  @default(false)
   createdAt     DateTime        @default(now()) @map("created_at")
   updatedAt     DateTime        @default(now()) @updatedAt @map("updated_at")
   Studio                  Studio?   @relation(fields: [studioZohoId], references: [zohoId])
