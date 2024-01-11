@@ -1,6 +1,7 @@
 'use server'
 import axios from 'axios';
 import { getZohoAccount } from "..";
+import { logError } from '~/utils/logError';
 
 export const createTaskData = ({ zohoId, message, contact }) => {
     const { to, from, msg } = message;
@@ -47,11 +48,10 @@ export const postTaskToZoho = async ({ apiDomain, accessToken, taskData }) => {
 export const createTask = async ({ studioId, zohoId, contact, message }) => {
     try {
         const taskData = createTaskData({ zohoId, message, contact });
-        console.log('taskData', JSON.stringify(taskData))
         const { apiDomain, accessToken } = await getZohoAccount({ studioId });
 
         await postTaskToZoho({ apiDomain, accessToken, taskData });
     } catch (error) {
-        console.error('Error creating task:', JSON.stringify({ error: error.message, studioId, zohoId, contact, message }));
+        logError({ message: 'Error creating task:', error, data: { studioId, zohoId, contact, message } })
     }
 };
