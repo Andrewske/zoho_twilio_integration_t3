@@ -1,4 +1,5 @@
 'use server';
+import { logError } from '~/utils/logError';
 import { getStudioAccounts, getZohoAccountFromAccounts, refreshAndFetchUpdatedAccount } from './account';
 import { isAccessTokenExpired } from './utils';
 
@@ -16,7 +17,11 @@ export const getZohoAccount = async ({ studioId }) => {
 
     return account;
   } catch (error) {
-    console.error('Error getting Zoho account:', error);
+    logError({
+      message: 'Error getting Zoho account',
+      error,
+      data: { studioId }
+    })
   }
 };
 
