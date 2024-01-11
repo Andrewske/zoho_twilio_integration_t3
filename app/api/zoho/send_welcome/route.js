@@ -5,10 +5,7 @@ import { sendMessage } from '~/actions/twilio';
 import * as Sentry from '@sentry/node';
 import { logError } from '~/utils/logError';
 
-
-
 export async function POST(request) {
-
   try {
     const body = await parseRequest(request);
 
@@ -16,14 +13,16 @@ export async function POST(request) {
       throw new Error('Invalid body');
     }
 
-    const zohoWebhookId = await postWebhookData(body);
-
     let { leadId, ownerId, mobile, firstName } = body;
 
     mobile = formatMobileNumber(mobile);
 
     const studio = await getStudioFromZohoId(ownerId);
+
     if (!studio.active) return new Response(null, { status: 200 });
+
+    const zohoWebhookId = await postWebhookData(body);
+
     const contact = {
       id: leadId,
       fullName: firstName,
@@ -36,25 +35,27 @@ export async function POST(request) {
       const message = createMessage(firstName, studio);
       await sendAndLogMessage(mobile, studio, message, zohoWebhookId, contact);
     } else {
-      throw new Error('Can find studio sms phone')
+      throw new Error('Can find studio sms phone');
     }
 
     return new Response(null, { status: 200 });
   } catch (error) {
     Sentry.captureException(error);
-    return new Response(null, { status: 200 })
+    return new Response(null, { status: 200 });
   }
 }
 
 async function postWebhookData(body) {
-  return prisma.zohoWebhook.create({
-    data: {
-      contactId: body.leadId,
-      studioZohoId: body.ownerId,
-      firstName: body.firstName,
-      mobile: body.mobile
-    },
-  }).then(({ id }) => id);
+  return prisma.zohoWebhook
+    .create({
+      data: {
+        contactId: body.leadId,
+        studioZohoId: body.ownerId,
+        firstName: body.firstName,
+        mobile: body.mobile,
+      },
+    })
+    .then(({ id }) => id);
 }
 
 function formatMobileNumber(mobile) {
@@ -64,35 +65,52 @@ function formatMobileNumber(mobile) {
   return mobile;
 }
 
-function createMessage(first_name, { name: studioName, callPhone, managerName }) {
-  return `Hi ${first_name}! This is ${managerName} with ` +
+function createMessage(
+  first_name,
+  { name: studioName, callPhone, managerName }
+) {
+  return (
+    `Hi ${first_name}! This is ${managerName} with ` +
     `Fred Astaire Dance Studios - ${studioName}. ` +
     `We would love to get you scheduled for your introductory Program! ` +
     `We have limited space for new clients. ` +
     `Reply "YES" to book your first lesson! ` +
     `Or call us at ${callPhone ?? ''}. ` +
-    `If you need to opt-out, reply "STOP"`;
+    `If you need to opt-out, reply "STOP"`
+  );
 }
 
-async function sendAndLogMessage(mobile, { smsPhone, id: studioId }, message, zohoWebhookId, contact) {
-
+async function sendAndLogMessage(
+  mobile,
+  { smsPhone, id: studioId },
+  message,
+  zohoWebhookId,
+  contact
+) {
   try {
     const response = await sendMessage({
       to: mobile,
       from: smsPhone,
       message,
       studioId,
-      contact
+      contact,
     });
 
     await prisma.zohoWebhook.update({
       where: { id: zohoWebhookId },
-      data: { twilioMessageId: response?.twilioMessageId, sentWelcomeMessage: true },
+      data: {
+        twilioMessageId: response?.twilioMessageId,
+        sentWelcomeMessage: true,
+      },
     });
   } catch (error) {
-    logError({ message: 'Error sending message:', error, level: "error", data: { to: mobile, from: smsPhone, message, studioId } })
+    logError({
+      message: 'Error sending message:',
+      error,
+      level: 'error',
+      data: { to: mobile, from: smsPhone, message, studioId },
+    });
   }
-
 }
 
 export async function parseRequest(request) {
@@ -107,11 +125,7 @@ export async function parseRequest(request) {
 
 export async function isValidBody(body) {
   return Boolean(
-    body &&
-    body.leadId &&
-    body.ownerId &&
-    body.mobile &&
-    body.firstName
+    body && body.leadId && body.ownerId && body.mobile && body.firstName
   );
 }
 
@@ -119,7 +133,15 @@ export async function getStudioFromZohoId(owner_id) {
   try {
     const studio = await prisma.studio.findFirst({
       where: { zohoId: owner_id },
-      select: { id: true, zohoId: true, smsPhone: true, callPhone: true, name: true, managerName: true, active: true },
+      select: {
+        id: true,
+        zohoId: true,
+        smsPhone: true,
+        callPhone: true,
+        name: true,
+        managerName: true,
+        active: true,
+      },
     });
     return studio;
   } catch (error) {
