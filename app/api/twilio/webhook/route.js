@@ -138,7 +138,7 @@ async function sendFollowUpMessage({ contact, from, to, studioInfo }) {
     if (contactZohoRecord) {
       const followUpMessage =
         'Great! We have a limited number spots for new clients each week. What day of the week Monday to Friday works best for you?';
-      const response = sendMessage({
+      const response = await sendMessage({
         to: from,
         from: to,
         message: followUpMessage,
