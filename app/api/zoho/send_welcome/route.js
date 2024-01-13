@@ -118,7 +118,7 @@ export async function parseRequest(request) {
     const body = await request.text();
     return parse(body);
   } catch (error) {
-    console.error('Error parsing request:', error);
+    logError({ message: 'Error parsing request:', error, level: 'warning', data: { request } })
     throw new Error('Error parsing request');
   }
 }
@@ -145,7 +145,7 @@ export async function getStudioFromZohoId(owner_id) {
     });
     return studio;
   } catch (error) {
-    console.error({ message: 'Could not find studio', owner_id });
+    logError({ message: 'Could not find studio', error, level: 'warning', data: { owner_id } })
     throw new Error('Could not find studio');
   }
 }
