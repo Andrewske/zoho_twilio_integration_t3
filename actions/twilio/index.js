@@ -111,7 +111,7 @@ export const sendMessage = async ({ to, from, message, studioId, contact }) => {
       throw new Error('Could not send message')
     }
 
-    await recordTwilioMessage({ to, from, message, studioId, contactId: contact.id, twilioMessageId: sendRecord.sid })
+    await recordTwilioMessage({ to, from, message, studioId, contactId: contact?.id, twilioMessageId: sendRecord.sid })
 
     return { twilioMessageId: sendRecord.sid }
 
@@ -127,7 +127,7 @@ export const sendMessage = async ({ to, from, message, studioId, contact }) => {
 };
 
 async function recordTwilioMessage({ to, from, message, twilioMessageId, studioId, contactId }) {
-  return prisma.twilioMessage.create({
+  return await prisma.twilioMessage.create({
     data: {
       studioId,
       contactId,
