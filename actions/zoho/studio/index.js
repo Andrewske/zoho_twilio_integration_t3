@@ -1,4 +1,5 @@
 'use server';
+import { logError } from '~/utils/logError';
 import prisma from '~/utils/prisma.js';
 
 export const getStudioData = async ({ zohoId, phone = null }) => {
@@ -10,7 +11,7 @@ export const getStudioData = async ({ zohoId, phone = null }) => {
 
     return studio;
   } catch (error) {
-    console.error({ message: 'Could not find studio', zohoId });
+    logError({ message: 'Could not find studio', error, level: 'warning', data: { zohoId } })
     return null;
   }
 };

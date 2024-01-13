@@ -21,7 +21,7 @@ export const getTwilioAccount = async (id) => {
     return twilioAccount;
 
   } catch (error) {
-    console.error('Error getting Twilio account:', error);
+    logError({ message: 'Error getting Twilio account', error, level: 'error', data: { id } })
     throw error;
   }
 }
@@ -39,7 +39,7 @@ export const getMessagesToContact = async (client, contactMobile) => {
       fromStudio: true,
     }));
   } catch (error) {
-    console.error('Error getting messages to contact:', error);
+    logError({ message: 'Error getting messages to contact', error, level: 'info', data: { contactMobile } })
     throw error;
   }
 
@@ -56,7 +56,7 @@ export const getMessagesFromContact = async (client, contactMobile) => {
       fromStudio: false,
     }));
   } catch (error) {
-    console.error('Error getting messages from contact:', error);
+    logError({ message: 'Error getting messages from contact', error, level: 'info', data: { contactMobile } })
     throw error;
   }
 
@@ -77,7 +77,7 @@ export const getMessages = async ({ contactMobile, studioId }) => {
       (a, b) => new Date(a.date) - new Date(b.date)
     );
   } catch (error) {
-    console.error('Error getting messages:', { contactMobile, studioId });
+    logError({ message: 'Error getting messages', error, level: 'warning', data: { contactMobile, studioId } })
     throw error;
   }
 
@@ -116,7 +116,6 @@ export const sendMessage = async ({ to, from, message, studioId, contact }) => {
     return { twilioMessageId: sendRecord.sid }
 
   } catch (error) {
-    console.error('Not logError: Error sending message:', error);
     logError({ message: 'Error sending message:', error, level: "error", data: { to, from, message, studioId } })
 
     if (error.code === 21610) {

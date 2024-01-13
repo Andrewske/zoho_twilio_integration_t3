@@ -50,7 +50,8 @@ const getContactFromModules = async ({ mobile, account, modules }) => {
         return contact;
       }
     } catch (error) {
-      console.error(`Error looking up contact in ${module}:`);
+      logError({ message: 'Error looking up contact', error, level: 'info', data: { mobile, zohoModule } })
+      throw error;
     }
   }
   return null;

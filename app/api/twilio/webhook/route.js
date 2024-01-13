@@ -70,7 +70,7 @@ export async function POST(request) {
       });
     }
   } catch (error) {
-    console.error('Error in Twilio Webhook:', error);
+    logError({ message: 'Error in Twilio Webhook:', error, level: 'error' });
     throw new Error('Webhook error');
   }
   return new Response(null, { status: 200 });
@@ -156,7 +156,6 @@ async function sendFollowUpMessage({ contact, from, to, studioInfo }) {
       console.log('already sent follow up message');
     }
   } catch (error) {
-    console.error('Error sending follow up message:', error);
     logError({
       message: 'Error sending follow up message:',
       error,

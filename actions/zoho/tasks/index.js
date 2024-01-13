@@ -33,14 +33,14 @@ export const postTaskToZoho = async ({ apiDomain, accessToken, taskData }) => {
         const response = await axios.post(url, { data: [taskData] }, { headers });
 
         if (response.status >= 300) {
-            console.error('Error posting task to Zoho:', response);
+            logError({ message: 'Error posting task to Zoho', error: response, level: 'error', data: { taskData } })
             throw new Error(`Request failed with status code ${response.status}`);
         }
 
 
         return response?.data?.data?.[0];
     } catch (error) {
-        console.error('Error posting task to Zoho:', error?.response);
+        logError({ message: 'Error posting task to Zoho', error, level: 'error', data: { taskData } })
         throw error;
     }
 };

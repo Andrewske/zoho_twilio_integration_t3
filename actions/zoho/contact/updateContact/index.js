@@ -18,7 +18,6 @@ export const updateContact = async ({ studioId, contactId, data, module = 'Leads
 
 
   } catch (error) {
-    logError({ message: 'Error updating contact:', error, data })
-    console.error('Error updating contact:', error.message);
+    logError({ message: 'Error updating contact:', error, level: 'warning', data: { studioId, contactId, data, module } })
   }
 };
