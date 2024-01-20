@@ -9,6 +9,7 @@ import sendFollowUpMessage from '~/actions/sendFollowUpMessage';
 import { getStudioFromZohoId } from '../zoho/send_welcome/route';
 
 export async function GET(request) {
+    console.log("CRON STARTED")
     const authHeader = request.headers.get('authorization');
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
         return new Response('Unauthorized', {
