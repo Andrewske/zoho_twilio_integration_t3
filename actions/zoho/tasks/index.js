@@ -52,6 +52,6 @@ export const createTask = async ({ studioId, zohoId, contact, message }) => {
 
         await postTaskToZoho({ apiDomain, accessToken, taskData });
     } catch (error) {
-        logError({ message: 'Error creating task:', error, data: { studioId, zohoId, contact, message } })
+        logError({ message: 'Error creating task:', error, data: { studioId, zohoId, contactId: contact?.id } })
     }
 };

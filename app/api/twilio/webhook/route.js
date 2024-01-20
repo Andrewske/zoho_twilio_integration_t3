@@ -99,8 +99,7 @@ export async function parseRequest(request) {
     logError({
       message: 'Error parsing request:',
       error,
-      level: 'warning',
-      data: { request },
+      level: 'warning'
     });
   }
 }

@@ -118,7 +118,7 @@ export async function parseRequest(request) {
     const body = await request.text();
     return parse(body);
   } catch (error) {
-    logError({ message: 'Error parsing request:', error, level: 'warning', data: { request } })
+    logError({ message: 'Error parsing request:', error, level: 'warning' })
     throw new Error('Error parsing request');
   }
 }

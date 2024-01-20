@@ -30,9 +30,9 @@ export const getZohoAccountFromAccounts = (studioAccounts) => {
         .map(({ Account }) => Account)
         .find(({ platform }) => platform === 'zoho');
 
-    if (!account) {
-        throw new Error('No Zoho account found for studio');
-    }
+    // if (!account) {
+    //     throw new Error('No Zoho account found for studio');
+    // }
 
     return account;
 };
