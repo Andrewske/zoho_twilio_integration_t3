@@ -45,12 +45,11 @@ export async function GET() {
                 console.info("NOT YOU")
                 continue;
             }
-            const { Mobile, Owner: { id: studioId, smsPhone } } = zohoLead;
-            console.log({ Mobile, studioId, smsPhone })
-            // const { Studio: { id: studioId, smsPhone } } = newLeads.find((lead) => arePhoneNumbersSame(lead.mobile, Mobile))
+            const { Mobile, Owner: { id: studioId } } = zohoLead;
+            const { Studio: { smsPhone } } = newLeads.find((lead) => arePhoneNumbersSame(lead.mobile, Mobile))
 
             // Send follow-up message via Twilio
-            await sendFollowUpMessage({ contact: zohoLead, studioId: studioId, to: Mobile, from: smsPhone });
+            await sendFollowUpMessage({ contact: zohoLead, studioId, to: Mobile, from: smsPhone });
         }
 
         return NextResponse.json({ ok: true });
@@ -89,9 +88,9 @@ async function getLeadNotSentFollowUpMessage() {
     });
 }
 
-// function arePhoneNumbersSame(phoneNumber1, phoneNumber2) {
-//     return formatMobile(phoneNumber1) === formatMobile(phoneNumber2);
-// }
+function arePhoneNumbersSame(phoneNumber1, phoneNumber2) {
+    return formatMobile(phoneNumber1) === formatMobile(phoneNumber2);
+}
 
 const formatMobile = (mobile) => {
     return mobile.replace(/\D/g, '').trim().slice(-10);
