@@ -56,7 +56,7 @@ export async function GET() {
         return NextResponse.json({ ok: true });
     } catch (error) {
         // logError({ message: 'Error in cron', error, level: 'error' });
-        console.log(error)
+        console.log(error.message)
         return NextResponse.json({ ok: false });
     }
 }
