@@ -17,8 +17,8 @@ const sendFollowUpMessage = async ({ contact, from, to, studioInfo }) => {
             const followUpMessage =
                 'Great! We have a limited number spots for new clients each week. What day of the week Monday to Friday works best for you?';
             const { twilioMessageId } = await sendMessage({
-                to: from,
-                from: to,
+                to,
+                from,
                 message: followUpMessage,
                 studioId: studioInfo?.id,
                 contact,
