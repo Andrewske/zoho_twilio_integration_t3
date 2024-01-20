@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 import { getZohoAccount } from '~/actions/zoho';
 
 import sendFollowUpMessage from '~/actions/sendFollowUpMessage';
+import { getStudioFromZohoId } from '../zoho/send_welcome/route';
 
 export async function GET() {
     try {
@@ -45,11 +46,11 @@ export async function GET() {
                 console.info("NOT YOU")
                 continue;
             }
-            const { Mobile, Owner: { id: studioId } } = zohoLead;
-            const { Studio: { smsPhone } } = newLeads.find((lead) => arePhoneNumbersSame(lead.mobile, Mobile))
+            const { Mobile } = zohoLead;
+            const studio = await getStudioFromZohoId(zohoLead.Owner.id)
 
             // Send follow-up message via Twilio
-            await sendFollowUpMessage({ contact: zohoLead, studioId, to: Mobile, from: smsPhone });
+            await sendFollowUpMessage({ contact: zohoLead, studioId: studio.id, to: Mobile, from: studio.smsPhone });
         }
 
         return NextResponse.json({ ok: true });
