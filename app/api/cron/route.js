@@ -1,13 +1,20 @@
 import prisma from '~/utils/prisma';
 import axios from 'axios';
 import { NextResponse } from 'next/server';
+
 // import { logError } from '~/utils/logError';
 import { getZohoAccount } from '~/actions/zoho';
 
 import sendFollowUpMessage from '~/actions/sendFollowUpMessage';
 import { getStudioFromZohoId } from '../zoho/send_welcome/route';
 
-export async function GET() {
+export async function GET(request) {
+    const authHeader = request.headers.get('authorization');
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+        return new Response('Unauthorized', {
+            status: 401,
+        });
+    }
     try {
         // Get TwilioWebhooks where sentFollowUpMessage is false
         const newLeads = await getLeadNotSentFollowUpMessage()
