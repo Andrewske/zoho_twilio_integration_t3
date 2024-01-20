@@ -11,7 +11,7 @@ export async function GET() {
         // Get TwilioWebhooks where sentFollowUpMessage is false
         const newLeads = await getLeadNotSentFollowUpMessage()
 
-
+        console.info({ newLeads })
 
         if (!newLeads.length || newLeads[0].id != "clrlgwvzf0001jo08nyupfcmj") {
             return NextResponse.json({ ok: false });
@@ -21,6 +21,7 @@ export async function GET() {
 
 
         const mobileNumbers = newLeads.map((lead) => formatMobile(lead?.mobile));
+
 
         const searchQuery = `(Mobile:in:${mobileNumbers.join(',')})`
 
@@ -34,7 +35,7 @@ export async function GET() {
                 headers: { Authorization: `Zoho-oauthtoken ${account?.accessToken}` },
             }
         );
-        console.log({ zohoResponse: zohoResponse.data.data })
+        console.info({ zohoResponse: zohoResponse.data.data })
 
 
 
