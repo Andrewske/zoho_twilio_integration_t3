@@ -7,7 +7,7 @@ const sendFollowUpMessage = async ({ contact, from, to, studioId }) => {
     const followUpMessage =
         'Great! We have a limited number spots for new clients each week. What day of the week Monday to Friday works best for you?';
 
-    let message = findOrCreateMessage({ contact, from, to, studioId });
+    let message = await findOrCreateMessage({ contact, from, to, studioId });
 
     try {
         const { twilioMessageId } = await sendMessage({
@@ -19,7 +19,7 @@ const sendFollowUpMessage = async ({ contact, from, to, studioId }) => {
         });
 
         if (twilioMessageId) {
-            await prisma.Message.update({
+            await prisma.message.update({
                 where: {
                     id: message?.id,
                 },
