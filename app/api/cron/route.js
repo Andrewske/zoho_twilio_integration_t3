@@ -13,7 +13,7 @@ export async function GET() {
 
         console.info({ newLeads })
 
-        if (!newLeads.length || newLeads[0].id != "clrlgwvzf0001jo08nyupfcmj") {
+        if (!newLeads.length) {
             return NextResponse.json({ ok: false });
         }
 
@@ -41,6 +41,9 @@ export async function GET() {
 
 
         for (const zohoLead of zohoResponse.data.data) {
+            if (zohoLead.id != "clrlgwvzf0001jo08nyupfcmj") {
+                continue;
+            }
             const { Mobile, Owner: { id: studioId, smsPhone } } = zohoLead;
             console.log({ Mobile, studioId, smsPhone })
             // const { Studio: { id: studioId, smsPhone } } = newLeads.find((lead) => arePhoneNumbersSame(lead.mobile, Mobile))
