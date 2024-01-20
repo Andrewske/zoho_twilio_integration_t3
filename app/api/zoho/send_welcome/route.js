@@ -105,7 +105,7 @@ async function sendAndLogMessage(
     });
   } catch (error) {
     logError({
-      message: 'Error sending message:',
+      message: 'Error sendAndLogMessagee:',
       error,
       level: 'error',
       data: { to: mobile, from: smsPhone, message, studioId },
