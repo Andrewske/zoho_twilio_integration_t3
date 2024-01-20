@@ -41,12 +41,12 @@ export async function GET() {
 
 
         for (const zohoLead of zohoResponse.data.data) {
-            const { Mobile } = zohoLead;
-
-            const { Studio: { id: studioId, smsPhone } } = newLeads.find((lead) => arePhoneNumbersSame(lead.mobile, Mobile))
+            const { Mobile, Owner: { id: studioId, smsPhone } } = zohoLead;
+            console.log({ Mobile, studioId, smsPhone })
+            // const { Studio: { id: studioId, smsPhone } } = newLeads.find((lead) => arePhoneNumbersSame(lead.mobile, Mobile))
 
             // Send follow-up message via Twilio
-            await sendFollowUpMessage({ contact: zohoLead, studioId, to: Mobile, from: smsPhone });
+            await sendFollowUpMessage({ contact: zohoLead, studioId: studioId, to: Mobile, from: smsPhone });
         }
 
         return NextResponse.json({ ok: true });
