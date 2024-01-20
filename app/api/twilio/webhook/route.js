@@ -6,7 +6,7 @@ import { smsOptOut } from '~/actions/zoho/contact/smsOptOut';
 import { lookupContact } from '~/actions/zoho/contact/lookupContact';
 import { updateStatus } from '~/actions/zoho/contact/updateStatus';
 import { logError } from '~/utils/logError';
-import { sendFollowUpMessage } from '~/actions/sendFollowUpMessage';
+import sendFollowUpMessage from '~/actions/sendFollowUpMessage';
 
 export async function POST(request) {
   var STOP = false;
@@ -58,6 +58,16 @@ export async function POST(request) {
       studioId: studioInfo.id,
       contactId: contact.id,
     });
+
+    // await prisma.message.create({
+    //   data: {
+    //     studioId: studioInfo.id,
+    //     contactId: contact.id,
+    //     from,
+    //     to,
+    //     message: msg
+    //   },
+    // })
 
     if (STOP) {
       await smsOptOut({ studio: studioInfo, contact });

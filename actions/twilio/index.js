@@ -112,6 +112,17 @@ export const sendMessage = async ({ to, from, message, studioId, contact }) => {
 
     await recordTwilioMessage({ to, from, message, studioId, contactId: contact?.id, twilioMessageId: sendRecord.sid })
 
+    // await prisma.message.create({
+    //   data: {
+    //     studioId,
+    //     contactId: contact?.id,
+    //     from,
+    //     to,
+    //     message,
+    //     twilioMessageId: sendRecord.sid,
+    //   }
+    // })
+
     return { twilioMessageId: sendRecord.sid }
 
   } catch (error) {
