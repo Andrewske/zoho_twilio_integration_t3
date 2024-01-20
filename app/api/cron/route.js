@@ -41,7 +41,8 @@ export async function GET() {
 
 
         for (const zohoLead of zohoResponse.data.data) {
-            if (zohoLead.id != "clrlgwvzf0001jo08nyupfcmj") {
+            if (zohoLead.id != "5114699000054119007") {
+                console.info("NOT YOU")
                 continue;
             }
             const { Mobile, Owner: { id: studioId, smsPhone } } = zohoLead;
