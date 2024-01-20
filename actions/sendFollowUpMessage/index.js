@@ -3,7 +3,7 @@ import { sendMessage } from '~/actions/twilio';
 import { logError } from '~/utils/logError';
 
 
-const sendFollowUpMessage = async ({ contact, from, to, studioInfo }) => {
+const sendFollowUpMessage = async ({ contact, from, to, studioId }) => {
     try {
         const contactZohoRecord = await prisma.zohoWebhook.findFirst({
             where: {
@@ -20,7 +20,7 @@ const sendFollowUpMessage = async ({ contact, from, to, studioInfo }) => {
                 to,
                 from,
                 message: followUpMessage,
-                studioId: studioInfo?.id,
+                studioId,
                 contact,
             });
 
@@ -41,7 +41,7 @@ const sendFollowUpMessage = async ({ contact, from, to, studioInfo }) => {
             message: 'Error sending follow up message:',
             error,
             level: 'warning',
-            data: { contactId: contact?.id, from, to, studioId: studioInfo?.zohoId },
+            data: { contactId: contact?.id, from, to, studioId },
         });
     }
 }

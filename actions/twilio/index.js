@@ -117,7 +117,7 @@ export const sendMessage = async ({ to, from, message, studioId, contact }) => {
     return { twilioMessageId: sendRecord.sid }
 
   } catch (error) {
-    logError({ message: 'Error sending message:', error, level: "error", data: { to, from, message, studioId } })
+    logError({ message: 'Error sendMessage:', error, level: "error", data: { to, from, message, studioId } })
 
     if (error.code === 21610) {
       return { error: 'The recipient has unsubscribed from receiving SMS.' };
