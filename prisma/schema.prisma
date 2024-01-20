@@ -35,6 +35,7 @@ model Studio {
   StudioAccount StudioAccount[]
   ZohoWebhook   ZohoWebhook[]
   TwilioMessage TwilioMessage[]
+  Message       Message[]
 }
 
 model StudioAccount {
@@ -74,6 +75,22 @@ model TwilioMessage {
   to                      String
   message                 String?   @db.Text
   twilioMessageId         String
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @default(now()) @updatedAt @map("updated_at")
+  Studio                  Studio?   @relation(fields: [studioId], references: [id])
+  @@index([studioId])
+}
+
+model Message {
+  id                      String    @id @default(cuid())
+  studioId                String?
+  contactId               String?
+  from                    String
+  to                      String
+  message                 String?   @db.Text
+  twilioMessageId         String?
+  isWelcomeMessage        Boolean   @default(false)
+  isFollowUpMessage       Boolean   @default(false)
   createdAt               DateTime  @default(now()) @map("created_at")
   updatedAt               DateTime  @default(now()) @updatedAt @map("updated_at")
   Studio                  Studio?   @relation(fields: [studioId], references: [id])

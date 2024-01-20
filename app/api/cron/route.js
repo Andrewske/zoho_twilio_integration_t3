@@ -7,29 +7,31 @@ import { getZohoAccount } from '~/actions/zoho';
 
 import sendFollowUpMessage from '~/actions/sendFollowUpMessage';
 import { getStudioFromZohoId } from '../zoho/send_welcome/route';
+import { logError } from '~/utils/logError';
 
 export async function GET(request) {
     console.log("CRON STARTED")
     const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    if (process.env.NODE_ENV === 'production' && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
         return new Response('Unauthorized', {
             status: 401,
         });
     }
+
     try {
+        // TODO: I need to make sure that the cron job gets people who are supposed to get the follow up message
+        //       
         // Get TwilioWebhooks where sentFollowUpMessage is false
-        const newLeads = await getLeadNotSentFollowUpMessage()
+        const unsentFollowUpMessages = await getLeadNotSentFollowUpMessage()
 
-        console.info({ newLeads })
-
-        if (!newLeads.length) {
+        if (!unsentFollowUpMessages.length) {
             return NextResponse.json({ ok: false });
         }
 
-        const account = await getZohoAccount({ studioId: newLeads[0].Studio?.id });
+        const account = await getZohoAccount({ studioId: unsentFollowUpMessages[0].Studio?.id });
 
 
-        const mobileNumbers = newLeads.map((lead) => formatMobile(lead?.mobile));
+        const mobileNumbers = unsentFollowUpMessages.map((lead) => formatMobile(lead?.to));
 
 
         const searchQuery = `(Mobile:in:${mobileNumbers.join(',')})`
@@ -44,18 +46,16 @@ export async function GET(request) {
                 headers: { Authorization: `Zoho-oauthtoken ${account?.accessToken}` },
             }
         );
-        console.info({ zohoResponse: zohoResponse.data.data })
-
 
 
 
         for (const zohoLead of zohoResponse.data.data) {
             if (zohoLead.id != "5114699000054119007") {
-                console.info("NOT YOU")
+                logError({ message: 'Cron tried to send a follow up message', error: new Error("Not the right lead"), level: 'info', data: { zohoLead } })
                 continue;
             }
             const { Mobile } = zohoLead;
-            const studio = await getStudioFromZohoId(zohoLead.Owner.id)
+            const studio = await getStudioFromZohoId(zohoLead?.Owner?.id)
 
             // Send follow-up message via Twilio
             await sendFollowUpMessage({ contact: zohoLead, studioId: studio.id, to: Mobile, from: studio.smsPhone });
@@ -63,7 +63,7 @@ export async function GET(request) {
 
         return NextResponse.json({ ok: true });
     } catch (error) {
-        // logError({ message: 'Error in cron', error, level: 'error' });
+        logError({ message: 'Error in cron', error, level: 'error' });
         console.log(error.message)
         return NextResponse.json({ ok: false });
     }
@@ -71,18 +71,17 @@ export async function GET(request) {
 
 
 async function getLeadNotSentFollowUpMessage() {
-    return await prisma.zohoWebhook.findMany({
+    return await prisma.Message.findMany({
         where: {
             twilioMessageId: null,
+            isFollowUpMessage: true,
             createdAt: {
                 gt: new Date(new Date().getTime() - 6 * 60 * 60 * 1000),
             }
         },
         select: {
             id: true,
-            firstName: true,
-            mobile: true,
-            sentFollowUpMessage: true,
+            to: true,
             Studio: {
                 select: {
                     id: true,
@@ -97,9 +96,6 @@ async function getLeadNotSentFollowUpMessage() {
     });
 }
 
-// function arePhoneNumbersSame(phoneNumber1, phoneNumber2) {
-//     return formatMobile(phoneNumber1) === formatMobile(phoneNumber2);
-// }
 
 const formatMobile = (mobile) => {
     return mobile.replace(/\D/g, '').trim().slice(-10);
