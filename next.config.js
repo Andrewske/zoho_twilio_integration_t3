@@ -26,7 +26,7 @@ module.exports = withSentryConfig(
     // Suppresses source map uploading logs during build
     silent: true,
     org: "andrewske",
-    project: "javascript-nextjs",
+    project: "zoho-twilio-integration",
   },
   {
     // For all available options, see:
