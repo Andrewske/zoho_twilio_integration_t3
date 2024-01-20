@@ -89,7 +89,7 @@ export const sendMessage = async ({ to, from, message, studioId, contact }) => {
   console.info({ to, from, message, studioId, contact })
   const twilioAccount = await getTwilioAccount(studioId);
 
-  console.ingo({ twilioAccount })
+  console.info({ twilioAccount })
 
   if (contact?.SMS_Opt_Out) {
     throw new Error('Contact has opted out of SMS');

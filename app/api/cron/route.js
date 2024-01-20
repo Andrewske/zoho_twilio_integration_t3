@@ -85,9 +85,9 @@ async function getLeadNotSentFollowUpMessage() {
     });
 }
 
-function arePhoneNumbersSame(phoneNumber1, phoneNumber2) {
-    return formatMobile(phoneNumber1) === formatMobile(phoneNumber2);
-}
+// function arePhoneNumbersSame(phoneNumber1, phoneNumber2) {
+//     return formatMobile(phoneNumber1) === formatMobile(phoneNumber2);
+// }
 
 const formatMobile = (mobile) => {
     return mobile.replace(/\D/g, '').trim().slice(-10);
