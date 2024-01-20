@@ -86,10 +86,8 @@ export const getMessages = async ({ contactMobile, studioId }) => {
 
 // Create a route to send a new text message
 export const sendMessage = async ({ to, from, message, studioId, contact }) => {
-  console.info({ to, from, message, studioId, contact })
   const twilioAccount = await getTwilioAccount(studioId);
 
-  console.info({ twilioAccount })
 
   if (contact?.SMS_Opt_Out) {
     throw new Error('Contact has opted out of SMS');

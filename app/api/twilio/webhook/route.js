@@ -5,8 +5,8 @@ import prisma from '~/utils/prisma';
 import { smsOptOut } from '~/actions/zoho/contact/smsOptOut';
 import { lookupContact } from '~/actions/zoho/contact/lookupContact';
 import { updateStatus } from '~/actions/zoho/contact/updateStatus';
-import { sendMessage } from '~/actions/twilio';
 import { logError } from '~/utils/logError';
+import { sendFollowUpMessage } from '~/actions/sendFollowUpMessage';
 
 export async function POST(request) {
   var STOP = false;
@@ -49,7 +49,7 @@ export async function POST(request) {
       msg.toLowerCase().includes('yes')
     ) {
       updateStatus({ studio: studioInfo, contact });
-      sendFollowUpMessage({ contact, from, to, studioInfo });
+      sendFollowUpMessage({ contact, from: studioInfo.smsPhone, to: contact.Mobile, studioId: studioInfo?.id });
     }
 
     // TODO: make sure cleaned to and from values are being sent to postWebhookData
@@ -120,46 +120,6 @@ export async function getStudioInfo(to) {
       error,
       level: 'warning',
       data: { to },
-    });
-  }
-}
-
-async function sendFollowUpMessage({ contact, from, to, studioInfo }) {
-  try {
-    const contactZohoRecord = await prisma.zohoWebhook.findFirst({
-      where: {
-        contactId: contact.id,
-        sentWelcomeMessage: true,
-        sentFollowUpMessage: false,
-      },
-    });
-
-    if (contactZohoRecord) {
-      const followUpMessage =
-        'Great! We have a limited number spots for new clients each week. What day of the week Monday to Friday works best for you?';
-      const response = await sendMessage({
-        to: from,
-        from: to,
-        message: followUpMessage,
-        studioId: studioInfo?.id,
-        contact,
-      });
-
-      if (response?.twilioMessageId) {
-        await prisma.zohoWebhook.update({
-          where: { id: contactZohoRecord.id },
-          data: { sentFollowUpMessage: true },
-        });
-      }
-    } else {
-      console.log('already sent follow up message');
-    }
-  } catch (error) {
-    logError({
-      message: 'Error sending follow up message:',
-      error,
-      level: 'warning',
-      data: { contactId: contact?.id, from, to, studioId: studioInfo?.zohoId },
     });
   }
 }
