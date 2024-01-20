@@ -8,7 +8,7 @@ import * as Sentry from "@sentry/nextjs";
  * @param {string} [params.level='error'] - The error level.
  * @param {Object} params.data - Additional data related to the error.
  */
-export const logError = ({ message, error = null, level = 'error', data }) => {
+export const logError = ({ message, error = null, level = 'error', data = {} }) => {
     if (!isValidErrorParams(message, error)) {
         console.error('Invalid parameters for logError');
         return;

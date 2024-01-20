@@ -18,15 +18,20 @@ export async function POST(request) {
       throw new Error('Invalid Twilio Webhook Message');
     }
 
-    let { To: to, From: from, Body: msg } = message;
-    console.log(JSON.stringify({ to, from, msg }));
 
-    if (to.startsWith('+1')) {
-      to = to.substring(2);
-    }
-    if (from.startsWith('+1')) {
-      from = from.substring(2);
-    }
+    const to = formatMobile(message.To);
+    const from = formatMobile(message.From);
+    const msg = message.Body;
+
+
+    // console.log(JSON.stringify({ to, from, msg }));
+
+    // if (to.startsWith('+1')) {
+    //   to = to.substring(2);
+    // }
+    // if (from.startsWith('+1')) {
+    //   from = from.substring(2);
+    // }
 
     if (msg.toLowerCase().includes('stop')) {
       STOP = true;
@@ -80,8 +85,7 @@ export async function POST(request) {
       });
     }
   } catch (error) {
-    logError({ message: 'Error in Twilio Webhook:', error, level: 'error' });
-    throw new Error('Webhook error');
+    logError({ message: 'Error in Twilio Webhook:', error, level: 'error', data: {} });
   }
   return new Response(null, { status: 200 });
 }
@@ -95,7 +99,7 @@ async function postWebhookData({ message, studioId, contactId }) {
         from: message.From,
         to: message.To,
         message: message.Body,
-        twilioMessageId: message.MessageSid,
+        twilioMessageId: message?.MessageSid,
       },
     })
     .then(({ id }) => id);
@@ -121,8 +125,8 @@ export async function isValidMessage(message) {
 export async function getStudioInfo(to) {
   try {
     return await prisma.studio.findFirst({
-      where: { smsPhone: to.replace('+1', '') },
-      select: { id: true, zohoId: true },
+      where: { smsPhone: to },
+      select: { id: true, zohoId: true, smsPhone: true },
     });
   } catch (error) {
     logError({
@@ -132,4 +136,9 @@ export async function getStudioInfo(to) {
       data: { to },
     });
   }
+}
+
+
+const formatMobile = (mobile) => {
+  return mobile.replace(/\D/g, '').trim().slice(-10);
 }
