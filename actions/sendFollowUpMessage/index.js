@@ -7,37 +7,7 @@ const sendFollowUpMessage = async ({ contact, from, to, studioId }) => {
     const followUpMessage =
         'Great! We have a limited number spots for new clients each week. What day of the week Monday to Friday works best for you?';
 
-    // Look up the record
-    let message = await prisma.Message.findFirst({
-        where: {
-            to,
-            isFollowUpMessage: true,
-        },
-        select: {
-            id: true,
-            twilioMessageId: true,
-        }
-    });
-
-    if (message?.twilioMessageId) {
-        console.log('Follow up message already sent')
-        return;
-    }
-
-    // If the record doesn't exist, create it
-    if (!message) {
-        message = await prisma.Message.create({
-            data: {
-                contactId: contact?.id,
-                studioId: studioId,
-                from,
-                to,
-                isFollowUpMessage: true,
-            },
-        });
-    }
-
-
+    let message = findOrCreateMessage({ contact, from, to, studioId });
 
     try {
         const { twilioMessageId } = await sendMessage({
@@ -70,3 +40,37 @@ const sendFollowUpMessage = async ({ contact, from, to, studioId }) => {
 
 export default sendFollowUpMessage;
 
+
+
+const findOrCreateMessage = async ({ contact, from, to, studioId }) => {
+    // Look up the record
+    let message = await prisma.message.findFirst({
+        where: {
+            to,
+            isFollowUpMessage: true,
+        },
+        select: {
+            id: true,
+            twilioMessageId: true,
+        }
+    });
+
+    if (message?.twilioMessageId) {
+        console.log('Follow up message already sent')
+        return;
+    }
+
+    // If the record doesn't exist, create it
+    if (!message) {
+        message = await prisma.message.create({
+            data: {
+                contactId: contact?.id,
+                studioId: studioId,
+                from,
+                to,
+                isFollowUpMessage: true,
+            },
+        });
+    }
+    return message;
+}
