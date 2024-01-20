@@ -23,7 +23,7 @@ export const smsOptOut = async ({ studio, contact }) => {
 
             await updateContact({ studioId: studio.id, contactId: contact.id, data, zohoModule })
         } catch (error) {
-            logError({ message: 'Error updating contact', error, level: 'warning', data: { studioId: studio.id, contactId: contact.id, data, zohoModule } })
+            logError({ message: 'Error updating contact', error, level: 'warning', data: { studioId: studio?.id, contactId: contact?.id, data, zohoModule } })
         }
     } else {
         console.log('Contact already opted out of SMS')
