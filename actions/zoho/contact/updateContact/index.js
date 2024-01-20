@@ -3,7 +3,6 @@ import { getZohoAccount } from '~/actions/zoho/index.js';
 import { logError } from '~/utils/logError';
 
 export const updateContact = async ({ studioId, contactId, data, module = 'Leads' }) => {
-  console.log('updateContact', { studioId, contactId, data, module });
   const account = await getZohoAccount({ studioId });
   try {
     await axios
@@ -18,6 +17,6 @@ export const updateContact = async ({ studioId, contactId, data, module = 'Leads
 
 
   } catch (error) {
-    logError({ message: 'Error updating contact:', error, level: 'warning', data: { studioId, contactId, data, module } })
+    logError({ message: 'Error updating contact:', error, level: 'warning', data: { studioId, contactId, module } })
   }
 };
