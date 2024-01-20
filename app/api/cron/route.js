@@ -75,7 +75,7 @@ async function getLeadNotSentFollowUpMessage() {
         where: {
             twilioMessageId: null,
             createdAt: {
-                gt: new Date(new Date().getTime() - 4 * 60 * 60 * 1000),
+                gt: new Date(new Date().getTime() - 6 * 60 * 60 * 1000),
             }
         },
         select: {
