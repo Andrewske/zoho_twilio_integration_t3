@@ -26,7 +26,8 @@ export const fetchAndSetContact = async ({ entity, entityId, setContact }) => {
 
       if (phoneNumber) {
         const studio = await getStudioFromZohoId(ownerId);
-        if (studio?.id & studio.active) {
+        console.log({ studio });
+        if (studio?.active) {
           const contact = await lookupContact({
             mobile: phoneNumber,
             studioId: studio?.id,
