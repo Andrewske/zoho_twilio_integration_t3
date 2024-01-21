@@ -83,10 +83,10 @@ model TwilioMessage {
 
 model Message {
   id                      String    @id @default(cuid())
+  fromNumber              String
+  toNumber                String
   studioId                String?
   contactId               String?
-  from                    String
-  to                      String
   message                 String?   @db.Text
   twilioMessageId         String?
   isWelcomeMessage        Boolean   @default(false)

@@ -1,30 +1,28 @@
 'use server';
 import axios from 'axios';
 import { getZohoAccount } from '~/actions/zoho';
-// import { retryOperation } from '~/utils/retryOperation';
-import { logError } from '~/utils/logError';
+import { formatMobile } from '~/utils';
 
-const formatMobile = (mobile) => {
-  return mobile.replace(/\D/g, '');
-};
-
-const axiosGetContact = async ({ mobile, account, zohoModule }) => {
+const getContact = async ({ mobile, accessToken, zohoModule }) => {
   const fields = 'id,Full_Name,Mobile,SMS_Opt_Out,Lead_Status,Owner';
   const criteria = `(Mobile:equals:${formatMobile(mobile)})`;
   const response = await axios.get(
     `https://www.zohoapis.com/crm/v5/${zohoModule}/search?fields=${fields}&criteria=${criteria}`,
     {
-      headers: { Authorization: `Zoho-oauthtoken ${account.accessToken}` },
+      headers: { Authorization: `Zoho-oauthtoken ${accessToken}` },
     }
   );
 
   if (response.status !== 200) {
-    throw new Error(`Request failed with status code ${response.status}`);
+    throw new Error(
+      `getContact: Request failed with status code ${response.status}`
+    );
   }
 
   const data = response?.data?.data;
+
   if (!data || !data[0]) {
-    throw new Error('No data returned from server');
+    throw new Error('getContact: No data returned from server');
   }
 
   const contact = {
@@ -34,81 +32,50 @@ const axiosGetContact = async ({ mobile, account, zohoModule }) => {
   return contact;
 };
 
-const getContact = async ({ mobile, account, zohoModule }) => {
-  try {
-    return await axiosGetContact({ mobile, account, zohoModule });
-  } catch (error) {
-    return null;
-  }
-};
-
-const getContactFromModules = async ({ mobile, account, modules }) => {
+const getContactFromModules = async ({ mobile, accessToken, modules }) => {
+  let contact = null;
   for (const zohoModule of modules) {
     try {
-      const contact = await getContact({ mobile, account, zohoModule });
-      if (contact) {
-        return contact;
-      }
+      contact = await getContact({ mobile, accessToken, zohoModule });
     } catch (error) {
-      logError({ message: 'Error looking up contact', error, level: 'info', data: { mobile, zohoModule } })
-      throw error;
+      console.info(
+        `getContactFromModules: Contact ${mobile} not found in module ${zohoModule}`
+      );
     }
   }
-  return null;
+
+  if (!contact) {
+    throw new Error(
+      `getContactFromModules: Contact ${mobile} not found in any module`
+    );
+  }
+
+  return contact;
 };
 
 export const lookupContact = async ({ mobile, studioId }) => {
   if (!mobile) {
-    throw new Error('No number provided');
+    throw new Error('lookupContact: No mobile provided to lookupContact');
   }
 
-  const account = await getZohoAccount({ studioId });
+  const { accessToken } = await getZohoAccount({ studioId });
 
-  if (!account) {
-    throw new Error('Could not find Zoho account');
+  if (!accessToken) {
+    throw new Error(
+      `getZohoAccount: Could not get accessToken for ${studioId} in lookupContact`
+    );
   }
 
   const zohoModules = ['Leads', 'Contacts'];
 
   const contact = await getContactFromModules({
     mobile,
-    account,
+    accessToken,
     modules: zohoModules,
   });
 
   if (!contact) {
-    logError({
-      error: new Error('Not contact found'),
-      message: 'No contact found',
-      data: { mobile, studioId },
-      level: 'warning',
-    });
-    throw new Error('No contact found');
+    throw new Error(`lookupContact: Could not find ${mobile} for ${studioId}`);
   }
   return contact;
 };
-
-// const retryOperation = async (operation, delay, maxRetries) => {
-//     console.log('retryOperation')
-//     let attempts = 0;
-//     while (attempts < maxRetries) {
-//         try {
-//             const result = await operation();
-//             if (result) {
-//                 console.log(`Result found after ${attempts} attempts`);
-//                 return result;
-//             }
-//             // If result is not found, throw an error to go to the catch block.
-//             throw new Error('Result not found');
-//         } catch (error) {
-//             console.log(`Error in retryOperation, attempt: ${attempts}`)
-//             if (attempts === maxRetries - 1) {
-//                 throw error;
-//             }
-//             console.log(`Retrying in ${delay * Math.pow(2, attempts)} ms`);
-//             await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, attempts)));
-//             attempts++;
-//         }
-//     }
-//     return null; // In case of max retries reached
-// };

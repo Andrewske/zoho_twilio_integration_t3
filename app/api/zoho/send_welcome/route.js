@@ -21,6 +21,16 @@ export async function POST(request) {
 
     if (!studio.active) return new Response(null, { status: 200 });
 
+    await prisma.message.create({
+      data: {
+        toNumber: mobile,
+        fromNumber: studio.smsPhone,
+        isWelcomeMessage: true,
+        contactId: leadId,
+        studioId: studio.id,
+      },
+    });
+
     const zohoWebhookId = await postWebhookData(body);
 
     const contact = {
@@ -46,7 +56,7 @@ export async function POST(request) {
 }
 
 async function postWebhookData(body) {
-  return prisma.zohoWebhook
+  return prisma.message
     .create({
       data: {
         contactId: body.leadId,
@@ -96,11 +106,10 @@ async function sendAndLogMessage(
       contact,
     });
 
-    await prisma.zohoWebhook.update({
+    await prisma.message.update({
       where: { id: zohoWebhookId },
       data: {
         twilioMessageId: response?.twilioMessageId,
-        sentWelcomeMessage: true,
       },
     });
   } catch (error) {
@@ -118,7 +127,7 @@ export async function parseRequest(request) {
     const body = await request.text();
     return parse(body);
   } catch (error) {
-    logError({ message: 'Error parsing request:', error, level: 'warning' })
+    logError({ message: 'Error parsing request:', error, level: 'warning' });
     throw new Error('Error parsing request');
   }
 }
@@ -145,7 +154,12 @@ export async function getStudioFromZohoId(owner_id) {
     });
     return studio;
   } catch (error) {
-    logError({ message: 'Could not find studio', error, level: 'warning', data: { owner_id } })
+    logError({
+      message: 'Could not find studio',
+      error,
+      level: 'warning',
+      data: { owner_id },
+    });
     throw new Error('Could not find studio');
   }
 }
