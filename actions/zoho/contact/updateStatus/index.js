@@ -1,25 +1,23 @@
-
 import { updateContact } from '~/actions/zoho/contact/updateContact';
-import { logError } from '~/utils/logError';
-
+import { formatMobile } from '~/utils';
 
 export const updateStatus = async ({ studio, contact }) => {
-    const data = {
-        "data": [
-            {
-                "Owner": {
-                    "id": studio?.zohoId
-                },
-                "Lead_Status": "Contacted, Not Booked"
-            }
-        ]
-    }
+  if (formatMobile(contact?.Mobile) === process.env.KEVIN_MOBILE) return;
+  const data = {
+    data: [
+      {
+        Owner: {
+          id: studio?.zohoId,
+        },
+        Lead_Status: 'Contacted, Not Booked',
+      },
+    ],
+  };
 
-    try {
-
-        await updateContact({ studioId: studio?.id, contactId: contact?.id, data, zohoModule: 'Leads' })
-    } catch (error) {
-        logError({ message: 'Error updating contact', error, level: 'warning', data: { studioId: studio?.id, contactId: contact?.id, data, zohoModule: 'Leads' } })
-    }
-
-}
+  return await updateContact({
+    studioId: studio?.id,
+    contactId: contact?.id,
+    data,
+    zohoModule: 'Leads',
+  });
+};

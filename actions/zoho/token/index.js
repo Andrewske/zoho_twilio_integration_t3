@@ -35,11 +35,12 @@ export const refreshAccessToken = async (
   const url = buildUrl(params);
 
   const data = await axios.post(url).then((res) => res.data);
-  const { access_token, expires_in, api_domain } = data;
 
-  if (!access_token) {
+  if (!data.access_token) {
     throw new Error('Access token not received');
   }
+
+  const { access_token, expires_in, api_domain } = data;
 
   await updateAccount(prisma, { id, access_token, expires_in, api_domain });
 
