@@ -15,6 +15,11 @@ export const fetchAndSetStudioData = async ({ setStudio }) => {
 
     if (user?.id) {
       const studio = await getStudioData({ zohoId: user.id });
+
+      if (!studio.active) {
+        sendError('You are not an active studio. Please contact support.');
+        return;
+      }
       sendSuccess(`Zoho user: ${studio?.name}`);
       setStudio(studio);
     } else {
