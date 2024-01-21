@@ -22,17 +22,17 @@ export async function POST(request) {
 
     if (!studio.active) return new Response(null, { status: 200 });
 
-    const message = await prisma.message.create({
-      data: {
-        toNumber: mobile,
-        fromNumber: studio.smsPhone,
-        isWelcomeMessage: true,
-        contactId: leadId,
-        studioId: studio.id,
-      },
-    });
-
-    const zohoWebhookId = message?.id;
+    const zohoWebhookId = await prisma.message
+      .create({
+        data: {
+          toNumber: mobile,
+          fromNumber: studio.smsPhone,
+          isWelcomeMessage: true,
+          contactId: leadId,
+          studioId: studio.id,
+        },
+      })
+      .then((msg) => msg.id);
 
     const contact = {
       id: leadId,
