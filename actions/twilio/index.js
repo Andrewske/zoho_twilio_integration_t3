@@ -156,11 +156,5 @@ export const sendMessage = async ({
       level: 'error',
       data: { to, from, message, studioId },
     });
-
-    if (error.code === 21610) {
-      return { error: 'The recipient has unsubscribed from receiving SMS.' };
-    }
-
-    throw error;
   }
 };
