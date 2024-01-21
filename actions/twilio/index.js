@@ -104,7 +104,14 @@ export const getMessages = async ({ contactMobile, studioId }) => {
 };
 
 // Create a route to send a new text message
-export const sendMessage = async ({ to, from, message, studioId, contact }) => {
+export const sendMessage = async ({
+  to,
+  from,
+  message,
+  studioId,
+  contact,
+  messageId = null,
+}) => {
   const twilioAccount = await getTwilioAccount(studioId);
 
   if (contact?.SMS_Opt_Out) {
@@ -128,17 +135,18 @@ export const sendMessage = async ({ to, from, message, studioId, contact }) => {
       throw new Error('Could not send message');
     }
 
-    // This is the problem
-    await prisma.message.create({
-      data: {
-        studioId,
-        contactId: contact?.id,
-        fromNumber: from,
-        toNumber: to,
-        message,
-        twilioMessageId: sendRecord.sid,
-      },
-    });
+    if (!messageId) {
+      await prisma.message.create({
+        data: {
+          studioId,
+          contactId: contact?.id,
+          fromNumber: from,
+          toNumber: to,
+          message,
+          twilioMessageId: sendRecord.sid,
+        },
+      });
+    }
 
     return { twilioMessageId: sendRecord.sid };
   } catch (error) {

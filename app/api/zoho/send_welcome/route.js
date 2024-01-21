@@ -2,7 +2,6 @@
 import { parse } from 'querystring';
 import prisma from '~/utils/prisma';
 import { sendMessage } from '~/actions/twilio';
-import * as Sentry from '@sentry/node';
 import { logError } from '~/utils/logError';
 import { formatMobile } from '~/utils';
 
@@ -22,18 +21,6 @@ export async function POST(request) {
 
     if (!studio.active) return new Response(null, { status: 200 });
 
-    const zohoWebhookId = await prisma.message
-      .create({
-        data: {
-          toNumber: mobile,
-          fromNumber: studio.smsPhone,
-          isWelcomeMessage: true,
-          contactId: leadId,
-          studioId: studio.id,
-        },
-      })
-      .then((msg) => msg.id);
-
     const contact = {
       id: leadId,
       fullName: firstName,
@@ -41,6 +28,15 @@ export async function POST(request) {
       smsOptOut: false,
       isLead: true,
     };
+
+    const zohoWebhookId = await findOrCreateWelcomeMessage({
+      contact,
+      from: studio.smsPhone,
+      to: mobile,
+      studioId: studio.id,
+    });
+
+    if (!zohoWebhookId) return new Response(null, { status: 200 });
 
     if (studio.smsPhone) {
       const message = createMessage(firstName, studio);
@@ -51,7 +47,12 @@ export async function POST(request) {
 
     return new Response(null, { status: 200 });
   } catch (error) {
-    Sentry.captureException(error);
+    logError({
+      message: 'Error in send welcome',
+      error,
+      level: 'error',
+      data: {},
+    });
     return new Response(null, { status: 200 });
   }
 }
@@ -85,6 +86,7 @@ async function sendAndLogMessage(
       message,
       studioId,
       contact,
+      messageId: zohoWebhookId,
     });
 
     await prisma.message.update({
@@ -144,3 +146,35 @@ export async function getStudioFromZohoId(owner_id) {
     throw new Error('Could not find studio');
   }
 }
+
+const findOrCreateWelcomeMessage = async ({ contact, from, to, studioId }) => {
+  let message = await prisma.message.findFirst({
+    where: {
+      toNumber: to,
+      isWelcomeUpMessage: true,
+    },
+    select: {
+      id: true,
+      twilioMessageId: true,
+    },
+  });
+
+  if (message?.twilioMessageId) {
+    console.log('Welcome message already sent');
+    return null;
+  }
+
+  // If the record doesn't exist, create it
+  if (!message) {
+    message = await prisma.message.create({
+      data: {
+        contactId: contact?.id,
+        studioId: studioId,
+        fromNumber: from,
+        toNumber: to,
+        isFollowUpMessage: true,
+      },
+    });
+  }
+  return message.id;
+};
