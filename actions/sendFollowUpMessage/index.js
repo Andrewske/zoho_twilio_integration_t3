@@ -1,8 +1,10 @@
+'use server';
 import prisma from '~/utils/prisma';
 import { sendMessage } from '~/actions/twilio';
 // import { logError } from '~/utils/logError';
 
 const sendFollowUpMessage = async ({ contact, from, to, studioId }) => {
+  'use server';
   const followUpMessage =
     'Great! We have a limited number spots for new clients each week. What day of the week Monday to Friday works best for you?';
   console.log('sending follow up');

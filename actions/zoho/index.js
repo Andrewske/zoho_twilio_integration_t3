@@ -20,6 +20,7 @@ export const getZohoAccount = async ({ studioId }) => {
 
     return account;
   } catch (error) {
+    console.error(error);
     logError({
       message: 'Error getting Zoho account',
       error,

@@ -1,4 +1,6 @@
 'use server';
+import prisma from '~/utils/prisma';
+
 export const buildParams = ({ refreshToken, clientId, clientSecret }) => {
   return new URLSearchParams({
     refresh_token: refreshToken,
@@ -26,15 +28,22 @@ export const updateAccount = async (
   });
 };
 
-export const refreshAccessToken = async (
-  axios,
-  prisma,
-  { id, refreshToken, clientId, clientSecret }
-) => {
+export const refreshAccessToken = async ({
+  id,
+  refreshToken,
+  clientId,
+  clientSecret,
+}) => {
   const params = buildParams({ refreshToken, clientId, clientSecret });
   const url = buildUrl(params);
 
-  const data = await axios.post(url).then((res) => res.data);
+  const response = await fetch(url, { method: 'POST' });
+
+  if (!response.ok) {
+    throw new Error('Network response was not ok');
+  }
+
+  const data = await response.json();
 
   if (!data.access_token) {
     throw new Error('Access token not received');
