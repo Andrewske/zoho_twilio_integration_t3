@@ -42,37 +42,41 @@ const sendFollowUpMessage = async ({ contact, from, to, studioId }) => {
 export default sendFollowUpMessage;
 
 const findOrCreateMessage = async ({ contact, from, to, studioId }) => {
-  let message = await prisma.message.findFirst({
-    where: {
-      toNumber: to,
-      isFollowUpMessage: true,
-    },
-    select: {
-      id: true,
-      twilioMessageId: true,
-    },
-  });
-
-  console.log({ message });
-
-  if (message?.twilioMessageId) {
-    console.log('Follow up message already sent');
-    return null;
-  }
-
-  // If the record doesn't exist, create it
-  if (!message) {
-    message = await prisma.message.create({
-      data: {
-        contactId: contact?.id,
-        studioId: studioId,
-        fromNumber: from,
+  try {
+    let message = await prisma.message.findFirst({
+      where: {
         toNumber: to,
         isFollowUpMessage: true,
       },
+      select: {
+        id: true,
+        twilioMessageId: true,
+      },
     });
-  }
 
-  console.log({ message });
-  return message;
+    console.log({ message });
+
+    if (message?.twilioMessageId) {
+      console.log('Follow up message already sent');
+      return null;
+    }
+
+    // If the record doesn't exist, create it
+    if (!message) {
+      message = await prisma.message.create({
+        data: {
+          contactId: contact?.id,
+          studioId: studioId,
+          fromNumber: from,
+          toNumber: to,
+          isFollowUpMessage: true,
+        },
+      });
+    }
+
+    console.log({ message });
+    return message;
+  } catch (error) {
+    console.log({ error });
+  }
 };
