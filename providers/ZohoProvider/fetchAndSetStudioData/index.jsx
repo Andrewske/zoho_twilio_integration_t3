@@ -15,13 +15,11 @@ export const fetchAndSetStudioData = async ({ setStudio }) => {
 
     if (user?.id) {
       const studio = await getStudioData({ zohoId: user.id });
-
-      if (!studio.active) {
-        sendError('You are not an active studio. Please contact support.');
-        return;
+      console.log(JSON.stringify({ studio }));
+      if (studio?.active) {
+        sendSuccess(`Zoho user: ${studio?.name}`);
+        setStudio(studio);
       }
-      sendSuccess(`Zoho user: ${studio?.name}`);
-      setStudio(studio);
     } else {
       sendError('Cannot locate your Zoho user. Try refreshing the page');
     }
