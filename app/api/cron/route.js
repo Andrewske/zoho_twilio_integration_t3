@@ -1,13 +1,12 @@
 import prisma from '~/utils/prisma';
-import axios from 'axios';
 import { NextResponse } from 'next/server';
 
-// import { logError } from '~/utils/logError';
 import { getZohoAccount } from '~/actions/zoho';
-
-import sendFollowUpMessage from '~/actions/sendFollowUpMessage';
-import { getStudioFromZohoId } from '../zoho/send_welcome/route';
 import { logError } from '~/utils/logError';
+import { formatMobile } from '~/utils';
+
+export const runtime = 'edge'; // 'nodejs' is the default
+export const dynamic = 'force-dynamic'; // static by default, unless reading the request
 
 export async function GET(request) {
   console.log('CRON STARTED');
@@ -26,9 +25,12 @@ export async function GET(request) {
     const unsentFollowUpMessages = await getLeadNotSentFollowUpMessage();
     console.log('unsentFollowUpMessages:', unsentFollowUpMessages);
 
-    if (!unsentFollowUpMessages.length) {
-      return NextResponse.json({ ok: false });
-    }
+    // if (!unsentFollowUpMessages.length) {
+    //   return NextResponse.json({
+    //     ok: false,
+    //     message: 'No unsent follow up messages',
+    //   });
+    // }
 
     const account = await getZohoAccount({
       studioId: unsentFollowUpMessages[0].Studio?.id,
@@ -44,33 +46,49 @@ export async function GET(request) {
     const encodedSearchQuery = encodeURIComponent(searchQuery);
 
     const fields = 'id,Full_Name,Mobile,SMS_Opt_Out,Lead_Status,Owner';
-    const zohoResponse = await axios.get(
+    const response = await fetch(
       `https://www.zohoapis.com/crm/v5/Leads/search?fields=${fields}&criteria=${encodedSearchQuery}`,
       {
         headers: { Authorization: `Zoho-oauthtoken ${account?.accessToken}` },
       }
     );
 
-    for (const zohoLead of zohoResponse.data.data) {
-      if (zohoLead.id != '5114699000054119007') {
-        logError({
-          message: 'Cron tried to send a follow up message',
-          error: new Error('Not the right lead'),
-          level: 'info',
-          data: { zohoLead },
-        });
+    if (!response.ok) {
+      throw new Error(`Request failed with status code ${response.status}`);
+    }
+
+    const zohoResponse = await response.json();
+
+    for (const zohoLead of zohoResponse.data) {
+      if (zohoLead.id != '5114699000054215005') {
+        console.info('Skipping lead', zohoLead.id);
         continue;
       }
-      const { Mobile } = zohoLead;
-      const studio = await getStudioFromZohoId(zohoLead?.Owner?.id);
+      const { Mobile, Owner } = zohoLead;
+      const studio = await getStudioFromZohoId(Owner?.id);
 
-      // Send follow-up message via Twilio
-      await sendFollowUpMessage({
-        contact: zohoLead,
-        studioId: studio.id,
-        to: Mobile,
-        from: studio.smsPhone,
-      });
+      console.log({ studio });
+
+      const followUp = await fetch(
+        `${process.env.SERVER_URL}/api/twilio/send_follow_up`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contact: zohoLead,
+            from: studio.smsPhone,
+            to: Mobile,
+            studioId: studio.id,
+          }),
+        }
+      );
+
+      if (!followUp.ok) {
+        const errorData = await followUp.json();
+        console.error({ errorData });
+      }
     }
 
     return NextResponse.json({ ok: true });
@@ -100,12 +118,25 @@ async function getLeadNotSentFollowUpMessage() {
         },
       },
     },
-    orderBy: {
-      createdAt: 'desc',
-    },
   });
 }
 
-const formatMobile = (mobile) => {
-  return mobile.replace(/\D/g, '').trim().slice(-10);
-};
+export async function getStudioFromZohoId(owner_id) {
+  try {
+    const studio = await prisma.studio.findFirst({
+      where: { zohoId: owner_id },
+      select: {
+        id: true,
+        zohoId: true,
+        smsPhone: true,
+        callPhone: true,
+        name: true,
+        managerName: true,
+        active: true,
+      },
+    });
+    return studio;
+  } catch (error) {
+    throw new Error('Could not find studio');
+  }
+}
