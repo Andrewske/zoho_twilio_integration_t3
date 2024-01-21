@@ -128,12 +128,13 @@ export const sendMessage = async ({ to, from, message, studioId, contact }) => {
       throw new Error('Could not send message');
     }
 
+    // This is the problem
     await prisma.message.create({
       data: {
         studioId,
         contactId: contact?.id,
-        from,
-        to,
+        fromNumber: from,
+        toNumber: to,
         message,
         twilioMessageId: sendRecord.sid,
       },
