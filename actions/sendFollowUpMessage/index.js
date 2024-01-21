@@ -25,7 +25,7 @@ const sendFollowUpMessage = async ({ contact, from, to, studioId }) => {
 
   console.log({ twilioMessageId: response.twilioMessageId });
 
-  if (message.id && response.twilioMessageId) {
+  try {
     await prisma.message.update({
       where: {
         id: message.id,
@@ -34,7 +34,8 @@ const sendFollowUpMessage = async ({ contact, from, to, studioId }) => {
         twilioMessageId: response.twilioMessageId,
       },
     });
-  } else {
+  } catch (error) {
+    console.error({ error });
     throw new Error('Could not send follow up message');
   }
 };
@@ -54,8 +55,6 @@ const findOrCreateMessage = async ({ contact, from, to, studioId }) => {
       },
     });
 
-    console.log({ message });
-
     if (message?.twilioMessageId) {
       console.log('Follow up message already sent');
       return null;
@@ -73,8 +72,6 @@ const findOrCreateMessage = async ({ contact, from, to, studioId }) => {
         },
       });
     }
-
-    console.log({ message });
 
     return message;
   } catch (error) {
