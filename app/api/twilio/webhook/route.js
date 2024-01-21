@@ -40,6 +40,7 @@ export async function POST(request) {
 
     const YES = msg.toLowerCase().includes('yes');
     if (contact.isLead && contact.Lead_Status == 'New' && YES) {
+      console.log('Updating status');
       updateStatus({ studio: studioInfo, contact });
       sendFollowUpMessage({
         contact,
@@ -47,6 +48,8 @@ export async function POST(request) {
         to: contact.Mobile,
         studioId: studioInfo?.id,
       });
+    } else {
+      console.log({ contact, YES });
     }
 
     await createTask({
