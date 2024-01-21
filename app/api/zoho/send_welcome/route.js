@@ -1,5 +1,3 @@
-'use server';
-import { parse } from 'querystring';
 import prisma from '~/utils/prisma';
 import { sendMessage } from '~/actions/twilio';
 import { logError } from '~/utils/logError';
@@ -7,16 +5,7 @@ import { formatMobile } from '~/utils';
 
 export async function POST(request) {
   try {
-    const body = await parseRequest(request);
-
-    if (!isValidBody(body)) {
-      throw new Error('Invalid body');
-    }
-
-    let { leadId, ownerId, mobile, firstName } = body;
-
-    mobile = formatMobile(mobile);
-
+    const { leadId, ownerId, mobile, firstName } = await parseRequest(request);
     const studio = await getStudioFromZohoId(ownerId);
 
     if (!studio.active) return new Response(null, { status: 200 });
@@ -106,19 +95,18 @@ async function sendAndLogMessage(
 }
 
 export async function parseRequest(request) {
-  try {
-    const body = await request.text();
-    return parse(body);
-  } catch (error) {
-    logError({ message: 'Error parsing request:', error, level: 'warning' });
-    throw new Error('Error parsing request');
-  }
-}
+  const text = await request.text();
+  const body = new URLSearchParams(text);
+  const leadId = body.get('leadId');
+  const ownerId = body.get('ownerId');
+  const mobile = formatMobile(body.get('mobile'));
+  const firstName = body.get('firstName');
 
-export async function isValidBody(body) {
-  return Boolean(
-    body && body.leadId && body.ownerId && body.mobile && body.firstName
-  );
+  if (!leadId || !ownerId || !mobile || !firstName) {
+    throw new Error('Invalid Zoho Webhook Message');
+  }
+
+  return { leadId, ownerId, mobile, firstName };
 }
 
 export async function getStudioFromZohoId(owner_id) {
