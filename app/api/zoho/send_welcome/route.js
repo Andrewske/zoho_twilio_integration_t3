@@ -4,6 +4,7 @@ import prisma from '~/utils/prisma';
 import { sendMessage } from '~/actions/twilio';
 import * as Sentry from '@sentry/node';
 import { logError } from '~/utils/logError';
+import { formatMobile } from '~/utils';
 
 export async function POST(request) {
   try {
@@ -15,13 +16,13 @@ export async function POST(request) {
 
     let { leadId, ownerId, mobile, firstName } = body;
 
-    mobile = formatMobileNumber(mobile);
+    mobile = formatMobile(mobile);
 
     const studio = await getStudioFromZohoId(ownerId);
 
     if (!studio.active) return new Response(null, { status: 200 });
 
-    await prisma.message.create({
+    const message = await prisma.message.create({
       data: {
         toNumber: mobile,
         fromNumber: studio.smsPhone,
@@ -31,7 +32,7 @@ export async function POST(request) {
       },
     });
 
-    const zohoWebhookId = await postWebhookData(body);
+    const zohoWebhookId = message?.id;
 
     const contact = {
       id: leadId,
@@ -53,26 +54,6 @@ export async function POST(request) {
     Sentry.captureException(error);
     return new Response(null, { status: 200 });
   }
-}
-
-async function postWebhookData(body) {
-  return prisma.message
-    .create({
-      data: {
-        contactId: body.leadId,
-        studioZohoId: body.ownerId,
-        firstName: body.firstName,
-        mobile: body.mobile,
-      },
-    })
-    .then(({ id }) => id);
-}
-
-function formatMobileNumber(mobile) {
-  if (mobile.startsWith('+1')) {
-    return mobile.substring(2);
-  }
-  return mobile;
 }
 
 function createMessage(
