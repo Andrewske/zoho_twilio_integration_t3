@@ -151,7 +151,7 @@ const findOrCreateWelcomeMessage = async ({ contact, from, to, studioId }) => {
   let message = await prisma.message.findFirst({
     where: {
       toNumber: to,
-      isWelcomeUpMessage: true,
+      isWelcomeMessage: true,
     },
     select: {
       id: true,
