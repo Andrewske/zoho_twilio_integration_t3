@@ -1,3 +1,4 @@
+'use server';
 import { updateContact } from '~/actions/zoho/contact/updateContact';
 import { logError } from '~/utils/logError';
 

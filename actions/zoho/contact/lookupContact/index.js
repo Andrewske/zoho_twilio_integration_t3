@@ -1,25 +1,25 @@
 'use server';
-import axios from 'axios';
 import { getZohoAccount } from '~/actions/zoho';
 import { formatMobile } from '~/utils';
 
 const getContact = async ({ mobile, accessToken, zohoModule }) => {
   const fields = 'id,Full_Name,Mobile,SMS_Opt_Out,Lead_Status,Owner';
   const criteria = `(Mobile:equals:${formatMobile(mobile)})`;
-  const response = await axios.get(
-    `https://www.zohoapis.com/crm/v5/${zohoModule}/search?fields=${fields}&criteria=${criteria}`,
-    {
-      headers: { Authorization: `Zoho-oauthtoken ${accessToken}` },
-    }
-  );
+  const url = `https://www.zohoapis.com/crm/v5/${zohoModule}/search?fields=${fields}&criteria=${criteria}`;
 
-  if (response.status !== 200) {
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: { Authorization: `Zoho-oauthtoken ${accessToken}` },
+  });
+
+  if (!response.ok) {
     throw new Error(
       `getContact: Request failed with status code ${response.status}`
     );
   }
 
-  const data = response?.data?.data;
+  const responseBody = await response.json();
+  const data = responseBody?.data;
 
   if (!data || !data[0]) {
     throw new Error('getContact: No data returned from server');

@@ -1,5 +1,4 @@
 'use server';
-import axios from 'axios';
 import { getZohoAccount } from '..';
 import { logError } from '~/utils/logError';
 import { formatMobile } from '~/utils';
@@ -32,19 +31,18 @@ export const postTaskToZoho = async ({ apiDomain, accessToken, taskData }) => {
   };
 
   try {
-    const response = await axios.post(url, { data: [taskData] }, { headers });
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ data: [taskData] }),
+    });
 
-    if (response.status >= 300) {
-      logError({
-        message: 'Error posting task to Zoho',
-        error: response,
-        level: 'error',
-        data: { taskData },
-      });
-      throw new Error(`Request failed with status code ${response.status}`);
+    if (!response.ok) {
+      throw new Error(`Error posting task ${response.status}`);
     }
 
-    return response?.data?.data?.[0];
+    const responseBody = await response.json();
+    return responseBody?.data?.[0];
   } catch (error) {
     logError({
       message: 'Error posting task to Zoho',

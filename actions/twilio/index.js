@@ -1,9 +1,10 @@
-'use server';
+export const runtime = 'nodejs';
 import twilio from 'twilio';
 import { logError } from '~/utils/logError';
 import prisma from '~/utils/prisma';
 
 export const getTwilioAccount = async (id) => {
+  'use server';
   try {
     const studioAccounts = await prisma.studioAccount.findMany({
       where: {
@@ -112,6 +113,7 @@ export const sendMessage = async ({
   contact,
   messageId = null,
 }) => {
+  'use server';
   const twilioAccount = await getTwilioAccount(studioId);
 
   if (contact?.SMS_Opt_Out) {
@@ -147,6 +149,8 @@ export const sendMessage = async ({
         },
       });
     }
+
+    console.log({ sendRecord });
 
     return { twilioMessageId: sendRecord.sid };
   } catch (error) {

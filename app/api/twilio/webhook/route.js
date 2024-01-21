@@ -1,29 +1,39 @@
-'use server';
 import { createTask } from '~/actions/zoho/tasks';
-import { parse } from 'querystring';
 import prisma from '~/utils/prisma';
 import { smsOptOut } from '~/actions/zoho/contact/smsOptOut';
 import { lookupContact } from '~/actions/zoho/contact/lookupContact';
 import { updateStatus } from '~/actions/zoho/contact/updateStatus';
 import { logError } from '~/utils/logError';
-import sendFollowUpMessage from '~/actions/sendFollowUpMessage';
 import { formatMobile } from '~/utils';
+
+export const runtime = 'edge'; // 'nodejs' is the default
+export const dynamic = 'force-dynamic'; // static by default, unless reading the request
 
 export async function POST(request) {
   try {
     let { to, from, msg, twilioMessageId } = await parseRequest(request);
 
-    const { id: messageId } = await prisma.message.create({
-      data: {
-        fromNumber: from,
-        toNumber: to,
-        message: msg,
-        twilioMessageId,
-      },
-      select: {
-        id: true,
-      },
-    });
+    console.log({ to, from, msg, twilioMessageId });
+
+    const messageId = await prisma.message
+      .create({
+        data: {
+          fromNumber: from,
+          toNumber: to,
+          message: msg,
+          twilioMessageId,
+        },
+        select: {
+          id: true,
+        },
+      })
+      .then(({ id }) => id);
+
+    console.log({ messageId });
+
+    if (!messageId) {
+      throw new Error('Could not create message');
+    }
 
     const studioInfo = await getStudioInfo(to);
 
@@ -42,12 +52,26 @@ export async function POST(request) {
     if (contact.isLead && contact.Lead_Status == 'New' && YES) {
       console.log('Updating status');
       updateStatus({ studio: studioInfo, contact });
-      sendFollowUpMessage({
-        contact,
-        from: studioInfo.smsPhone,
-        to: contact.Mobile,
-        studioId: studioInfo?.id,
-      });
+      const followUp = await fetch(
+        `${process.env.SERVER_URL}/api/twilio/send_follow_up`,
+        {
+          method: 'POST', // or 'PUT'
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contact,
+            from: studioInfo.smsPhone,
+            to: contact.Mobile,
+            studioId: studioInfo?.id,
+          }),
+        }
+      );
+
+      if (!followUp.ok) {
+        const errorData = await followUp.json();
+        console.error({ errorData });
+      }
     } else {
       console.log({ contact, YES });
     }
@@ -67,6 +91,7 @@ export async function POST(request) {
       },
     });
   } catch (error) {
+    console.error(error);
     logError({
       message: 'Error in Twilio Webhook:',
       error,
@@ -79,14 +104,14 @@ export async function POST(request) {
 
 export async function parseRequest(request) {
   const text = await request.text();
-  const body = parse(text);
-  const to = formatMobile(body?.To);
-  const from = formatMobile(body?.From);
-  const msg = body?.Body;
-  const twilioMessageId = body?.MessageSid;
+  const body = new URLSearchParams(text);
+  const to = formatMobile(body.get('To'));
+  const from = formatMobile(body.get('From'));
+  const msg = body.get('Body');
+  const twilioMessageId = body.get('MessageSid');
 
   if (!to || !from || !msg || !twilioMessageId) {
-    console.log({ body });
+    console.info({ body });
     throw new Error('Invalid Twilio Webhook Message');
   }
 
