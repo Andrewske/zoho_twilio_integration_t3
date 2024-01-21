@@ -12,6 +12,8 @@ const sendFollowUpMessage = async ({ contact, from, to, studioId }) => {
     throw new Error('Could not find or create message');
   }
 
+  console.log(message);
+
   const { twilioMessageId } = await sendMessage({
     to,
     from,
@@ -20,6 +22,8 @@ const sendFollowUpMessage = async ({ contact, from, to, studioId }) => {
     contact,
     messageId: message?.id,
   });
+
+  console.log({ twilioMessageId });
 
   if (twilioMessageId) {
     await prisma.message.update({
@@ -66,5 +70,7 @@ const findOrCreateMessage = async ({ contact, from, to, studioId }) => {
       },
     });
   }
+
+  console.log({ message });
   return message;
 };
