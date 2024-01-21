@@ -172,7 +172,7 @@ const findOrCreateWelcomeMessage = async ({ contact, from, to, studioId }) => {
         studioId: studioId,
         fromNumber: from,
         toNumber: to,
-        isFollowUpMessage: true,
+        isWelcomeMessage: true,
       },
     });
   }

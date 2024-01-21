@@ -9,7 +9,7 @@ const sendFollowUpMessage = async ({ contact, from, to, studioId }) => {
   let message = await findOrCreateMessage({ contact, from, to, studioId });
 
   if (!message) {
-    return;
+    throw new Error('Could not find or create message');
   }
 
   const { twilioMessageId } = await sendMessage({
@@ -18,6 +18,7 @@ const sendFollowUpMessage = async ({ contact, from, to, studioId }) => {
     message: followUpMessage,
     studioId,
     contact,
+    messageId: message?.id,
   });
 
   if (twilioMessageId) {
