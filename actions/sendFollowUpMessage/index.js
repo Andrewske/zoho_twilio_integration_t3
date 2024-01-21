@@ -5,7 +5,7 @@ import { sendMessage } from '~/actions/twilio';
 const sendFollowUpMessage = async ({ contact, from, to, studioId }) => {
   const followUpMessage =
     'Great! We have a limited number spots for new clients each week. What day of the week Monday to Friday works best for you?';
-
+  console.log('sending follow up');
   let message = await findOrCreateMessage({ contact, from, to, studioId });
 
   if (!message) {
@@ -43,6 +43,7 @@ const sendFollowUpMessage = async ({ contact, from, to, studioId }) => {
 export default sendFollowUpMessage;
 
 const findOrCreateMessage = async ({ contact, from, to, studioId }) => {
+  console.info('findOrCreateMessage');
   try {
     let message = await prisma.message.findFirst({
       where: {
@@ -54,6 +55,8 @@ const findOrCreateMessage = async ({ contact, from, to, studioId }) => {
         twilioMessageId: true,
       },
     });
+
+    console.info(message);
 
     if (message?.twilioMessageId) {
       console.log('Follow up message already sent');
@@ -72,6 +75,8 @@ const findOrCreateMessage = async ({ contact, from, to, studioId }) => {
         },
       });
     }
+
+    console.log({ message });
 
     return message;
   } catch (error) {
