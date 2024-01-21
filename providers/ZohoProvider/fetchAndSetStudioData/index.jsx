@@ -1,5 +1,5 @@
 import { sendError } from '~/utils/toast';
-import { getStudioData } from '~/actions/zoho/studio';
+import { getStudioFromZohoId } from '~/actions/zoho/studio';
 import { sendSuccess } from '~/utils/toast';
 import { getCurrentUser } from '~/utils/zohoApi';
 import { logError } from '~/utils/logError';
@@ -14,7 +14,7 @@ export const fetchAndSetStudioData = async ({ setStudio }) => {
     console.log(JSON.stringify({ user }));
 
     if (user?.id) {
-      const studio = await getStudioData({ zohoId: user.id });
+      const studio = await getStudioFromZohoId(user.id);
       console.log(JSON.stringify({ studio }));
       if (studio?.active) {
         sendSuccess(`Zoho user: ${studio?.name}`);
@@ -34,6 +34,6 @@ export const fetchAndSetStudioData = async ({ setStudio }) => {
       error,
       level: 'warning',
       data: user,
-    }); // Log the error for debugging purposes
+    });
   }
 };
