@@ -26,12 +26,14 @@ export const fetchAndSetContact = async ({ entity, entityId, setContact }) => {
 
       if (phoneNumber) {
         const studio = await getStudioFromZohoId(ownerId);
-        if (studio?.id) {
+        if (studio?.id & studio.active) {
           const contact = await lookupContact({
             mobile: phoneNumber,
             studioId: studio?.id,
           });
           setContact(contact);
+        } else {
+          sendError('This lead is not assigned to an active studio.', false);
         }
       } else {
         sendError(
