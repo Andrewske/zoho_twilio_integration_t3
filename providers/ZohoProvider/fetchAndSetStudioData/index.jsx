@@ -16,7 +16,7 @@ export const fetchAndSetStudioData = async ({ setStudio }) => {
     if (user?.id) {
       const studio = await getStudioData({ zohoId: user.id });
       console.log(JSON.stringify({ studio }));
-      if (studio.active) {
+      if (studio?.active) {
         sendSuccess(`Zoho user: ${studio?.name}`);
         setStudio(studio);
       }

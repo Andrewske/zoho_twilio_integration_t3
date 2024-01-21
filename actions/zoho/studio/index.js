@@ -11,11 +11,12 @@ export const getStudioData = async ({ zohoId, phone = null }) => {
 
     return studio;
   } catch (error) {
+    console.error(error);
     logError({
       message: 'Could not find studio',
       error,
       level: 'warning',
-      data: { zohoId },
+      data: { zohoId, phone },
     });
     return null;
   }

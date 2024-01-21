@@ -25,12 +25,12 @@ export async function GET(request) {
     const unsentFollowUpMessages = await getLeadNotSentFollowUpMessage();
     console.log('unsentFollowUpMessages:', unsentFollowUpMessages);
 
-    // if (!unsentFollowUpMessages.length) {
-    //   return NextResponse.json({
-    //     ok: false,
-    //     message: 'No unsent follow up messages',
-    //   });
-    // }
+    if (!unsentFollowUpMessages.length) {
+      return NextResponse.json({
+        ok: false,
+        message: 'No unsent follow up messages',
+      });
+    }
 
     const account = await getZohoAccount({
       studioId: unsentFollowUpMessages[0].Studio?.id,
