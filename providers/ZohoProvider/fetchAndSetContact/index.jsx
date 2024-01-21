@@ -1,5 +1,5 @@
 import { lookupContact } from '~/actions/zoho/contact/lookupContact';
-import { getStudioFromZohoId } from '~/app/api/zoho/send_welcome/route';
+import { getStudioFromZohoId } from '~/actions/zoho/studio';
 import { logError } from '~/utils/logError';
 import { sendError } from '~/utils/toast';
 import { getZohoRecord } from '~/utils/zohoApi';
