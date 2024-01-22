@@ -41,8 +41,6 @@ export async function POST(request) {
         contact,
         studio,
       });
-    } else {
-      console.log({ contact, YES });
     }
 
     await createTask({
@@ -104,7 +102,7 @@ export async function getStudioInfo(to) {
 
     return studio;
   } catch (error) {
-    console.log(error);
+    console.error(error.message);
     return null;
   }
 }

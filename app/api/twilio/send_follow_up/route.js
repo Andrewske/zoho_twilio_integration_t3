@@ -8,7 +8,6 @@ const followUpMessage =
   'Great! We have a limited number spots for new clients each week. What day of the week Monday to Friday works best for you?';
 
 export async function POST(request) {
-  console.log('send_follow_up');
   const {
     contact,
     from,
@@ -80,10 +79,8 @@ const findOrCreateMessage = async ({ contact, from, to, studioId }) => {
       },
     });
 
-    console.info(message);
-
     if (message?.twilioMessageId) {
-      console.log('Follow up message already sent');
+      console.info('Follow up message already sent');
       return null;
     }
 
@@ -100,10 +97,14 @@ const findOrCreateMessage = async ({ contact, from, to, studioId }) => {
       });
     }
 
-    console.log({ message });
-
     return message;
   } catch (error) {
-    console.log({ error });
+    console.error(error.message);
+    logError({
+      error,
+      message: 'Error in findOrCreateMessage',
+      level: 'error',
+      data: { contact, from, to, studioId },
+    });
   }
 };
