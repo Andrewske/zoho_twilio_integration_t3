@@ -6,7 +6,7 @@ import {
   refreshAndFetchUpdatedAccount,
 } from './account';
 import { isAccessTokenExpired } from './utils';
-import * as Sentry from '@sentry/node';
+import * as Sentry from "@sentry/nextjs";
 
 export const getZohoAccount = async ({ studioId }) => {
   try {
