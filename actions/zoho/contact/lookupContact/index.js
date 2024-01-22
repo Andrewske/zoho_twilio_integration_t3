@@ -20,6 +20,7 @@ const getContact = async ({ mobile, account, studioId, zohoModule }) => {
 
   let responseBody = await response.json();
 
+  console.log({ responseBody, ok: response.ok, status: response.status })
 
   if (!response.ok) {
     if (responseBody?.code === 'INVALID_TOKEN') {
@@ -27,12 +28,13 @@ const getContact = async ({ mobile, account, studioId, zohoModule }) => {
       response = await searchMobileQuery({ mobile, accessToken, zohoModule })
       responseBody = await response.json();
 
+
       if (!response.ok) {
         logError({
           error: new Error(`getContact: Could not refresh token ${response.status}`),
           data: { mobile, studioId },
-          level: 'error',
-          message: 'Error in getContact:'
+          level: 'fatal',
+          message: 'Fatal Error in getContact:'
         })
       }
     } else {
@@ -41,6 +43,8 @@ const getContact = async ({ mobile, account, studioId, zohoModule }) => {
       );
     }
   }
+
+  console.error({ responseBody })
 
 
   const data = responseBody?.data;

@@ -33,6 +33,6 @@ export const getZohoAccount = async ({ studioId }) => {
       error,
       data: { studioId },
     });
-    return null;
+    throw new Error('Error getting Zoho account');
   }
 };
