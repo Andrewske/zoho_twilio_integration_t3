@@ -1,7 +1,7 @@
 'use server';
 import twilio from 'twilio';
 import { logError } from '~/utils/logError';
-import prisma from '~/utils/prisma';
+import { prisma } from '~/utils/prisma';
 
 export const getTwilioAccount = async (id) => {
   try {

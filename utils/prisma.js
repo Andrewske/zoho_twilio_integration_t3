@@ -3,4 +3,10 @@ import { withAccelerate } from '@prisma/extension-accelerate';
 
 const prisma = new PrismaClient().$extends(withAccelerate());
 
-export default prisma;
+async function prismaQueryWrapper(query) {
+    const result = await query;
+    await prisma.$disconnect();
+    return result;
+}
+
+export { prisma, prismaQueryWrapper };

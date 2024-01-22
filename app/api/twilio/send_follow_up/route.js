@@ -1,4 +1,4 @@
-import prisma from '~/utils/prisma';
+import { prisma } from '~/utils/prisma';
 import { sendMessage } from '~/actions/twilio';
 import { logError } from '~/utils/logError';
 
