@@ -1,12 +1,12 @@
 'use server';
 import { getZohoAccount } from '~/actions/zoho';
-// import { formatMobile } from '~/utils';
+import { formatMobile } from '~/utils';
 import { logError } from '~/utils/logError';
 
 const getContact = async ({ mobile, accessToken, zohoModule }) => {
   console.log(JSON.stringify({ mobile, accessToken, zohoModule }));
   const fields = 'id,Full_Name,Mobile,SMS_Opt_Out,Lead_Status,Owner';
-  const criteria = `(Mobile:equals:${mobile})`;
+  const criteria = `(Mobile:equals:${formatMobile(mobile)})`;
   const url = `https://www.zohoapis.com/crm/v5/${zohoModule}/search?fields=${fields}&criteria=${criteria}`;
 
   const response = await fetch(url, {
