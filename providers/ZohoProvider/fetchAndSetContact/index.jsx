@@ -60,7 +60,12 @@ export const fetchAndSetContact = async ({ entity, entityId, setContact }) => {
 
 export const parseDescription = (description) => {
   try {
-    const fromNumberMatch = description.match(/FROM: (\d+)/);
+    if (typeof description != 'string') {
+      console.log('description', description);
+      throw new Error('Description is not a string');
+    }
+
+    const fromNumberMatch = description?.match(/FROM: (\d+)/);
     return fromNumberMatch ? fromNumberMatch[1] : null;
   } catch (error) {
     logError({

@@ -1,5 +1,5 @@
 'use server';
-import { prisma, prismaQueryWrapper } from '~/utils/prisma.js';
+import { prisma } from '~/utils/prisma.js';
 
 import { refreshAccessToken } from '~/actions/zoho/token';
 
@@ -8,13 +8,10 @@ export const getStudioAccounts = async ({ studioId }) => {
     throw new Error('Studio ID is required');
   }
 
-  return await prismaQueryWrapper(prisma.studioAccount.findMany({
+  return await prisma.studioAccount.findMany({
     where: { studioId },
     include: { Account: true },
-    cacheStrategy: {
-      ttl: 60,
-    },
-  }));
+  });
 };
 
 export const getStudioFromZohoId = async (zohoId) => {
@@ -22,9 +19,9 @@ export const getStudioFromZohoId = async (zohoId) => {
     throw new Error('Zoho ID is required');
   }
 
-  return await prismaQueryWrapper(prisma.studio.findFirst({
+  return await prisma.studio.findFirst({
     where: { zohoId },
-  }));
+  });
 };
 
 export const getZohoAccountFromAccounts = (studioAccounts) => {
@@ -39,20 +36,20 @@ export const getZohoAccountFromAccounts = (studioAccounts) => {
   return account;
 };
 
-export const refreshAndFetchUpdatedAccount = async (account, studioId) => {
+export const refreshAndFetchUpdatedToken = async (account) => {
   // Refresh the access token
-  await refreshAccessToken(account);
+  const accessToken = await refreshAccessToken(account);
+
+  return accessToken;
 
   // Return a new account object with the updated access token
-  const updatedAccounts = await prismaQueryWrapper(prisma.studioAccount.findMany({
-    where: { studioId },
-    include: { Account: true },
-    cacheStrategy: {
-      ttl: 60,
-    },
-  }));
+  // const updatedAccounts = await prisma.studioAccount.findMany({
+  //   where: { studioId },
+  //   include: { Account: true },
 
-  return updatedAccounts
-    .map(({ Account }) => Account)
-    .find(({ platform }) => platform === 'zoho');
+  // });
+
+  // return updatedAccounts
+  //   .map(({ Account }) => Account)
+  //   .find(({ platform }) => platform === 'zoho');
 };

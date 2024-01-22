@@ -2,28 +2,47 @@
 import { getZohoAccount } from '~/actions/zoho';
 import { formatMobile } from '~/utils';
 import { logError } from '~/utils/logError';
+import { refreshAndFetchUpdatedToken } from '../../account';
 
-const getContact = async ({ mobile, accessToken, zohoModule }) => {
-  console.log(JSON.stringify({ mobile, accessToken, zohoModule }));
+const searchMobileQuery = async ({ mobile, accessToken, zohoModule }) => {
   const fields = 'id,Full_Name,Mobile,SMS_Opt_Out,Lead_Status,Owner';
   const criteria = `(Mobile:equals:${formatMobile(mobile)})`;
   const url = `https://www.zohoapis.com/crm/v5/${zohoModule}/search?fields=${fields}&criteria=${criteria}`;
 
-  const response = await fetch(url, {
+  return await fetch(url, {
     method: 'GET',
     headers: { Authorization: `Zoho-oauthtoken ${accessToken}` },
   });
+}
+
+const getContact = async ({ mobile, account, studioId, zohoModule }) => {
+  let response = await searchMobileQuery({ mobile, accessToken: account?.accessToken, zohoModule })
+
+  let responseBody = await response.json();
+
 
   if (!response.ok) {
-    console.log(JSON.stringify(response));
-    throw new Error(
-      `getContact: Request failed with status code ${response.status}`
-    );
+    if (responseBody?.code === 'INVALID_TOKEN') {
+      const accessToken = await refreshAndFetchUpdatedToken(account);
+      response = await searchMobileQuery({ mobile, accessToken, zohoModule })
+      responseBody = await response.json();
+
+      if (!response.ok) {
+        logError({
+          error: new Error(`getContact: Could not refresh token ${response.status}`),
+          data: { mobile, studioId },
+          level: 'error',
+          message: 'Error in getContact:'
+        })
+      }
+    } else {
+      throw new Error(
+        `getContact: Request failed with status code ${response.status}`
+      );
+    }
   }
 
-  const responseBody = await response.json();
 
-  console.log(responseBody);
   const data = responseBody?.data;
 
   if (!data || !data[0]) {
@@ -37,12 +56,12 @@ const getContact = async ({ mobile, accessToken, zohoModule }) => {
   return contact;
 };
 
-const getContactFromModules = async ({ mobile, accessToken, modules }) => {
+const getContactFromModules = async ({ mobile, account, studioId, modules }) => {
   let contact = null;
   console.log({ mobile });
   for (const zohoModule of modules) {
     try {
-      contact = await getContact({ mobile, accessToken, zohoModule });
+      contact = await getContact({ mobile, account, studioId, zohoModule });
     } catch (error) {
       console.error(error.message);
       console.info(
@@ -66,9 +85,9 @@ export const lookupContact = async ({ mobile, studioId }) => {
       throw new Error('lookupContact: No mobile provided to lookupContact');
     }
 
-    const { accessToken } = await getZohoAccount({ studioId });
+    const account = await getZohoAccount({ studioId });
 
-    if (!accessToken) {
+    if (!account?.accessToken) {
       throw new Error(
         `getZohoAccount: Could not get accessToken for ${studioId} in lookupContact`
       );
@@ -78,7 +97,8 @@ export const lookupContact = async ({ mobile, studioId }) => {
 
     const contact = await getContactFromModules({
       mobile,
-      accessToken,
+      account,
+      studioId,
       modules: zohoModules,
     });
 
