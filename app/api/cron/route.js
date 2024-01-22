@@ -23,7 +23,7 @@ export async function GET(request) {
   try {
     // Get follow up messages that were not sent
     const unsentFollowUpMessages = await getLeadNotSentFollowUpMessage();
-    console.log('unsentFollowUpMessages:', unsentFollowUpMessages);
+    console.info('unsentFollowUpMessages:', unsentFollowUpMessages);
 
     if (!unsentFollowUpMessages.length) {
       return NextResponse.json({
@@ -100,8 +100,8 @@ export async function GET(request) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
+    console.error(error.message);
     logError({ message: 'Error in cron', error, level: 'error' });
-    console.log(error.message);
     return NextResponse.json({ ok: false });
   }
 }
