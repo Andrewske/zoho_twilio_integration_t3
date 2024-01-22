@@ -46,8 +46,6 @@ export const refreshAndFetchUpdatedAccount = async (account, studioId) => {
     include: { Account: true },
   });
 
-  console.log('updatedAccounts', updatedAccounts);
-
   return updatedAccounts
     .map(({ Account }) => Account)
     .find(({ platform }) => platform === 'zoho');

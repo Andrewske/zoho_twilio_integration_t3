@@ -9,20 +9,28 @@ const followUpMessage =
 
 export async function POST(request) {
   console.log('send_follow_up');
-  const { contact, from, to, studioId } = await request.json();
+  const {
+    contact,
+    from,
+    to,
+    studioId,
+    messageId = null,
+  } = await request.json();
 
   if (!contact || !from || !to || !studioId) {
     return new Response('Missing required parameters', { status: 400 });
   }
 
+  let message = { id: messageId };
+
   try {
-    let message = await findOrCreateMessage({ contact, from, to, studioId });
+    if (!messageId) {
+      message = await findOrCreateMessage({ contact, from, to, studioId });
 
-    if (!message) {
-      return new Response('Message already sent', { status: 200 });
+      if (!message) {
+        return new Response('Message already sent', { status: 200 });
+      }
     }
-
-    console.log({ message });
 
     const response = await sendMessage({
       to,
@@ -30,16 +38,16 @@ export async function POST(request) {
       message: followUpMessage,
       studioId,
       contact,
-      messageId: message?.id,
+      messageId: message.id,
     });
-
-    console.log({ twilioMessageId: response.twilioMessageId });
 
     const updatedMessage = await prisma.message.update({
       where: {
         id: message.id,
       },
       data: {
+        studioId,
+        contactId: contact?.id,
         twilioMessageId: response.twilioMessageId,
       },
     });

@@ -26,5 +26,6 @@ export const getZohoAccount = async ({ studioId }) => {
       error,
       data: { studioId },
     });
+    return null;
   }
 };

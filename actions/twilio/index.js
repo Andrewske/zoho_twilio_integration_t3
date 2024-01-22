@@ -148,8 +148,6 @@ export const sendMessage = async ({
       });
     }
 
-    console.log({ sendRecord });
-
     return { twilioMessageId: sendRecord.sid };
   } catch (error) {
     logError({

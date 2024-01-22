@@ -11,74 +11,43 @@ export const dynamic = 'force-dynamic'; // static by default, unless reading the
 
 export async function POST(request) {
   try {
-    let { to, from, msg, twilioMessageId } = await parseRequest(request);
+    const body = await parseRequest(request);
 
-    console.log({ to, from, msg, twilioMessageId });
+    let { to, from, msg } = body;
 
-    const messageId = await prisma.message
-      .create({
-        data: {
-          fromNumber: from,
-          toNumber: to,
-          message: msg,
-          twilioMessageId,
-        },
-        select: {
-          id: true,
-        },
-      })
-      .then(({ id }) => id);
+    const studio = await getStudioInfo(to);
 
-    console.log({ messageId });
-
-    if (!messageId) {
-      throw new Error('Could not create message');
-    }
-
-    const studioInfo = await getStudioInfo(to);
+    const { messageId, followUpMessageId } = await createMessageRecords(
+      body,
+      studio
+    );
 
     const contact = await lookupContact({
       mobile: from,
-      studioId: studioInfo?.id,
+      studioId: studio?.id,
     });
 
     const STOP = msg.toLowerCase().trim() == 'stop';
     if (STOP) {
-      await smsOptOut({ studio: studioInfo, contact });
+      await smsOptOut({ studio, contact });
       return new Response(null, { status: 200 });
     }
 
-    const YES = msg.toLowerCase().includes('yes');
+    const YES = msg.toLowerCase().trim() === 'yes';
     if (contact.isLead && contact.Lead_Status == 'New' && YES) {
-      console.log('Updating status');
-      updateStatus({ studio: studioInfo, contact });
-      const followUp = await fetch(
-        `${process.env.SERVER_URL}/api/twilio/send_follow_up`,
-        {
-          method: 'POST', // or 'PUT'
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            contact,
-            from: studioInfo.smsPhone,
-            to: contact.Mobile,
-            studioId: studioInfo?.id,
-          }),
-        }
-      );
-
-      if (!followUp.ok) {
-        const errorData = await followUp.json();
-        console.error({ errorData });
-      }
+      updateStatus({ studio, contact });
+      sendFollowUp({
+        followUpMessageId,
+        contact,
+        studio,
+      });
     } else {
       console.log({ contact, YES });
     }
 
     await createTask({
-      studioId: studioInfo.id,
-      zohoId: studioInfo.zohoId,
+      studioId: studio.id,
+      zohoId: studio.zohoId,
       contact,
       message: { to, from, msg },
     });
@@ -86,7 +55,7 @@ export async function POST(request) {
     await prisma.message.update({
       where: { id: messageId },
       data: {
-        studioId: studioInfo?.id,
+        studioId: studio?.id,
         contactId: contact?.id,
       },
     });
@@ -119,14 +88,99 @@ export async function parseRequest(request) {
 }
 
 export async function getStudioInfo(to) {
-  const studio = await prisma.studio.findFirst({
-    where: { smsPhone: to },
-    select: { id: true, zohoId: true, smsPhone: true },
-  });
+  try {
+    const studio = await prisma.studio.findFirst({
+      where: { smsPhone: to },
+      select: { id: true, zohoId: true, smsPhone: true, active: true },
+    });
 
-  if (!studio) {
-    throw new Error('Could not find studio');
+    if (!studio) {
+      throw new Error('Could not find studio');
+    }
+
+    if (!studio.active) {
+      throw new Error('Studio is not active');
+    }
+
+    return studio;
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+}
+
+const sendFollowUp = async ({ followUpMessageId, contact, studio }) => {
+  try {
+    const response = await fetch(
+      `${process.env.SERVER_URL}/api/twilio/send_follow_up`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contact,
+          from: studio.smsPhone,
+          to: contact.Mobile,
+          studioId: studio.id,
+          messageId: followUpMessageId,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Could not send follow up message');
+      console.error(JSON.stringify({ errorData }));
+    }
+
+    return response;
+  } catch (error) {
+    console.error('Could not send follow up message');
+    console.error(JSON.stringify({ error }));
+    logError({
+      message: 'Error in createAndSendFollowUp',
+      error,
+      level: 'error',
+      data: { followUpMessageId, contact, studio },
+    });
+  }
+};
+
+const createMessageRecords = async (
+  { to, from, msg, twilioMessageId },
+  studio
+) => {
+  let messageData = [
+    {
+      fromNumber: from,
+      toNumber: to,
+      message: msg,
+      twilioMessageId,
+      studioId: studio?.id,
+    },
+  ];
+
+  const YES = msg.toLowerCase().trim() === 'yes';
+  if (YES) {
+    messageData.push({
+      fromNumber: to,
+      toNumber: from,
+      isFollowUpMessage: true,
+      studioId: studio?.id,
+    });
   }
 
-  return studio;
-}
+  const [messageId, followUpMessageId] = await Promise.all(
+    messageData.map(async (data) => {
+      const message = await prisma.message.create({ data });
+      return message.id;
+    })
+  );
+
+  if (!messageId) {
+    throw new Error('Could not create message');
+  }
+
+  return { messageId, followUpMessageId };
+};

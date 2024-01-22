@@ -1,6 +1,7 @@
 'use server';
 import { getZohoAccount } from '~/actions/zoho';
 import { formatMobile } from '~/utils';
+import { logError } from '~/utils/logError';
 
 const getContact = async ({ mobile, accessToken, zohoModule }) => {
   const fields = 'id,Full_Name,Mobile,SMS_Opt_Out,Lead_Status,Owner';
@@ -54,28 +55,41 @@ const getContactFromModules = async ({ mobile, accessToken, modules }) => {
 };
 
 export const lookupContact = async ({ mobile, studioId }) => {
-  if (!mobile) {
-    throw new Error('lookupContact: No mobile provided to lookupContact');
+  try {
+    if (!mobile) {
+      throw new Error('lookupContact: No mobile provided to lookupContact');
+    }
+
+    const { accessToken } = await getZohoAccount({ studioId });
+
+    if (!accessToken) {
+      throw new Error(
+        `getZohoAccount: Could not get accessToken for ${studioId} in lookupContact`
+      );
+    }
+
+    const zohoModules = ['Leads', 'Contacts'];
+
+    const contact = await getContactFromModules({
+      mobile,
+      accessToken,
+      modules: zohoModules,
+    });
+
+    if (!contact) {
+      throw new Error(
+        `lookupContact: Could not find ${mobile} for ${studioId}`
+      );
+    }
+    return contact;
+  } catch (error) {
+    console.error(error.message);
+    logError({
+      message: 'Error in lookupContact:',
+      error,
+      level: 'error',
+      data: { mobile, studioId },
+    });
+    return null;
   }
-
-  const { accessToken } = await getZohoAccount({ studioId });
-
-  if (!accessToken) {
-    throw new Error(
-      `getZohoAccount: Could not get accessToken for ${studioId} in lookupContact`
-    );
-  }
-
-  const zohoModules = ['Leads', 'Contacts'];
-
-  const contact = await getContactFromModules({
-    mobile,
-    accessToken,
-    modules: zohoModules,
-  });
-
-  if (!contact) {
-    throw new Error(`lookupContact: Could not find ${mobile} for ${studioId}`);
-  }
-  return contact;
 };
