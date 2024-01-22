@@ -1,21 +1,23 @@
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+});
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // output: 'export',
   rewrites: async () => [
     {
-      source: "/index",
-      destination: "/",
+      source: '/index',
+      destination: '/',
     },
   ],
+};
 
-}
-
-module.exports = nextConfig
-
+module.exports = withBundleAnalyzer(nextConfig);
 
 // Injected content via Sentry wizard below
 
-const { withSentryConfig } = require("@sentry/nextjs");
+const { withSentryConfig } = require('@sentry/nextjs');
 
 module.exports = withSentryConfig(
   module.exports,
@@ -25,8 +27,8 @@ module.exports = withSentryConfig(
 
     // Suppresses source map uploading logs during build
     silent: true,
-    org: "andrewske",
-    project: "zoho-twilio-integration",
+    org: 'andrewske',
+    project: 'zoho-twilio-integration',
   },
   {
     // For all available options, see:
@@ -39,7 +41,7 @@ module.exports = withSentryConfig(
     transpileClientSDK: true,
 
     // Routes browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers (increases server load)
-    tunnelRoute: "/monitoring",
+    tunnelRoute: '/monitoring',
 
     // Hides source maps from generated client bundles
     hideSourceMaps: true,
