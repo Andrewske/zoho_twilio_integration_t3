@@ -161,8 +161,16 @@ const createMessageRecords = async (
     },
   ];
 
+  const sentFollowUp = prisma.message.findFirst({
+    where: {
+      fromNumber: to,
+      isFollowUpMessage: true,
+    },
+  });
+
   const YES = msg.toLowerCase().trim() === 'yes';
-  if (YES) {
+
+  if (YES & !sentFollowUp) {
     messageData.push({
       fromNumber: to,
       toNumber: from,
