@@ -34,7 +34,7 @@ export async function POST(request) {
     }
 
     const YES = msg.toLowerCase().trim() === 'yes';
-    if (contact.isLead && contact.Lead_Status == 'New' && YES) {
+    if (contact?.isLead && contact?.Lead_Status == 'New' && YES) {
       updateStatus({ studio, contact });
       sendFollowUp({
         followUpMessageId,
@@ -44,8 +44,8 @@ export async function POST(request) {
     }
 
     await createTask({
-      studioId: studio.id,
-      zohoId: studio.zohoId,
+      studioId: studio?.id,
+      zohoId: studio?.zohoId,
       contact,
       message: { to, from, msg },
     });
