@@ -36,6 +36,10 @@ export async function GET(request) {
       studioId: unsentFollowUpMessages[0].Studio?.id,
     });
 
+    if (!account) {
+      return NextResponse.json({ ok: false, message: 'No Zoho account' });
+    }
+
     const mobileNumbers = unsentFollowUpMessages.map((lead) =>
       formatMobile(lead?.toNumber)
     );
@@ -57,17 +61,20 @@ export async function GET(request) {
       throw new Error(`Request failed with status code ${response.status}`);
     }
 
-    const zohoResponse = await response.json();
+    let zohoResponse;
+    try {
+      zohoResponse = await response.json();
+    } catch (error) {
+      console.error(response);
+    }
 
     for (const zohoLead of zohoResponse.data) {
-      if (zohoLead.id != '5114699000054215005') {
+      if (zohoLead.id != '5114699000054215028') {
         console.info('Skipping lead', zohoLead.id);
         continue;
       }
       const { Mobile, Owner } = zohoLead;
       const studio = await getStudioFromZohoId(Owner?.id);
-
-      console.log({ studio });
 
       const followUp = await fetch(
         `${process.env.SERVER_URL}/api/twilio/send_follow_up`,
