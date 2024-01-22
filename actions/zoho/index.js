@@ -12,11 +12,21 @@ export const getZohoAccount = async ({ studioId }) => {
     const studioAccounts = await getStudioAccounts({ studioId });
     const account = getZohoAccountFromAccounts(studioAccounts);
 
+    console.log({ account });
     // Check if the access token is expired
     if (isAccessTokenExpired(account)) {
       console.log('Access token is expired, refreshing...');
       return await refreshAndFetchUpdatedAccount(account, studioId);
     }
+
+    // const { updatedAt, expiresIn } = account;
+    // console.log({ updatedAt });
+    // const updatedAtDate = new Date(updatedAt);
+    // updatedAtDate.setUTCSeconds(updatedAtDate.getUTCSeconds() + expiresIn);
+    // console.log({ updatedAt, now: new Date(Date.now()) });
+    // console.log(updatedAtDate < new Date(Date.now()));
+
+    console.log('Access token is valid');
 
     return account;
   } catch (error) {

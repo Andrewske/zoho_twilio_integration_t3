@@ -29,14 +29,15 @@ export const getZohoAccountFromAccounts = (studioAccounts) => {
     .map(({ Account }) => Account)
     .find(({ platform }) => platform === 'zoho');
 
-  // if (!account) {
-  //     throw new Error('No Zoho account found for studio');
-  // }
+  if (!account) {
+    throw new Error('No Zoho account found for studio');
+  }
 
   return account;
 };
 
 export const refreshAndFetchUpdatedAccount = async (account, studioId) => {
+  console.log('Update and refresh');
   // Refresh the access token
   await refreshAccessToken(account);
 
@@ -45,6 +46,15 @@ export const refreshAndFetchUpdatedAccount = async (account, studioId) => {
     where: { studioId },
     include: { Account: true },
   });
+
+  console.log(
+    'updatedAccounts',
+    JSON.stringify(
+      updatedAccounts
+        .map(({ Account }) => Account)
+        .find(({ platform }) => platform === 'zoho')
+    )
+  );
 
   return updatedAccounts
     .map(({ Account }) => Account)
