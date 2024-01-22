@@ -1,4 +1,5 @@
 'use server';
+import { logError } from '~/utils/logError';
 import prisma from '~/utils/prisma';
 
 export const buildParams = ({ refreshToken, clientId, clientSecret }) => {
@@ -35,27 +36,38 @@ export const refreshAccessToken = async ({
   clientId,
   clientSecret,
 }) => {
-  console.log('refreshAccessToken');
-  const params = buildParams({ refreshToken, clientId, clientSecret });
-  const url = buildUrl(params);
+  try {
+    console.log('refreshAccessToken');
+    const params = buildParams({ refreshToken, clientId, clientSecret });
+    const url = buildUrl(params);
 
-  const response = await fetch(url, {
-    method: 'POST',
-  });
+    const response = await fetch(url, {
+      method: 'POST',
+    });
 
-  if (!response.ok) {
-    throw new Error('Network response was not ok');
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const data = await response.json();
+
+    if (!data.access_token) {
+      throw new Error('Access token not received');
+    }
+
+    const { access_token, expires_in, api_domain } = data;
+
+    await updateAccount({ id, access_token, expires_in, api_domain });
+
+    return access_token;
+  } catch (error) {
+    console.error(error);
+    logError({
+      message: 'Error refreshing access token',
+      error,
+      data: { id },
+    });
+    throw new Error('Error refreshing access token');
   }
 
-  const data = await response.json();
-
-  if (!data.access_token) {
-    throw new Error('Access token not received');
-  }
-
-  const { access_token, expires_in, api_domain } = data;
-
-  await updateAccount({ id, access_token, expires_in, api_domain });
-
-  return access_token;
 };

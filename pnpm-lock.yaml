@@ -47,6 +47,9 @@ dependencies:
   twilio:
     specifier: ^4.19.0
     version: 4.20.1
+  zoho_twilio_integration_next:
+    specifier: 'link:'
+    version: 'link:'
 
 devDependencies:
   '@testing-library/jest-dom':
