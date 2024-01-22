@@ -8,10 +8,10 @@ export const getStudioAccounts = async ({ studioId }) => {
     throw new Error('Studio ID is required');
   }
 
-  return await prisma.studioAccount.findMany({
+  return await prismaQueryWrapper(prisma.studioAccount.findMany({
     where: { studioId },
     include: { Account: true },
-  });
+  }));
 };
 
 export const getStudioFromZohoId = async (zohoId) => {
@@ -19,15 +19,15 @@ export const getStudioFromZohoId = async (zohoId) => {
     throw new Error('Zoho ID is required');
   }
 
-  return await prisma.studio.findFirst({
+  return await prismaQueryWrapper(prisma.studio.findFirst({
     where: { zohoId },
-  });
+  }));
 };
 
-export const getZohoAccountFromAccounts = async (studioAccounts) => {
-  const account = await prismaQueryWrapper(studioAccounts
+export const getZohoAccountFromAccounts = (studioAccounts) => {
+  const account = studioAccounts
     .map(({ Account }) => Account)
-    .find(({ platform }) => platform === 'zoho'));
+    .find(({ platform }) => platform === 'zoho');
 
   if (!account) {
     throw new Error('No Zoho account found for studio');
