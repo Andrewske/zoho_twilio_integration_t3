@@ -1,4 +1,5 @@
 'use server';
+
 export const isAccessTokenExpired = (account) => {
   const { updatedAt, expiresIn } = account;
   const updatedAtDate = new Date(updatedAt);
