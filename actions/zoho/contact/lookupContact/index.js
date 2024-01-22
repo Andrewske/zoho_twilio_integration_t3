@@ -2,7 +2,7 @@
 import { getZohoAccount } from '~/actions/zoho';
 import { formatMobile } from '~/utils';
 import { logError } from '~/utils/logError';
-import { refreshAndFetchUpdatedToken } from '../../account';
+import refreshAndRetry from '../../token/refreshAndRetry';
 
 const searchMobileQuery = async ({ mobile, accessToken, zohoModule }) => {
   const fields = 'id,Full_Name,Mobile,SMS_Opt_Out,Lead_Status,Owner';
@@ -15,41 +15,19 @@ const searchMobileQuery = async ({ mobile, accessToken, zohoModule }) => {
   });
 }
 
-const getContact = async ({ mobile, account, studioId, zohoModule }) => {
+const getContact = async ({ mobile, account, zohoModule }) => {
   let response = await searchMobileQuery({ mobile, accessToken: account?.accessToken, zohoModule })
 
-  let responseBody = await response.json();
-
-  console.log({ responseBody, ok: response.ok, status: response.status })
-
   if (!response.ok) {
-    if (responseBody?.code === 'INVALID_TOKEN') {
-      const accessToken = await refreshAndFetchUpdatedToken(account);
-      response = await searchMobileQuery({ mobile, accessToken, zohoModule })
-      responseBody = await response.json();
-
-
-      if (!response.ok) {
-        logError({
-          error: new Error(`getContact: Could not refresh token ${response.status}`),
-          data: { mobile, studioId },
-          level: 'fatal',
-          message: 'Fatal Error in getContact:'
-        })
-      }
-    } else {
-      throw new Error(
-        `getContact: Request failed with status code ${response.status}`
-      );
-    }
+    response = await refreshAndRetry(searchMobileQuery({ mobile, accessToken: account?.accessToken, zohoModule }), account?.accessToken);
   }
 
-  console.error({ responseBody })
-
+  let responseBody = await response.json();
 
   const data = responseBody?.data;
 
   if (!data || !data[0]) {
+    console.error('getContact: No data returned from server', responseBody);
     throw new Error('getContact: No data returned from server');
   }
 
