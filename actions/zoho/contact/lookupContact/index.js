@@ -1,11 +1,11 @@
 'use server';
 import { getZohoAccount } from '~/actions/zoho';
-import { formatMobile } from '~/utils';
+// import { formatMobile } from '~/utils';
 import { logError } from '~/utils/logError';
 
 const getContact = async ({ mobile, accessToken, zohoModule }) => {
   const fields = 'id,Full_Name,Mobile,SMS_Opt_Out,Lead_Status,Owner';
-  const criteria = `(Mobile:equals:${formatMobile(mobile)})`;
+  const criteria = `(Mobile:equals:${mobile})`;
   const url = `https://www.zohoapis.com/crm/v5/${zohoModule}/search?fields=${fields}&criteria=${criteria}`;
 
   const response = await fetch(url, {
@@ -35,10 +35,12 @@ const getContact = async ({ mobile, accessToken, zohoModule }) => {
 
 const getContactFromModules = async ({ mobile, accessToken, modules }) => {
   let contact = null;
+  console.log({ mobile });
   for (const zohoModule of modules) {
     try {
       contact = await getContact({ mobile, accessToken, zohoModule });
     } catch (error) {
+      console.error(error.message);
       console.info(
         `getContactFromModules: Contact ${mobile} not found in module ${zohoModule}`
       );
