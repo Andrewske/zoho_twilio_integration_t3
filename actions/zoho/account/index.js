@@ -37,7 +37,6 @@ export const getZohoAccountFromAccounts = (studioAccounts) => {
 };
 
 export const refreshAndFetchUpdatedAccount = async (account, studioId) => {
-  console.log('Update and refresh');
   // Refresh the access token
   await refreshAccessToken(account);
 
@@ -46,15 +45,6 @@ export const refreshAndFetchUpdatedAccount = async (account, studioId) => {
     where: { studioId },
     include: { Account: true },
   });
-
-  console.log(
-    'updatedAccounts',
-    JSON.stringify(
-      updatedAccounts
-        .map(({ Account }) => Account)
-        .find(({ platform }) => platform === 'zoho')
-    )
-  );
 
   return updatedAccounts
     .map(({ Account }) => Account)
