@@ -14,12 +14,15 @@ const getContact = async ({ mobile, accessToken, zohoModule }) => {
   });
 
   if (!response.ok) {
+    console.error(response.status, response.statusText);
     throw new Error(
       `getContact: Request failed with status code ${response.status}`
     );
   }
 
   const responseBody = await response.json();
+
+  console.log(responseBody);
   const data = responseBody?.data;
 
   if (!data || !data[0]) {
