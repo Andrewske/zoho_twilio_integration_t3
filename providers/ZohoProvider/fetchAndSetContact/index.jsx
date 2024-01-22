@@ -32,6 +32,7 @@ export const fetchAndSetContact = async ({ entity, entityId, setContact }) => {
             mobile: phoneNumber,
             studioId: studio?.id,
           });
+          console.log('contact', contact);
           setContact(contact);
         } else {
           sendError('This lead is not assigned to an active studio.', false);
