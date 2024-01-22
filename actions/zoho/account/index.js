@@ -11,6 +11,9 @@ export const getStudioAccounts = async ({ studioId }) => {
   return await prismaQueryWrapper(prisma.studioAccount.findMany({
     where: { studioId },
     include: { Account: true },
+    cacheStrategy: {
+      ttl: 60,
+    },
   }));
 };
 
@@ -44,6 +47,9 @@ export const refreshAndFetchUpdatedAccount = async (account, studioId) => {
   const updatedAccounts = await prismaQueryWrapper(prisma.studioAccount.findMany({
     where: { studioId },
     include: { Account: true },
+    cacheStrategy: {
+      ttl: 60,
+    },
   }));
 
   return updatedAccounts
