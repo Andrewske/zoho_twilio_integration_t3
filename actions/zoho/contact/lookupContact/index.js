@@ -4,6 +4,7 @@ import { getZohoAccount } from '~/actions/zoho';
 import { logError } from '~/utils/logError';
 
 const getContact = async ({ mobile, accessToken, zohoModule }) => {
+  console.log(JSON.stringify({ mobile, accessToken, zohoModule }));
   const fields = 'id,Full_Name,Mobile,SMS_Opt_Out,Lead_Status,Owner';
   const criteria = `(Mobile:equals:${mobile})`;
   const url = `https://www.zohoapis.com/crm/v5/${zohoModule}/search?fields=${fields}&criteria=${criteria}`;
@@ -14,7 +15,7 @@ const getContact = async ({ mobile, accessToken, zohoModule }) => {
   });
 
   if (!response.ok) {
-    console.error(response.status, response.statusText);
+    console.log(JSON.stringify(response));
     throw new Error(
       `getContact: Request failed with status code ${response.status}`
     );
