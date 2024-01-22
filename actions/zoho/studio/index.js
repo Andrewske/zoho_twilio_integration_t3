@@ -1,6 +1,6 @@
 'use server';
 import { logError } from '~/utils/logError';
-import prisma from '~/utils/prisma.js';
+import { prisma } from '~/utils/prisma.js';
 
 export const getStudioData = async ({ zohoId, phone = null }) => {
   const where = phone ? { smsPhone: phone } : { zohoId };

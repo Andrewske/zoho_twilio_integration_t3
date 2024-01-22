@@ -1,5 +1,5 @@
 import { createTask } from '~/actions/zoho/tasks';
-import prisma from '~/utils/prisma';
+import { prisma } from '~/utils/prisma';
 import { smsOptOut } from '~/actions/zoho/contact/smsOptOut';
 import { lookupContact } from '~/actions/zoho/contact/lookupContact';
 import { updateStatus } from '~/actions/zoho/contact/updateStatus';

@@ -1,5 +1,5 @@
 'use server';
-import prisma from '~/utils/prisma.js';
+import { prisma, prismaQueryWrapper } from '~/utils/prisma.js';
 
 import { refreshAccessToken } from '~/actions/zoho/token';
 
@@ -25,9 +25,9 @@ export const getStudioFromZohoId = async (zohoId) => {
 };
 
 export const getZohoAccountFromAccounts = (studioAccounts) => {
-  const account = studioAccounts
+  const account = prismaQueryWrapper(studioAccounts
     .map(({ Account }) => Account)
-    .find(({ platform }) => platform === 'zoho');
+    .find(({ platform }) => platform === 'zoho'));
 
   if (!account) {
     throw new Error('No Zoho account found for studio');
@@ -41,10 +41,10 @@ export const refreshAndFetchUpdatedAccount = async (account, studioId) => {
   await refreshAccessToken(account);
 
   // Return a new account object with the updated access token
-  const updatedAccounts = await prisma.studioAccount.findMany({
+  const updatedAccounts = await prismaQueryWrapper(prisma.studioAccount.findMany({
     where: { studioId },
     include: { Account: true },
-  });
+  }));
 
   return updatedAccounts
     .map(({ Account }) => Account)

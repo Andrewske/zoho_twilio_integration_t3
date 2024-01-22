@@ -6,17 +6,20 @@ import {
   refreshAndFetchUpdatedAccount,
 } from './account';
 import { isAccessTokenExpired } from './utils';
+import * as Sentry from '@sentry/node';
 
 export const getZohoAccount = async ({ studioId }) => {
   try {
     const studioAccounts = await getStudioAccounts({ studioId });
-    const account = getZohoAccountFromAccounts(studioAccounts);
+    const account = await getZohoAccountFromAccounts(studioAccounts);
 
     // Check if the access token is expired
     if (isAccessTokenExpired(account)) {
-      console.log('Access token is expired, refreshing...');
+      Sentry.captureMessage('Access token is expired, refreshing...');
       return await refreshAndFetchUpdatedAccount(account, studioId);
     }
+
+    console.log('Access token is not expired, returning account', { account });
 
     return account;
   } catch (error) {

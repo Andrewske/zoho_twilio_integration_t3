@@ -1,5 +1,5 @@
 import { POST, parseRequest, isValidMessage, getStudioInfo } from './route.js'; // Adjust the import based on your file structure
-import prisma from '~/utils/prisma.js';
+import { prisma } from '~/utils/prisma.js';
 import { lookupLead } from '~/actions/zoho/leads/index.js';
 import { createTask } from '~/actions/zoho/tasks/index.js';
 
