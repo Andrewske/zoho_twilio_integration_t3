@@ -24,8 +24,8 @@ export const getStudioFromZohoId = async (zohoId) => {
   });
 };
 
-export const getZohoAccountFromAccounts = (studioAccounts) => {
-  const account = prismaQueryWrapper(studioAccounts
+export const getZohoAccountFromAccounts = async (studioAccounts) => {
+  const account = await prismaQueryWrapper(studioAccounts
     .map(({ Account }) => Account)
     .find(({ platform }) => platform === 'zoho'));
 
