@@ -14,10 +14,11 @@ export const buildUrl = (params) => {
   return `https://accounts.zoho.com/oauth/v2/token?${params.toString()}`;
 };
 
-export const updateAccount = async (
-  prisma,
-  { id, access_token, expires_in /*, api_domain */ }
-) => {
+export const updateAccount = async ({
+  id,
+  access_token,
+  expires_in /*, api_domain */,
+}) => {
   return await prisma.account.update({
     where: { id },
     data: {
@@ -34,10 +35,13 @@ export const refreshAccessToken = async ({
   clientId,
   clientSecret,
 }) => {
+  console.log('refreshAccessToken');
   const params = buildParams({ refreshToken, clientId, clientSecret });
   const url = buildUrl(params);
 
-  const response = await fetch(url, { method: 'POST' });
+  const response = await fetch(url, {
+    method: 'POST',
+  });
 
   if (!response.ok) {
     throw new Error('Network response was not ok');
@@ -51,7 +55,7 @@ export const refreshAccessToken = async ({
 
   const { access_token, expires_in, api_domain } = data;
 
-  await updateAccount(prisma, { id, access_token, expires_in, api_domain });
+  await updateAccount({ id, access_token, expires_in, api_domain });
 
   return access_token;
 };
