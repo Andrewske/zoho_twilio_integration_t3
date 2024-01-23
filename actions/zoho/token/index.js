@@ -1,5 +1,4 @@
 'use server';
-
 import { prisma } from '~/utils/prisma';
 
 export const buildParams = ({ refreshToken, clientId, clientSecret }) => {
@@ -20,13 +19,16 @@ export const updateAccount = async ({
   access_token,
   expires_in
 }) => {
-  return await prisma.account.update({
+  const updated = await prisma.account.update({
     where: { id },
     data: {
       accessToken: access_token,
       expiresIn: expires_in
     },
   });
+
+  console.log('updateAccount', { updated })
+  return updated;
 };
 
 export const refreshAccessToken = async ({
@@ -58,6 +60,7 @@ export const refreshAccessToken = async ({
 
 
     const { access_token, expires_in } = data;
+
 
     return await updateAccount({ id, access_token, expires_in });
 
