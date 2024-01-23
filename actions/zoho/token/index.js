@@ -27,7 +27,7 @@ export const updateAccount = async ({
     },
   });
 
-  console.log('updateAccount', { updated })
+
   return updated;
 };
 
@@ -53,18 +53,13 @@ export const refreshAccessToken = async ({
 
     const data = await response.json();
 
-    console.log('refreshAccessToken', { data })
-
     if (!data?.access_token) {
       throw new Error('Access token not received');
     }
 
-
     const { access_token, expires_in } = data;
 
-
     return await updateAccount({ id, access_token, expires_in });
-
   } catch (error) {
     console.error(error);
     throw new Error('Error refreshing access token');

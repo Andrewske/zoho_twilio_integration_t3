@@ -18,7 +18,7 @@ export const logError = ({ message, error = null, level = 'error', data = {} }) 
     const errorData = formatErrorData(data);
 
     try {
-        logToConsole(timestamp, message, errorData, level);
+        logToConsole(timestamp, message, errorData, error);
         reportToSentry(error, level, errorData);
     } catch (error) {
         console.error('Error logging error:', error)
@@ -34,8 +34,8 @@ function formatErrorData(data) {
     return typeof data === 'object' && data !== null ? JSON.stringify({ ...data }) : data;
 }
 
-function logToConsole(timestamp, message, errorData) {
-    console.log(`${timestamp} - ${message} - ${errorData}`);
+function logToConsole(timestamp, message, errorData, error) {
+    console.log(`${timestamp} - ${message} - ${errorData} - ${error?.message} - ${error?.code}`);
 }
 
 function reportToSentry(error, level, data) {
