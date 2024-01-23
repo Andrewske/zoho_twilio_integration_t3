@@ -44,6 +44,7 @@ export const refreshAccessToken = async ({
 
     const response = await fetch(url, {
       method: 'POST',
+      cache: 'no-cache',
     });
 
     if (!response.ok) {
