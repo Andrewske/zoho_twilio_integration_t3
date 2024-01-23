@@ -1,12 +1,12 @@
 'use client';
 import styles from './styles.module.css'
 
-import { getMessages } from '~/actions/twilio';
-import { useContext, useState, useEffect } from 'react';
+// import { getMessages } from '~/actions/twilio';
+import { useContext, useState } from 'react';
 import { ZohoContext } from '~/providers/ZohoProvider';
 import ChatWindow from '~/components/ChatWindow';
 import { Comment } from 'react-loader-spinner';
-import { sendError } from '~/utils/toast';
+// import { sendError } from '~/utils/toast';
 import ToastContainer from '~/components/ToastContainer';
 import { lookupContact } from '~/actions/zoho/contact/lookupContact';
 
