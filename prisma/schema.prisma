@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider     = "mysql"
   url          = env("DATABASE_URL")
+  directUrl    = env("DIRECT_URL")
   relationMode = "prisma"
 }
 
@@ -22,6 +23,17 @@ model Account {
   scope         String?
   apiDomain     String?
   StudioAccount StudioAccount[]
+  TokenRefresh  TokenRefresh[]
+
+
+}
+
+model TokenRefresh {
+  accountId     String         
+  accessToken   String         @db.Text
+  Account       Account        @relation(fields: [accountId], references: [id])
+  @@id([accountId])
+  @@index([accountId])
 }
 
 model Studio {
