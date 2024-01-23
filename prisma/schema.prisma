@@ -31,6 +31,8 @@ model Account {
 model TokenRefresh {
   accountId     String         
   accessToken   String         @db.Text
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @default(now()) @updatedAt @map("updated_at")
   Account       Account        @relation(fields: [accountId], references: [id])
   @@id([accountId])
   @@index([accountId])
