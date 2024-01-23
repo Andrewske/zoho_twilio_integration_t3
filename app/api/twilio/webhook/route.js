@@ -5,6 +5,8 @@ import { lookupContact } from '~/actions/zoho/contact/lookupContact';
 import { updateStatus } from '~/actions/zoho/contact/updateStatus';
 import { logError } from '~/utils/logError';
 import { formatMobile } from '~/utils';
+import { getStudioAccounts } from '~/actions/zoho/account';
+import { getZohoAccount } from '~/actions/zoho';
 
 export const runtime = 'edge'; // 'nodejs' is the default
 export const dynamic = 'force-dynamic'; // static by default, unless reading the request
@@ -17,46 +19,53 @@ export async function POST(request) {
 
     const studio = await getStudioInfo(to);
 
-    const { messageId, followUpMessageId } = await createMessageRecords(
-      body,
-      studio
-    );
+    const account = await getZohoAccount({ studioId: "cloj98kcn00002z9w53lw8lze" });
+
+
+
+    // const { messageId, followUpMessageId } = await createMessageRecords(
+    //   body,
+    //   studio
+    // );
 
     const contact = await lookupContact({
       mobile: from,
-      studioId: studio?.id,
+      studioId: "cloj98kcn00002z9w53lw8lze",
     });
 
-    const STOP = msg.toLowerCase().trim() == 'stop';
-    if (STOP) {
-      await smsOptOut({ studio, contact });
-      return new Response(null, { status: 200 });
-    }
+    console.log("here")
+    console.log({ contact });
 
-    const YES = msg.toLowerCase().trim() === 'yes';
-    if (contact?.isLead && contact?.Lead_Status == 'New' && YES) {
-      updateStatus({ studio, contact });
-      sendFollowUp({
-        followUpMessageId,
-        contact,
-        studio,
-      });
-    }
+    // const STOP = msg.toLowerCase().trim() == 'stop';
+    // if (STOP) {
+    //   await smsOptOut({ studio, contact });
+    //   return new Response(null, { status: 200 });
+    // }
 
-    await createTask({
-      studioId: studio?.id,
-      zohoId: studio?.zohoId,
-      contact,
-      message: { to, from, msg },
-    });
+    // const YES = msg.toLowerCase().trim() === 'yes';
+    // if (contact?.isLead && contact?.Lead_Status == 'New' && YES) {
+    //   updateStatus({ studio, contact });
+    //   sendFollowUp({
+    //     followUpMessageId,
+    //     contact,
+    //     studio,
+    //   });
+    // }
 
-    await prisma.message.update({
-      where: { id: messageId },
-      data: {
-        studioId: studio?.id,
-        contactId: contact?.id,
-      },
-    });
+    // // await createTask({
+    // //   studioId: studio?.id,
+    // //   zohoId: studio?.zohoId,
+    // //   contact,
+    // //   message: { to, from, msg },
+    // // });
+
+    // await prisma.message.update({
+    //   where: { id: messageId },
+    //   data: {
+    //     studioId: studio?.id,
+    //     contactId: contact?.id,
+    //   },
+    // });
   } catch (error) {
     console.error(error);
     logError({

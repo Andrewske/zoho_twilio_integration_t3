@@ -1,5 +1,5 @@
 'use server';
-import { logError } from '~/utils/logError';
+
 import { prisma } from '~/utils/prisma';
 
 export const buildParams = ({ refreshToken, clientId, clientSecret }) => {
@@ -18,14 +18,13 @@ export const buildUrl = (params) => {
 export const updateAccount = async ({
   id,
   access_token,
-  expires_in /*, api_domain */,
+  expires_in
 }) => {
   return await prisma.account.update({
     where: { id },
     data: {
       accessToken: access_token,
-      expiresIn: expires_in,
-      // apiDomain: api_domain,
+      expiresIn: expires_in
     },
   });
 };
@@ -51,22 +50,19 @@ export const refreshAccessToken = async ({
 
     const data = await response.json();
 
-    if (!data.access_token) {
+    console.log('refreshAccessToken', { data })
+
+    if (!data?.access_token) {
       throw new Error('Access token not received');
     }
 
-    const { access_token, expires_in, api_domain } = data;
 
-    await updateAccount({ id, access_token, expires_in, api_domain });
+    const { access_token, expires_in } = data;
 
-    return access_token;
+    return await updateAccount({ id, access_token, expires_in });
+
   } catch (error) {
     console.error(error);
-    logError({
-      message: 'Error refreshing access token',
-      error,
-      data: { id },
-    });
     throw new Error('Error refreshing access token');
   }
 

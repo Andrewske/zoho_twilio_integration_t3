@@ -4,25 +4,31 @@ import { formatMobile } from '~/utils';
 import { logError } from '~/utils/logError';
 import refreshAndRetry from '../../token/refreshAndRetry';
 
-const searchMobileQuery = async ({ mobile, accessToken, zohoModule }) => {
+const searchMobileQuery = async ({ mobile, account, zohoModule }) => {
   const fields = 'id,Full_Name,Mobile,SMS_Opt_Out,Lead_Status,Owner';
   const criteria = `(Mobile:equals:${formatMobile(mobile)})`;
   const url = `https://www.zohoapis.com/crm/v5/${zohoModule}/search?fields=${fields}&criteria=${criteria}`;
+  console.log({ account })
 
   return await fetch(url, {
     method: 'GET',
-    headers: { Authorization: `Zoho-oauthtoken ${accessToken}` },
+    headers: { Authorization: `Zoho-oauthtoken ${account?.accessToken}` },
   });
 }
 
-const getContact = async ({ mobile, account, zohoModule }) => {
-  let response = await searchMobileQuery({ mobile, accessToken: account?.accessToken, zohoModule })
+const getContact = async (props) => {
+  let response = await searchMobileQuery(props)
+  let responseBody = await response.json();
+  console.log('responseBody', { responseBody })
 
   if (!response.ok) {
-    response = await refreshAndRetry(searchMobileQuery({ mobile, accessToken: account?.accessToken, zohoModule }), account?.accessToken);
+    console.error(`getContact: response not ok ${response?.status} ${response?.statusText}`)
+    response = await refreshAndRetry(searchMobileQuery, props);
+    responseBody = await response.json();
   }
 
-  let responseBody = await response.json();
+
+  console.log('responseBody2', { responseBody })
 
   const data = responseBody?.data;
 
@@ -33,8 +39,9 @@ const getContact = async ({ mobile, account, zohoModule }) => {
 
   const contact = {
     ...data[0],
-    isLead: zohoModule === 'Leads',
+    isLead: props.zohoModule === 'Leads',
   };
+
   return contact;
 };
 
@@ -68,6 +75,8 @@ export const lookupContact = async ({ mobile, studioId }) => {
     }
 
     const account = await getZohoAccount({ studioId });
+
+    console.log('lookupContact', { account })
 
     if (!account?.accessToken) {
       throw new Error(
