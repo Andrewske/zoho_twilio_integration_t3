@@ -12,9 +12,6 @@ const refreshAndRetry = async (func, props) => {
     }
 
     const updatedAccount = await refreshAccessToken(account);
-    console.log('refreshAndRetry', { oldToken: props.account.accessToken })
-    console.log('refreshAndRetry', { newToken: updatedAccount.accessToken })
-
 
     props.account.accessToken = updatedAccount.accessToken;
 

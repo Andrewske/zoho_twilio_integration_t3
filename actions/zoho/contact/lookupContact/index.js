@@ -8,7 +8,6 @@ const searchMobileQuery = async ({ mobile, account, zohoModule }) => {
   const fields = 'id,Full_Name,Mobile,SMS_Opt_Out,Lead_Status,Owner';
   const criteria = `(Mobile:equals:${formatMobile(mobile)})`;
   const url = `https://www.zohoapis.com/crm/v5/${zohoModule}/search?fields=${fields}&criteria=${criteria}`;
-  console.log({ account })
 
   return await fetch(url, {
     method: 'GET',
@@ -19,7 +18,6 @@ const searchMobileQuery = async ({ mobile, account, zohoModule }) => {
 const getContact = async (props) => {
   let response = await searchMobileQuery(props)
   let responseBody = await response.json();
-  console.log('responseBody', { responseBody })
 
   if (!response.ok) {
     console.error(`getContact: response not ok ${response?.status} ${response?.statusText}`)
@@ -47,7 +45,6 @@ const getContact = async (props) => {
 
 const getContactFromModules = async ({ mobile, account, studioId, modules }) => {
   let contact = null;
-  console.log({ mobile });
   for (const zohoModule of modules) {
     try {
       contact = await getContact({ mobile, account, studioId, zohoModule });
@@ -76,7 +73,6 @@ export const lookupContact = async ({ mobile, studioId }) => {
 
     const account = await getZohoAccount({ studioId });
 
-    console.log('lookupContact', { account })
 
     if (!account?.accessToken) {
       throw new Error(
