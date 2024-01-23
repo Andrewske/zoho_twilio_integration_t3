@@ -151,7 +151,7 @@ export const sendMessage = async ({
     return { twilioMessageId: sendRecord.sid };
   } catch (error) {
     logError({
-      message: 'Error sendMessage:',
+      message: error.message,
       error,
       level: 'error',
       data: { to, from, message, studioId },
