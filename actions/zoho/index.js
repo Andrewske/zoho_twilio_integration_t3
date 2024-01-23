@@ -13,7 +13,7 @@ export const getZohoAccount = async ({ studioId }) => {
     const studioAccounts = await getStudioAccounts({ studioId });
     let account = await getZohoAccountFromAccounts(studioAccounts);
 
-    console.log('getZohoAccount', { account })
+    console.log('getZohoAccount', { token: account.accessToken })
 
     // account.expiresIn = 0;
 
