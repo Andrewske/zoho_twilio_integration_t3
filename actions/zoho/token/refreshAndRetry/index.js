@@ -2,19 +2,23 @@
 import { prisma } from "~/utils/prisma"
 import { refreshAccessToken } from "~/actions/zoho/token"
 
-const refreshAndRetry = async (func, accessToken) => {
+const refreshAndRetry = async (func, props) => {
     const account = await prisma.account.findFirst({
-        where: { accessToken, platform: 'zoho' },
+        where: { accessToken: props.accessToken, platform: 'zoho' },
     });
 
     if (!account) {
-        throw new Error('No account found for access token');
+        throw new Error(`No account found for access token ${props.accessToken}`);
     }
 
-    const updatedAccessToken = await refreshAccessToken(account);
+    const updatedAccount = await refreshAccessToken(account);
+    console.log(props)
+    console.log('refreshAndRetry', { updatedAccount })
 
 
-    return func(updatedAccessToken);
+    props.account.accessToken = updatedAccount.accessToken;
+
+    return func(props);
 }
 
 export default refreshAndRetry;
