@@ -19,7 +19,7 @@ export const logError = ({ message, error = null, level = 'error', data = {} }) 
 
     try {
         logToConsole(timestamp, message, errorData, level);
-        reportToSentry(error, level, data);
+        reportToSentry(error, level, errorData);
     } catch (error) {
         console.error('Error logging error:', error)
     }

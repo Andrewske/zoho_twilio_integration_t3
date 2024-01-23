@@ -10,40 +10,31 @@ import { Comment } from 'react-loader-spinner';
 import ToastContainer from '~/components/ToastContainer';
 import { lookupContact } from '~/actions/zoho/contact/lookupContact';
 
+
 export default function Page() {
     const { studio, contact } = useContext(ZohoContext);
     const [messages, setMessages] = useState(null);
 
-    // useEffect(() => {
-    //     if (!messages && contact && studio?.id) {
-    //         console.log(JSON.stringify({ contact, studio }));
-    //         getMessages({ contactMobile: contact.Mobile, studioId: studio?.id }).then(
-    //             (messages) => {
-    //                 if (messages.length === 0) {
-    //                     sendError(
-    //                         `There are no messages to or from this lead. Be the first to send one!`
-    //                     );
-    //                 }
-    //                 setMessages(messages);
-    //             }
-    //         );
-    //     }
-    // }, [contact, studio, messages]);
 
-    // useEffect(() => {
-    //     if (studio && !studio?.active) {
-    //         sendError(
-    //             `Hi ${studio?.name}, this feature is currently still in development. Please check back soon!`,
-    //             false
-    //         );
-    //     }
-    // }, [studio]);
+    // const secretPassword = process.env.SECRET_PASSWORD;
+
+
+    // Existing code
 
     const handleButtonOneClick = async () => {
         const contact = await lookupContact({ mobile: '2818445012', studioId: "cloj98kgd00092z9whucd9web" })
         console.log({ contact })
 
     }
+
+    // if (!secretPassword) {
+    //     return (
+    //         <div className={styles.wrapper}>
+    //             <input type="password" placeholder="Enter secret password" />
+    //             <button>Submit</button>
+    //         </div>
+    //     );
+    // }
 
     return (
         <main className={styles.wrapper}>
@@ -73,5 +64,4 @@ export default function Page() {
         </main>
     );
 }
-
 
