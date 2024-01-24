@@ -87,8 +87,11 @@ export async function parseRequest(request) {
 
 export async function getStudioInfo(to) {
   try {
+    const { DEV_ZOHO_ID, ADMIN_ZOHO_ID } = process.env
+    const ignoreIds = [DEV_ZOHO_ID, ADMIN_ZOHO_ID].filter(Boolean)
+
     const studio = await prisma.studio.findFirst({
-      where: { smsPhone: to },
+      where: { smsPhone: to, zohoId: { notIn: ignoreIds } },
       select: { id: true, zohoId: true, smsPhone: true, active: true },
     });
 
