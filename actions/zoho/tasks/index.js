@@ -13,11 +13,11 @@ export const createTaskData = ({ zohoId, message, contact }) => {
     Description: `TO: ${to} FROM: ${from} MSG: ${msg}`,
     Priority: 'Low',
     Subject: `NEW SMS: From ${contact.isLead ? 'Lead' : 'Student'} - ${
-      contact.Full_Name
+      contact?.Full_Name
     }`,
   };
 
-  taskData['What_Id'] = { id: contact.id, name: contact.Full_Name };
+  taskData['What_Id'] = { id: contact?.id, name: contact?.Full_Name };
   taskData['$se_module'] = se_module;
 
   return taskData;
@@ -38,7 +38,9 @@ export const postTaskToZoho = async ({ apiDomain, accessToken, taskData }) => {
     });
 
     if (!response.ok) {
-      throw new Error(`Error posting task ${response.status}`);
+      throw new Error(
+        `Error posting task ${response.status}, ${response.statusText}`
+      );
     }
 
     const responseBody = await response.json();
