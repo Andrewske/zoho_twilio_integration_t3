@@ -26,12 +26,11 @@ const getContact = async (props) => {
   }
 
 
-  console.log('responseBody2', { responseBody })
 
   const data = responseBody?.data;
 
   if (!data || !data[0]) {
-    console.error('getContact: No data returned from server', responseBody);
+    console.error('getContact: No data returned from server', JSON.stringify(responseBody));
     throw new Error('getContact: No data returned from server');
   }
 
