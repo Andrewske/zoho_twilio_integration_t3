@@ -38,9 +38,8 @@ export const postTaskToZoho = async ({ apiDomain, accessToken, taskData }) => {
     });
 
     if (!response.ok) {
-      throw new Error(
-        `Error posting task ${response.status}, ${response.statusText}`
-      );
+      const text = await response.text();
+      throw new Error(`Error posting task ${response.status}, ${text}`);
     }
 
     const responseBody = await response.json();
