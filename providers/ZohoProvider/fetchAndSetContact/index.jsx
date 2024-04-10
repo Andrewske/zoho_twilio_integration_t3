@@ -8,6 +8,7 @@ import { getZohoRecord } from '~/utils/zohoApi';
 export const fetchAndSetContact = async ({ entity, entityId, setContact }) => {
   try {
     const response = await getZohoRecord(entity, entityId);
+    console.log('contact', response);
 
     if (response && response.data && response.data[0]) {
       const {
