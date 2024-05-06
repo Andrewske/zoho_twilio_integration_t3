@@ -19,7 +19,7 @@ export async function POST(request) {
       smsOptOut: false,
       isLead: true,
     };
-
+    
     const zohoWebhookId = await findOrCreateWelcomeMessage({
       contact,
       from: studio.smsPhone,
@@ -113,7 +113,6 @@ export async function parseRequest(request) {
 
 export async function getStudioFromZohoId(owner_id) {
   try {
-    console.log(owner_id)
     const studio = await prisma.studio.findFirst({
       where: { zohoId: owner_id },
       select: {

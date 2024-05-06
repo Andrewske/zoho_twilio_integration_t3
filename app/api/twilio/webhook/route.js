@@ -6,8 +6,8 @@ import { updateStatus } from '~/actions/zoho/contact/updateStatus';
 import { logError } from '~/utils/logError';
 import { formatMobile } from '~/utils';
 
-export const runtime = 'edge'; // 'nodejs' is the default
-export const dynamic = 'force-dynamic'; // static by default, unless reading the request
+// export const runtime = 'edge'; // 'nodejs' is the default
+// export const dynamic = 'force-dynamic'; // static by default, unless reading the request
 
 export async function POST(request) {
   try {
