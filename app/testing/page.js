@@ -9,6 +9,7 @@ import { Comment } from 'react-loader-spinner';
 // import { sendError } from '~/utils/toast';
 import ToastContainer from '~/components/ToastContainer';
 import { lookupContact } from '~/actions/zoho/contact/lookupContact';
+import { printDatabaseURL } from '~/actions/testing_server';
 
 
 export default function Page() {
@@ -84,6 +85,7 @@ export default function Page() {
 
                 <button className={styles.button} onClick={() => handleSendWelcomeMessage()}>Send Welcome Message</button>
                 <button className={styles.button} onClick={() => handleSendFollowUpMessage()}>Send Follow Up Message</button>
+                <button className={styles.button} onClick={() => printDatabaseURL()}>Print DB URL</button>
             </div>
             <ToastContainer />
             {!messages || !studio?.active ? (
