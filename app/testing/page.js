@@ -40,7 +40,7 @@ export default function Page() {
             mobile: '5098992771',
             firstName: 'Test',
         });
-        const response = fetch('/api/zoho/send_welcome', {
+        const response = await fetch('/api/zoho/send_welcome', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
