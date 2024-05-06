@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 // import { withAccelerate } from '@prisma/extension-accelerate';
 
 const prisma = new PrismaClient({
-    datasources: { db: { url: process.env.POSTGRES_PRISMA_URL } }
+    datasourceURL: process.env.POSTGRES_PRISMA_URL
 })
 // .$extends(withAccelerate());
 
