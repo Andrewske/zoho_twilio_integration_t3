@@ -3,6 +3,7 @@ import { getZohoAccount } from '~/actions/zoho';
 import { formatMobile } from '~/utils';
 import { logError } from '~/utils/logError';
 import refreshAndRetry from '../../token/refreshAndRetry';
+import { revalidatePath } from 'next/cache';
 
 const searchMobileQuery = async ({ mobile, account, zohoModule }) => {
   const fields = 'id,Full_Name,Mobile,SMS_Opt_Out,Lead_Status,Owner';
@@ -12,6 +13,8 @@ const searchMobileQuery = async ({ mobile, account, zohoModule }) => {
   return await fetch(url, {
     method: 'GET',
     headers: { Authorization: `Zoho-oauthtoken ${account?.accessToken}` },
+    cache: 'no-cache',
+    revalidate: 0
   });
 }
 
@@ -65,6 +68,7 @@ const getContactFromModules = async ({ mobile, account, studioId, modules }) => 
 };
 
 export const lookupContact = async ({ mobile, studioId }) => {
+  revalidatePath('/testing')
   try {
     if (!mobile) {
       throw new Error('lookupContact: No mobile provided to lookupContact');

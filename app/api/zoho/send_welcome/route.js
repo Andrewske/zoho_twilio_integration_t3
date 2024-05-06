@@ -8,6 +8,8 @@ export async function POST(request) {
     const { leadId, ownerId, mobile, firstName } = await parseRequest(request);
     const studio = await getStudioFromZohoId(ownerId);
 
+    console.log(studio)
+
     if (!studio.active) return new Response(null, { status: 200 });
 
     const contact = {
@@ -111,6 +113,7 @@ export async function parseRequest(request) {
 
 export async function getStudioFromZohoId(owner_id) {
   try {
+    console.log(owner_id)
     const studio = await prisma.studio.findFirst({
       where: { zohoId: owner_id },
       select: {

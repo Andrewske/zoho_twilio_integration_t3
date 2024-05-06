@@ -27,12 +27,12 @@ export const updateAccount = async ({
     },
   });
 
-  await prisma.tokenRefresh.create({
-    data: {
-      accountId: id,
-      accessToken: updated.accessToken
-    }
-  })
+  // await prisma.tokenRefresh.create({
+  //   data: {
+  //     accountId: id,
+  //     accessToken: updated.accessToken
+  //   }
+  // })
 
 
   return updated;
