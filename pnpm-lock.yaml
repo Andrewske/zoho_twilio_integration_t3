@@ -11,9 +11,6 @@ dependencies:
   '@prisma/client':
     specifier: ^5.13.0
     version: 5.13.0(prisma@5.13.0)
-  '@prisma/extension-accelerate':
-    specifier: ^0.6.2
-    version: 0.6.2(@prisma/client@5.13.0)
   '@rollbar/react':
     specifier: ^0.11.2
     version: 0.11.2(prop-types@15.8.1)(react@18.2.0)(rollbar@2.26.2)
@@ -1129,15 +1126,6 @@ packages:
       '@prisma/engines-version': 5.13.0-23.b9a39a7ee606c28e3455d0fd60e78c3ba82b1a2b
       '@prisma/fetch-engine': 5.13.0
       '@prisma/get-platform': 5.13.0
-    dev: false
-
-  /@prisma/extension-accelerate@0.6.2(@prisma/client@5.13.0):
-    resolution: {integrity: sha512-KIBVPeWt8qaSg7wQ+TXmCVeUDoW75whtXcdS9dbHxRoO2OWFH5I9+qbkHBhx5Wj/h1wQpS8usuxGnsZqiBjUpQ==}
-    engines: {node: '>=16'}
-    peerDependencies:
-      '@prisma/client': '>=4.16.1'
-    dependencies:
-      '@prisma/client': 5.13.0(prisma@5.13.0)
     dev: false
 
   /@prisma/fetch-engine@5.13.0:
