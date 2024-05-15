@@ -30,7 +30,7 @@ export const getTwilioAccount = async (id) => {
   }
 };
 
-const getTwilioClient = ({ clientId, clientSecret }) =>
+export const getTwilioClient = ({ clientId, clientSecret }) =>
   twilio(clientId, clientSecret, { region: 'US1', edge: 'umatilla' });
 
 export const getMessagesToContact = async (client, contactMobile) => {
