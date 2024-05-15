@@ -3,6 +3,10 @@
     {
       "path": "/api/cron",
       "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/twilio/get_messages",
+      "schedule": "* 23 * * *"
     }
   ]
 }
