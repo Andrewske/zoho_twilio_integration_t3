@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/twilio/get_messages",
-      "schedule": "* 23 * * *"
+      "schedule": "0 23 * * *"
     }
   ]
 }
