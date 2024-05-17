@@ -28,15 +28,13 @@ const getLastWeekOfMessages = async () => {
     // Subtract 7 days worth of milliseconds from the current date
     oneWeekAgo.setTime(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    console.log(oneWeekAgo);
-
 
     // // Get all the messages from Twilio
     const twilioAccount = await getTwilioAccount(process.env.ADMIN_STUDIO_ID);
 
     const client = getTwilioClient(twilioAccount);
 
-    const messages = await client.messages.list().then(messages => messages.map(message => {
+    const messages = await client.messages.list({ dateSentAfter: oneWeekAgo }).then(messages => messages.map(message => {
         return {
             sid: message.sid,
             from: message.from,
