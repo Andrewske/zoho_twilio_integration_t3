@@ -6,15 +6,26 @@ import { logError } from "~/utils/logError";
 
 
 export async function GET() {
+    console.log('CRON update analytics')
 
-    const messages = await getLastWeekOfMessages();
+    try {
+        const messages = await getLastWeekOfMessages();
 
-    await uploadMessagesToZoho(messages)
+        await uploadMessagesToZoho(messages)
 
-    return new Response('OK', {
-        status: 200,
-    });
+        return new Response('OK', {
+            status: 200,
+        });
 
+    } catch (error) {
+        console.error(error);
+        logError({
+            message: 'Error in Updating Analytics:',
+            error,
+            level: 'error',
+            data: {},
+        });
+    }
 }
 
 
