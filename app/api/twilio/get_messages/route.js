@@ -34,6 +34,9 @@ export async function GET(request) {
             level: 'error',
             data: {},
         });
+        return new Response('Error', {
+            status: 500,
+        });
     }
 }
 
