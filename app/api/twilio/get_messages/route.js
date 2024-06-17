@@ -5,8 +5,17 @@ import FormData from "form-data";
 import { logError } from "~/utils/logError";
 
 
-export async function GET() {
+export async function GET(request) {
     console.log('CRON update analytics')
+    const authHeader = request.headers.get('authorization');
+    if (
+        process.env.NODE_ENV === 'production' &&
+        authHeader !== `Bearer ${process.env.CRON_SECRET}`
+    ) {
+        return new Response('Unauthorized', {
+            status: 401,
+        });
+    }
 
     try {
         const messages = await getLastWeekOfMessages();
