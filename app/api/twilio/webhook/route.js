@@ -27,6 +27,10 @@ export async function POST(request) {
       studioId: "cloj98kcn00002z9w53lw8lze",
     });
 
+    if (!contact) {
+      return new Response(null, { status: 200 });
+    }
+
     const STOP = msg.toLowerCase().trim() == 'stop';
     if (STOP) {
       await smsOptOut({ studio, contact });
