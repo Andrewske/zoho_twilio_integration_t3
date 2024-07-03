@@ -61,7 +61,7 @@ export const postTaskToZoho = async ({ apiDomain, accessToken, taskData }) => {
 };
 
 export const createTask = async ({ studioId, zohoId, contact, message }) => {
-  if (formatMobile(contact.Mobile) === process.env.KEVIN_MOBILE) return;
+  // if (formatMobile(contact.Mobile) === process.env.KEVIN_MOBILE) return;
   try {
     const taskData = createTaskData({ zohoId, message, contact });
     const { apiDomain, accessToken } = await getZohoAccount({ studioId });
