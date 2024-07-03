@@ -10,6 +10,7 @@ import { Comment } from 'react-loader-spinner';
 import ToastContainer from '~/components/ToastContainer';
 import { lookupContact } from '~/actions/zoho/contact/lookupContact';
 import { printDatabaseURL } from '~/actions/testing_server';
+import { createTask } from '~/actions/zoho/tasks';
 
 
 export default function Page() {
@@ -28,9 +29,26 @@ export default function Page() {
 
     const handleLookupContactClick = async () => {
 
-        const contact = await lookupContact({ mobile: '5098992771', studioId: "cloj98kgd00092z9whucd9web" })
+        const contact = await lookupContact({ mobile: '7703145316', studioId: "cloj98kgd00092z9whucd9web" })
         console.log({ contact })
 
+    }
+
+    const handleCreateTask = async () => {
+        await createTask({
+            studioId: "cloj98kg600072z9wh3xer6yz",
+            zohoId: '5114699000000445008',
+            contact: {
+                isLead: false,
+                Full_Name: "rebecca rodriguez",
+                id: "5114699000074859039"
+            },
+            message: {
+                to: '2109728592',
+                from: '2104528489',
+                msg: "hi there! is there any way to reschedule the lesson we have for tonight? we're vinny and rebecca- i believe it's at 0715",
+            }
+        });
     }
 
     const handleSendWelcomeMessage = async () => {
@@ -82,7 +100,7 @@ export default function Page() {
         <main className={styles.wrapper}>
             <div className={styles.buttonsContainer}>
                 <button className={styles.button} onClick={() => handleLookupContactClick()}>Lookup Contact</button>
-
+                <button className={styles.button} onClick={() => handleCreateTask()}>Create Task</button>
                 <button className={styles.button} onClick={() => handleSendWelcomeMessage()}>Send Welcome Message</button>
                 <button className={styles.button} onClick={() => handleSendFollowUpMessage()}>Send Follow Up Message</button>
                 <button className={styles.button} onClick={() => printDatabaseURL()}>Print DB URL</button>
