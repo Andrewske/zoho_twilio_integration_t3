@@ -87,6 +87,26 @@ export default function Page() {
         })
     }
 
+    const handleHitWebhook = async () => {
+        console.log('hit webhook')
+        const body = new URLSearchParams({
+            To: '+13466161442',
+            From: '5098992771',
+            Body: 'hello there!',
+            MessageSid: 'SM456789',
+        })
+
+        fetch('/api/twilio/webhook', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+            },
+            body,
+            cache: 'no-cache',
+            next: { revalidate: 0 },// *default, no-cache, reload, force-cache, only-if-cached
+        })
+    }
+
     // if (!secretPassword) {
     //     return (
     //         <div className={styles.wrapper}>
@@ -104,6 +124,7 @@ export default function Page() {
                 <button className={styles.button} onClick={() => handleSendWelcomeMessage()}>Send Welcome Message</button>
                 <button className={styles.button} onClick={() => handleSendFollowUpMessage()}>Send Follow Up Message</button>
                 <button className={styles.button} onClick={() => printDatabaseURL()}>Print DB URL</button>
+                <button className={styles.button} onClick={() => handleHitWebhook()}>Hit Webhook</button>
             </div>
             <ToastContainer />
             {!messages || !studio?.active ? (
