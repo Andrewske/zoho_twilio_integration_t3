@@ -5,6 +5,7 @@ import { lookupContact } from '~/actions/zoho/contact/lookupContact';
 import { updateStatus } from '~/actions/zoho/contact/updateStatus';
 import { logError } from '~/utils/logError';
 import { formatMobile } from '~/utils';
+import { getStudioFromZohoId } from '~/actions/zoho/studio';
 
 // export const runtime = 'edge'; // 'nodejs' is the default
 // export const dynamic = 'force-dynamic'; // static by default, unless reading the request
@@ -15,12 +16,7 @@ export async function POST(request) {
 
     let { to, from, msg } = body;
 
-    const studio = await getStudioInfo(to);
-
-    const { messageId, followUpMessageId } = await createMessageRecords(
-      body,
-      studio
-    );
+    // if to is Admin number then we need to use the contacts owner as the studio
 
     const contact = await lookupContact({
       mobile: from,
@@ -30,6 +26,22 @@ export async function POST(request) {
     if (!contact) {
       return new Response(null, { status: 200 });
     }
+
+    let studio;
+
+    if (to == process.env.ADMIN_NUMBER) {
+      studio = await getStudioFromZohoId(contact.Owner?.id);
+    } else {
+      studio = await getStudioInfo(to);
+    }
+
+
+    const { messageId, followUpMessageId } = await createMessageRecords(
+      body,
+      studio
+    );
+
+
 
     const STOP = msg.toLowerCase().trim() == 'stop';
     if (STOP) {
