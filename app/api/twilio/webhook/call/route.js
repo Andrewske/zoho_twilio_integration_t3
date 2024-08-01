@@ -17,12 +17,13 @@ export async function POST(request) {
 
         let messageContent;
 
+
         if (studio?.callPhone) {
             messageContent = `
             <Response>
                 <Say voice="woman">Thanks for the call. This number is for text messages only.</Say>
                 <Pause length="1" />
-                <Say voice="woman">If you would like to reach our studio you can text this number or call us at ${studio?.callPhone}.</Say>
+                <Say voice="woman">If you would like to reach our studio you can text this number or call us at ${studio.callPhone.toString().split('').join(' ')}.</Say>
                 <Pause length="1"/>
                 <Say voice="woman">We look forward to speaking with you soon.</Say>
             </Response>
