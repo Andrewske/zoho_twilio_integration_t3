@@ -35,6 +35,8 @@ export async function POST(request) {
       studio = await getStudioInfo(to);
     }
 
+    console.log({ studio })
+
 
     const { messageId, followUpMessageId } = await createMessageRecords(
       body,
@@ -59,12 +61,12 @@ export async function POST(request) {
       });
     }
 
-    await createTask({
-      studioId: studio?.id,
-      zohoId: studio?.zohoId,
-      contact,
-      message: { to, from, msg },
-    });
+    // await createTask({
+    //   studioId: studio?.id,
+    //   zohoId: studio?.zohoId,
+    //   contact,
+    //   message: { to, from, msg },
+    // });
 
     await prisma.message.update({
       where: { id: messageId },
@@ -108,7 +110,7 @@ export async function getStudioInfo(to) {
 
     const studio = await prisma.studio.findFirst({
       where: { smsPhone: to, zohoId: { notIn: ignoreIds } },
-      select: { id: true, zohoId: true, smsPhone: true, active: true },
+      select: { id: true, zohoId: true, smsPhone: true, active: true, callPhone: true },
     });
 
     if (!studio) {
