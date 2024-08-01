@@ -19,33 +19,33 @@ export async function POST(request) {
 
         if (studio?.callPhone) {
             messageContent = `
-<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-    <Say voice="woman">Thanks for the call. This number is for text messages only.</Say>
-    <Pause length="1" />
-    <Say voice="woman">If you would like to reach our studio you can text this number or call us at ${studio?.callPhone}.</Say>
-    <Pause length="1"/>
-    <Say voice="woman">We look forward to speaking with you soon.</Say>
-</Response>
+            <Response>
+                <Say voice="woman">Thanks for the call. This number is for text messages only.</Say>
+                <Pause length="1" />
+                <Say voice="woman">If you would like to reach our studio you can text this number or call us at ${studio?.callPhone}.</Say>
+                <Pause length="1"/>
+                <Say voice="woman">We look forward to speaking with you soon.</Say>
+            </Response>
             `
         } else {
             messageContent = `
-<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-    <Say voice="woman">Thanks for the call. This number is for text messages only.</Say>
-    <Pause length="1" />
-    <Say voice="woman">If you would like to reach our studio you can text this number.</Say>
-    <Pause length="1" />
-    <Say voice="woman">We look forward to speaking with you soon.</Say>
-<Response>
-            `
+            
+            <Response>
+                <Say voice="woman">Thanks for the call. This number is for text messages only.</Say>
+                <Pause length="1" />
+                <Say voice="woman">If you would like to reach our studio you can text this number.</Say>
+                <Pause length="1" />
+                <Say voice="woman">We look forward to speaking with you soon.</Say>
+            </Response>
+        `
         }
 
 
 
         const xmlResponse =
             `
-${messageContent}
+            <?xml version="1.0" encoding="UTF-8"?>
+            ${messageContent}
             `;
 
         return new Response(xmlResponse, {
