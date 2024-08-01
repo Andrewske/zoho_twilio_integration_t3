@@ -61,12 +61,12 @@ export async function POST(request) {
       });
     }
 
-    // await createTask({
-    //   studioId: studio?.id,
-    //   zohoId: studio?.zohoId,
-    //   contact,
-    //   message: { to, from, msg },
-    // });
+    await createTask({
+      studioId: studio?.id,
+      zohoId: studio?.zohoId,
+      contact,
+      message: { to, from, msg },
+    });
 
     await prisma.message.update({
       where: { id: messageId },
