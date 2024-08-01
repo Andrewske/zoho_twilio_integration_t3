@@ -90,7 +90,7 @@ export default function Page() {
     const handleHitWebhook = async () => {
         console.log('hit webhook')
         const body = new URLSearchParams({
-            To: '+13466161442',
+            To: '2813469774',
             From: '5098992771',
             Body: 'hello there!',
             MessageSid: 'SM456789',
