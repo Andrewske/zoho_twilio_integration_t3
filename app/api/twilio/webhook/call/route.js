@@ -1,5 +1,6 @@
 import { logError } from "~/utils/logError";
 import { getStudioInfo } from "../route";
+import { formatMobile } from "~/utils";
 
 
 
@@ -8,9 +9,9 @@ export async function POST(request) {
 
         const text = await request.text();
         const body = new URLSearchParams(text);
-        const toNumber = body.get('To');
+        const toNumber = formatMobile(body.get('To'));
 
-        console.log({ text, body, toNumber, request })
+        // console.log({ text, body, toNumber, request })
 
         const studio = await getStudioInfo(toNumber);
 
@@ -20,9 +21,9 @@ export async function POST(request) {
             messageContent = `
             <Response>
                 <Say voice="woman">Thanks for the call. This number is for text messages only.</Say>
-                    <Pause length="1"/>
+                <Pause length="1"/>
                 <Say voice="woman">If you would like to reach our studio you can text this number or call us at ${studio?.callPhone}.</Say>
-                    <Pause length="1"/>
+                <Pause length="1"/>
                 <Say voice="woman">We look forward to speaking with you soon.</Say>
             </Response>
             `
@@ -30,9 +31,9 @@ export async function POST(request) {
             messageContent = `
             <Response>
                 <Say voice="woman">Thanks for the call. This number is for text messages only.</Say>
-                    <Pause length="1"/>
+                <Pause length="1"/>
                 <Say voice="woman">If you would like to reach our studio you can text this number.</Say>
-                    <Pause length="1"/>
+                <Pause length="1"/>
                 <Say voice="woman">We look forward to speaking with you soon.</Say>
             <Response>
             `
@@ -45,7 +46,6 @@ export async function POST(request) {
             `;
 
         return new Response(xmlResponse, {
-            status: 200,
             headers: {
                 'Content-Type': 'application/xml',
             },
