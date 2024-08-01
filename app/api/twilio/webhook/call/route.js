@@ -44,7 +44,6 @@ export async function POST(request) {
 
         const xmlResponse =
             `
-            <?xml version="1.0" encoding="UTF-8"?>
             ${messageContent}
             `;
 
