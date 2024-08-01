@@ -10,6 +10,8 @@ export async function POST(request) {
         const body = new URLSearchParams(text);
         const toNumber = body.get('To');
 
+        console.log({ text, body, toNumber, request })
+
         const studio = await getStudioInfo(toNumber);
 
         let messageContent;
@@ -26,13 +28,13 @@ export async function POST(request) {
             `
         } else {
             messageContent = `
-
+            <Response>
                 <Say voice="woman">Thanks for the call. This number is for text messages only.</Say>
                     <Pause length="1"/>
                 <Say voice="woman">If you would like to reach our studio you can text this number.</Say>
                     <Pause length="1"/>
                 <Say voice="woman">We look forward to speaking with you soon.</Say>
-
+            <Response>
             `
         }
 
