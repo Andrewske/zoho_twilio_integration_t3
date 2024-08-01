@@ -19,9 +19,10 @@ export async function POST(request) {
 
         if (studio?.callPhone) {
             messageContent = `
+<?xml version="1.0" encoding="UTF-8"?>
 <Response>
     <Say voice="woman">Thanks for the call. This number is for text messages only.</Say>
-    <Pause length="1"/>
+    <Pause length="1" />
     <Say voice="woman">If you would like to reach our studio you can text this number or call us at ${studio?.callPhone}.</Say>
     <Pause length="1"/>
     <Say voice="woman">We look forward to speaking with you soon.</Say>
@@ -29,26 +30,27 @@ export async function POST(request) {
             `
         } else {
             messageContent = `
+<?xml version="1.0" encoding="UTF-8"?>
 <Response>
     <Say voice="woman">Thanks for the call. This number is for text messages only.</Say>
-    <Pause length="1"/>
+    <Pause length="1" />
     <Say voice="woman">If you would like to reach our studio you can text this number.</Say>
-    <Pause length="1"/>
+    <Pause length="1" />
     <Say voice="woman">We look forward to speaking with you soon.</Say>
 <Response>
             `
         }
 
 
+
         const xmlResponse =
             `
-<?xml version="1.0" encoding="UTF-8"?>
 ${messageContent}
             `;
 
         return new Response(xmlResponse, {
             headers: {
-                'Content-Type': 'application/xml',
+                'Content-Type': 'text/xml',
             },
         });
 
