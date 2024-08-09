@@ -18,24 +18,22 @@ export async function POST(request) {
 
     // if to is Admin number then we need to use the contacts owner as the studio
 
+    let studio = await getStudioInfo(to);
+
     const contact = await lookupContact({
       mobile: from,
-      studioId: "cloj98kcn00002z9w53lw8lze",
+      studioId: studio?.id,
     });
 
     if (!contact) {
       return new Response(null, { status: 200 });
     }
 
-    let studio;
 
     if (to == process.env.ADMIN_NUMBER) {
+      console.log('admin number')
       studio = await getStudioFromZohoId(contact.Owner?.id);
-    } else {
-      studio = await getStudioInfo(to);
     }
-
-    console.log({ studio })
 
 
     const { messageId, followUpMessageId } = await createMessageRecords(
