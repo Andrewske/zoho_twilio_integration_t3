@@ -41,7 +41,7 @@ model TokenRefresh {
 
 model Studio {
   id            String          @id @default(cuid())
-  zohoId        String          @unique
+  zohoId        String
   name          String
   managerName   String?
   smsPhone      String     
@@ -64,11 +64,9 @@ model StudioAccount {
   @@index([accountId])
 }
 
-
-
 model ZohoWebhook {
   id                      String   @id @default(cuid())
-  studioZohoId            String?
+  studioId                String?
   contactId               String?
   firstName               String?
   mobile                  String?
@@ -77,10 +75,9 @@ model ZohoWebhook {
   sentFollowUpMessage     Boolean  @default(false)
   createdAt     DateTime        @default(now()) @map("created_at")
   updatedAt     DateTime        @default(now()) @updatedAt @map("updated_at")
-  Studio                  Studio?   @relation(fields: [studioZohoId], references: [zohoId])
-  @@index([studioZohoId])
+  Studio                  Studio?   @relation(fields: [studioId], references: [id]) // Adjusted to use studioId
+  @@index([studioId]) // Adjusted to index studioId
 }
-
 
 model TwilioMessage {
   id                      String    @id @default(cuid())

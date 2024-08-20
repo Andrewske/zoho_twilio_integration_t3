@@ -20,8 +20,13 @@ export async function GET(request) {
     });
   }
 
+
   try {
     // Get follow up messages that were not sent
+
+    await convertNotSentYesMessages();
+
+
     const unsentFollowUpMessages = await getLeadNotSentFollowUpMessage();
     console.info('unsentFollowUpMessages:', unsentFollowUpMessages);
 
@@ -104,6 +109,23 @@ export async function GET(request) {
     logError({ message: 'Error in cron', error, level: 'error' });
     return NextResponse.json({ ok: false });
   }
+}
+
+async function convertNotSentYesMessages() {
+ return await prisma.message.updateMany({
+    where: {
+      twilioMessageId: null,
+      createdAt: {
+        gt: new Date(new Date().getTime() - 1 * 60 * 60 * 1000),
+      },
+      message: {
+        equalsIgnoreCase: 'yes'
+      }
+    },
+    data: {
+      isFollowUpMessage: true
+    }
+  })
 }
 
 async function getLeadNotSentFollowUpMessage() {

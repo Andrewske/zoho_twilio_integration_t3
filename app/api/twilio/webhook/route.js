@@ -16,14 +16,23 @@ export async function POST(request) {
 
     let { to, from, msg } = body;
 
+    console.log('webhook', { to, from, msg })
+
     // if to is Admin number then we need to use the contacts owner as the studio
 
     let studio = await getStudioInfo(to);
+
 
     const contact = await lookupContact({
       mobile: from,
       studioId: studio?.id,
     });
+
+    const { messageId, followUpMessageId } = await createMessageRecords(
+      body,
+      studio
+    );
+
 
     if (!contact) {
       return new Response(null, { status: 200 });
@@ -35,11 +44,6 @@ export async function POST(request) {
       studio = await getStudioFromZohoId(contact.Owner?.id);
     }
 
-
-    const { messageId, followUpMessageId } = await createMessageRecords(
-      body,
-      studio
-    );
 
 
 
@@ -103,8 +107,8 @@ export async function parseRequest(request) {
 
 export async function getStudioInfo(to) {
   try {
-    const { DEV_ZOHO_ID, ADMIN_ZOHO_ID } = process.env
-    const ignoreIds = [DEV_ZOHO_ID, ADMIN_ZOHO_ID].filter(Boolean)
+    const { DEV_ZOHO_ID } = process.env
+    const ignoreIds = [DEV_ZOHO_ID].filter(Boolean)
 
     const studio = await prisma.studio.findFirst({
       where: { smsPhone: to, zohoId: { notIn: ignoreIds } },
@@ -168,6 +172,7 @@ const createMessageRecords = async (
   { to, from, msg, twilioMessageId },
   studio
 ) => {
+  console.log('createMessageRecords', { to, from, msg, twilioMessageId, studio })
   let messageData = [
     {
       fromNumber: from,

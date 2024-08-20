@@ -90,20 +90,23 @@ export default function Page() {
     const handleHitWebhook = async () => {
         console.log('hit webhook')
         const body = new URLSearchParams({
-            To: '2813469774',
+            To: '3466161442',
             From: '5098992771',
-            Body: 'hello there!',
-            MessageSid: 'SM456789',
+            Body: 'Yes',
+            MessageSid: 'SM456729',
         })
+
+        console.log(body)
 
         fetch('/api/twilio/webhook', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+                'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+                'Cache-Control': 'no-store'
             },
             body,
-            cache: 'no-cache',
-            next: { revalidate: 0 },// *default, no-cache, reload, force-cache, only-if-cached
+            cache: 'no-store',
+            // next: { revalidate: 'no-cache' },// *default, no-cache, reload, force-cache, only-if-cached
         })
     }
 
