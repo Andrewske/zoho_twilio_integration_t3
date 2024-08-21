@@ -112,14 +112,15 @@ export async function GET(request) {
 }
 
 async function convertNotSentYesMessages() {
- return await prisma.message.updateMany({
+  return await prisma.message.updateMany({
     where: {
       twilioMessageId: null,
       createdAt: {
         gt: new Date(new Date().getTime() - 1 * 60 * 60 * 1000),
       },
       message: {
-        equalsIgnoreCase: 'yes'
+        eq: 'yes',
+        mode: 'insensitive'
       }
     },
     data: {
