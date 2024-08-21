@@ -37,6 +37,8 @@ export async function POST(request) {
       studioId: studio?.id,
     });
 
+    console.log('contact', contact)
+
     if (!contact) {
       if (isYesMessage(msg)) {
         sendFollowUp({ to: from, from: to });
@@ -46,6 +48,7 @@ export async function POST(request) {
 
     // If to is Admin number then we need to use the contacts owner as the studio
     if (isAdminNumber(to)) {
+      console.log('admin number', contact.Owner?.id)
       studio = await getStudioFromZohoId(contact.Owner?.id);
     }
 
@@ -74,13 +77,11 @@ export async function POST(request) {
 
   } catch (error) {
     console.error(error);
-    const text = await request.text();
-    const body = new URLSearchParams(text);
     logError({
       message: 'Error in Twilio Webhook:',
       error,
       level: 'error',
-      data: JSON.stringify({ body }),
+      data: {},
     });
   }
   return new Response(null, { status: 200 });
@@ -139,7 +140,7 @@ const createMessage = async ({ body }) => {
     throw new Error('Invalid Twilio Webhook Message', JSON.stringify({ body }));
   }
 
-  return await prisma.message.create({
+  const { id } = await prisma.message.create({
     data: {
       fromNumber: from,
       toNumber: to,
@@ -150,4 +151,6 @@ const createMessage = async ({ body }) => {
       id: true,
     }
   });
+
+  return id
 };
