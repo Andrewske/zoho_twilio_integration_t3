@@ -2,66 +2,67 @@ import { createTask } from '~/actions/zoho/tasks';
 import { prisma } from '~/utils/prisma';
 import { smsOptOut } from '~/actions/zoho/contact/smsOptOut';
 import { lookupContact } from '~/actions/zoho/contact/lookupContact';
-import { updateStatus } from '~/actions/zoho/contact/updateStatus';
 import { logError } from '~/utils/logError';
 import { formatMobile } from '~/utils';
-import { getStudioFromZohoId } from '~/actions/zoho/studio';
+import { getStudioFromPhoneNumber, getStudioFromZohoId } from '~/actions/zoho/studio';
+import { sendFollowUp } from '~/actions/zoho/sendFollowUp';
 
 // export const runtime = 'edge'; // 'nodejs' is the default
 // export const dynamic = 'force-dynamic'; // static by default, unless reading the request
 
+// POST request that receives a Twilio message sent to a studio
+// Parses the message
+// Finds the studio associated with the message
+// We make sure the message is created in the database
+// Finds the contact associated with the message
+// If there is no contact we either send a follow up message or create a message
+// If the number is the admin number, we use the contact's owner as the studio
+// If the message is yes, we update the status of the lead and send a follow up message
+// If the message is stop, we opt out of SMS
+// If the message is not yes or stop, we create a task and update the message in the database
 export async function POST(request) {
   try {
     const body = await parseRequest(request);
-
     let { to, from, msg } = body;
 
-    console.log('webhook', { to, from, msg })
+    // Get the studio of the number messaged
+    let studio = await getStudioFromPhoneNumber(to);
 
-    // if to is Admin number then we need to use the contacts owner as the studio
+    // Create the message record
+    const messageId = await createMessage({ body, studio });
 
-    let studio = await getStudioInfo(to);
-
-
+    // Find the contact, studioId is used for account.accessToken
     const contact = await lookupContact({
       mobile: from,
       studioId: studio?.id,
     });
 
-    const { messageId, followUpMessageId } = await createMessageRecords(
-      body,
-      studio
-    );
-
-
     if (!contact) {
+      if (isYesMessage(msg)) {
+        sendFollowUp({ to: from, from: to });
+      }
       return new Response(null, { status: 200 });
     }
 
-
-    if (to == process.env.ADMIN_NUMBER) {
-      console.log('admin number')
+    // If to is Admin number then we need to use the contacts owner as the studio
+    if (isAdminNumber(to)) {
       studio = await getStudioFromZohoId(contact.Owner?.id);
     }
 
 
 
+    // If the message is yes, we need to update the status of the lead and send a follow up message
+    if (isYesMessage(msg)) {
+      sendFollowUp({ contact, studio });
+      return new Response(null, { status: 200 });
+    }
 
-    const STOP = msg.toLowerCase().trim() == 'stop';
-    if (STOP) {
+    // If the message is stop, we need to opt out of SMS
+    if (isStopMessage(msg)) {
       await smsOptOut({ studio, contact });
       return new Response(null, { status: 200 });
     }
 
-    const YES = msg.toLowerCase().trim() === 'yes';
-    if (contact?.isLead && contact?.Lead_Status == 'New' && YES) {
-      updateStatus({ studio, contact });
-      sendFollowUp({
-        followUpMessageId,
-        contact,
-        studio,
-      });
-    }
 
     await createTask({
       studioId: studio?.id,
@@ -70,20 +71,17 @@ export async function POST(request) {
       message: { to, from, msg },
     });
 
-    await prisma.message.update({
-      where: { id: messageId },
-      data: {
-        studioId: studio?.id,
-        contactId: contact?.id,
-      },
-    });
+    await updateMessage({ messageId, studio, contact });
+
   } catch (error) {
     console.error(error);
+    const text = await request.text();
+    const body = new URLSearchParams(text);
     logError({
       message: 'Error in Twilio Webhook:',
       error,
       level: 'error',
-      data: {},
+      data: JSON.stringify({ body }),
     });
   }
   return new Response(null, { status: 200 });
@@ -98,119 +96,68 @@ export async function parseRequest(request) {
   const twilioMessageId = body.get('MessageSid');
 
   if (!to || !from || !msg || !twilioMessageId) {
-    console.info({ body });
     throw new Error('Invalid Twilio Webhook Message');
   }
 
   return { to, from, msg, twilioMessageId };
 }
 
-export async function getStudioInfo(to) {
-  try {
-    const { DEV_ZOHO_ID } = process.env
-    const ignoreIds = [DEV_ZOHO_ID].filter(Boolean)
+const isYesMessage = (msg) => msg.toLowerCase().trim() === 'yes';
+const isStopMessage = (msg) => msg.toLowerCase().trim() == 'stop';
 
-    const studio = await prisma.studio.findFirst({
-      where: { smsPhone: to, zohoId: { notIn: ignoreIds } },
-      select: { id: true, zohoId: true, smsPhone: true, active: true, callPhone: true },
-    });
-
-    if (!studio) {
-      throw new Error('Could not find studio');
-    }
-
-    if (!studio.active) {
-      throw new Error('Studio is not active');
-    }
-
-    return studio;
-  } catch (error) {
-    console.error(error.message);
-    return null;
-  }
-}
-
-const sendFollowUp = async ({ followUpMessageId, contact, studio }) => {
-  try {
-    const response = await fetch(
-      `${process.env.SERVER_URL}/api/twilio/send_follow_up`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contact,
-          from: studio.smsPhone,
-          to: contact.Mobile,
-          studioId: studio.id,
-          messageId: followUpMessageId,
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Could not send follow up message');
-      console.error(JSON.stringify({ errorData }));
-    }
-
-    return response;
-  } catch (error) {
-    console.error('Could not send follow up message');
-    console.error(JSON.stringify({ error }));
-    logError({
-      message: 'Error in createAndSendFollowUp',
-      error,
-      level: 'error',
-      data: { followUpMessageId, contact, studio },
-    });
-  }
+const isAdminNumber = (to) => to == process.env.ADMIN_NUMBER;
+const updateMessage = async ({ messageId, studio, contact }) => {
+  await prisma.message.update({
+    where: { id: messageId },
+    data: {
+      studioId: studio?.id,
+      contactId: contact?.id,
+    },
+  });
 };
 
-const createMessageRecords = async (
-  { to, from, msg, twilioMessageId },
-  studio
-) => {
-  console.log('createMessageRecords', { to, from, msg, twilioMessageId, studio })
-  let messageData = [
-    {
+// export async function getStudioInfo(to) {
+//   try {
+//     const { DEV_ZOHO_ID } = process.env
+//     const ignoreIds = [DEV_ZOHO_ID].filter(Boolean)
+
+//     const studio = await prisma.studio.findFirst({
+//       where: { smsPhone: to, zohoId: { notIn: ignoreIds } },
+//       select: { id: true, zohoId: true, smsPhone: true, active: true, callPhone: true },
+//     });
+
+//     if (!studio) {
+//       throw new Error('Could not find studio');
+//     }
+
+//     if (!studio.active) {
+//       throw new Error('Studio is not active');
+//     }
+
+//     return studio;
+//   } catch (error) {
+//     console.error(error.message);
+//     return null;
+//   }
+// }
+
+
+const createMessage = async ({ body }) => {
+  const { to, from, msg, twilioMessageId } = body;
+
+  if (!to || !from || !msg || !twilioMessageId) {
+    throw new Error('Invalid Twilio Webhook Message', JSON.stringify({ body }));
+  }
+
+  return await prisma.message.create({
+    data: {
       fromNumber: from,
       toNumber: to,
       message: msg,
       twilioMessageId,
-      studioId: studio?.id,
     },
-  ];
-
-  const sentFollowUp = prisma.message.findFirst({
-    where: {
-      fromNumber: to,
-      isFollowUpMessage: true,
-    },
+    select: {
+      id: true,
+    }
   });
-
-  const YES = msg.toLowerCase().trim() === 'yes';
-
-  if (YES & !sentFollowUp) {
-    messageData.push({
-      fromNumber: to,
-      toNumber: from,
-      isFollowUpMessage: true,
-      studioId: studio?.id,
-    });
-  }
-
-  const [messageId, followUpMessageId] = await Promise.all(
-    messageData.map(async (data) => {
-      const message = await prisma.message.create({ data });
-      return message.id;
-    })
-  );
-
-  if (!messageId) {
-    throw new Error('Could not create message');
-  }
-
-  return { messageId, followUpMessageId };
 };

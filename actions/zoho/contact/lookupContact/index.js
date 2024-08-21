@@ -3,7 +3,6 @@ import { getZohoAccount } from '~/actions/zoho';
 import { formatMobile } from '~/utils';
 import { logError } from '~/utils/logError';
 import refreshAndRetry from '../../token/refreshAndRetry';
-import { revalidatePath } from 'next/cache';
 
 const searchMobileQuery = async ({ mobile, account, zohoModule }) => {
   const fields = 'id,Full_Name,Mobile,SMS_Opt_Out,Lead_Status,Owner';
@@ -20,15 +19,14 @@ const searchMobileQuery = async ({ mobile, account, zohoModule }) => {
 
 const getContact = async (props) => {
   let response = await searchMobileQuery(props)
-  let responseBody = await response?.json();
+
 
   if (!response.ok) {
     console.error(`getContact: response not ok ${response?.status} ${response?.statusText}`)
     response = await refreshAndRetry(searchMobileQuery, props);
-    responseBody = await response?.json();
   }
 
-
+  let responseBody = await response?.json();
 
   const data = responseBody?.data;
 
@@ -51,7 +49,6 @@ const getContactFromModules = async ({ mobile, account, studioId, modules }) => 
     try {
       contact = await getContact({ mobile, account, studioId, zohoModule });
     } catch (error) {
-      console.error(error?.message);
       console.info(
         `getContactFromModules: Contact ${mobile} not found in module ${zohoModule}`
       );
@@ -68,7 +65,6 @@ const getContactFromModules = async ({ mobile, account, studioId, modules }) => 
 };
 
 export const lookupContact = async ({ mobile, studioId }) => {
-  revalidatePath('/testing')
   try {
     if (!mobile) {
       throw new Error('lookupContact: No mobile provided to lookupContact');

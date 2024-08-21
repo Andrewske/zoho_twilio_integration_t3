@@ -28,7 +28,6 @@ export default function Page() {
     // Existing code
 
     const handleLookupContactClick = async () => {
-
         const contact = await lookupContact({ mobile: '7703145316', studioId: "cloj98kgd00092z9whucd9web" })
         console.log({ contact })
 
@@ -68,25 +67,6 @@ export default function Page() {
         console.log(response)
     }
 
-    const handleSendFollowUpMessage = async () => {
-        const contact = await lookupContact({ mobile: '5098992771', studioId: "cloj98kgd00092z9whucd9web" })
-        console.log({ contact })
-        fetch('/api/twilio/send_follow_up', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                contact,
-                studioId: "cloj98kgd00092z9whucd9web",
-                from: "2813469774",
-                to: "5098992771"
-            }),
-            cache: 'no-cache',
-            next: { revalidate: 0 },// *default, no-cache, reload, force-cache, only-if-cached
-        })
-    }
-
     const handleHitWebhook = async () => {
         console.log('hit webhook')
         const body = new URLSearchParams({
@@ -96,8 +76,6 @@ export default function Page() {
             MessageSid: 'SM456729',
         })
 
-        console.log(body)
-
         fetch('/api/twilio/webhook', {
             method: 'POST',
             headers: {
@@ -106,7 +84,22 @@ export default function Page() {
             },
             body,
             cache: 'no-store',
+            next: { revalidate: 0 },
             // next: { revalidate: 'no-cache' },// *default, no-cache, reload, force-cache, only-if-cached
+        })
+    }
+
+    const handleCronJob = async () => {
+        console.log('hit cron job')
+
+        fetch('/api/cron', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+                'Cache-Control': 'no-store'
+            },
+            cache: 'no-store',
+            next: { revalidate: 0 },
         })
     }
 
@@ -125,9 +118,9 @@ export default function Page() {
                 <button className={styles.button} onClick={() => handleLookupContactClick()}>Lookup Contact</button>
                 <button className={styles.button} onClick={() => handleCreateTask()}>Create Task</button>
                 <button className={styles.button} onClick={() => handleSendWelcomeMessage()}>Send Welcome Message</button>
-                <button className={styles.button} onClick={() => handleSendFollowUpMessage()}>Send Follow Up Message</button>
                 <button className={styles.button} onClick={() => printDatabaseURL()}>Print DB URL</button>
                 <button className={styles.button} onClick={() => handleHitWebhook()}>Hit Webhook</button>
+                <button className={styles.button} onClick={() => handleCronJob()}>CronJob</button>
             </div>
             <ToastContainer />
             {!messages || !studio?.active ? (

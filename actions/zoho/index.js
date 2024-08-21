@@ -15,8 +15,6 @@ export const getZohoAccount = async ({ studioId }) => {
     if (isAccessTokenExpired(account)) {
       console.log('Access token is expired, refreshing...');
       return await refreshAccessToken(account);
-    } else {
-      console.log('Access token is not expired, returning account', { account });
     }
 
 

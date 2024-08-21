@@ -1,15 +1,21 @@
 import { prisma } from '~/utils/prisma';
 import { NextResponse } from 'next/server';
 
-import { getZohoAccount } from '~/actions/zoho';
 import { logError } from '~/utils/logError';
-import { formatMobile } from '~/utils';
+import { lookupContact } from '~/actions/zoho/contact/lookupContact';
+import { sendFollowUp } from '~/actions/zoho/sendFollowUp';
+import { getStudioFromPhoneNumber } from '~/actions/zoho/studio';
+
 
 // export const runtime = 'edge'; // 'nodejs' is the default
 // export const dynamic = 'force-dynamic'; // static by default, unless reading the request
 
+
+// GET request that runs the cron job
+// Gets the list of messages that did not get sent a follow up message
+
+
 export async function GET(request) {
-  console.log('CRON STARTED');
   const authHeader = request.headers.get('authorization');
   if (
     process.env.NODE_ENV === 'production' &&
@@ -22,13 +28,8 @@ export async function GET(request) {
 
 
   try {
-    // Get follow up messages that were not sent
-
-    await convertNotSentYesMessages();
-
-
-    const unsentFollowUpMessages = await getLeadNotSentFollowUpMessage();
-    console.info('unsentFollowUpMessages:', unsentFollowUpMessages);
+    const unsentFollowUpMessages = await getUnsentFollowUpMessages();
+    console.log('unsentFollowUpMessages', unsentFollowUpMessages)
 
     if (!unsentFollowUpMessages.length) {
       return NextResponse.json({
@@ -37,102 +38,39 @@ export async function GET(request) {
       });
     }
 
-    const account = await getZohoAccount({
-      studioId: unsentFollowUpMessages[0].Studio?.id,
+    const studio = await getStudioFromPhoneNumber(unsentFollowUpMessages[0].fromNumber);
+
+    const followUpPromises = unsentFollowUpMessages.map(async (message) => {
+      try {
+        const contact = await lookupContact({ mobile: message.toNumber, studioId: studio?.id });
+        await sendFollowUp({
+          contact,
+          studio,
+          from: message.fromNumber,
+          to: message.toNumber
+        });
+        return { status: 'fulfilled' };
+      } catch (error) {
+        return { status: 'rejected', reason: error };
+      }
     });
 
-    if (!account) {
-      return NextResponse.json({ ok: false, message: 'No Zoho account' });
-    }
+    const results = await Promise.allSettled(followUpPromises);
 
-    const mobileNumbers = unsentFollowUpMessages.map((lead) =>
-      formatMobile(lead?.toNumber)
-    );
 
-    const searchQuery = `(Mobile:in:${mobileNumbers.join(',')})`;
-
-    // Encode the search query
-    const encodedSearchQuery = encodeURIComponent(searchQuery);
-
-    const fields = 'id,Full_Name,Mobile,SMS_Opt_Out,Lead_Status,Owner';
-    const response = await fetch(
-      `https://www.zohoapis.com/crm/v5/Leads/search?fields=${fields}&criteria=${encodedSearchQuery}`,
-      {
-        headers: { Authorization: `Zoho-oauthtoken ${account?.accessToken}` },
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Request failed with status code ${response.status}`);
-    }
-
-    let zohoResponse;
-    try {
-      zohoResponse = await response.json();
-    } catch (error) {
-      console.error(response);
-    }
-
-    for (const zohoLead of zohoResponse.data) {
-      if (zohoLead.id != '5114699000054215028') {
-        console.info('Skipping lead', zohoLead.id);
-        continue;
-      }
-      const { Mobile, Owner } = zohoLead;
-      const studio = await getStudioFromZohoId(Owner?.id);
-
-      const followUp = await fetch(
-        `${process.env.SERVER_URL}/api/twilio/send_follow_up`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            contact: zohoLead,
-            from: studio.smsPhone,
-            to: Mobile,
-            studioId: studio.id,
-          }),
-        }
-      );
-
-      if (!followUp.ok) {
-        const errorData = await followUp.json();
-        console.error({ errorData });
-      }
-    }
-
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ results });
   } catch (error) {
-    console.error(error.message);
     logError({ message: 'Error in cron', error, level: 'error' });
     return NextResponse.json({ ok: false });
   }
 }
 
-async function convertNotSentYesMessages() {
-  return await prisma.message.updateMany({
-    where: {
-      contactId: null,
-      createdAt: {
-        gt: new Date(new Date().getTime() - 1 * 60 * 60 * 1000),
-      },
-      message: {
-        equals: 'yes',
-        mode: 'insensitive'
-      }
-    },
-    data: {
-      isFollowUpMessage: true
-    }
-  })
-}
-
-async function getLeadNotSentFollowUpMessage() {
+async function getUnsentFollowUpMessages() {
   return await prisma.message.findMany({
     where: {
-      twilioMessageId: null,
+      twilioMessageId: {
+        equals: null,
+      },
       isFollowUpMessage: true,
       createdAt: {
         gt: new Date(new Date().getTime() - 1 * 60 * 60 * 1000),
@@ -141,32 +79,9 @@ async function getLeadNotSentFollowUpMessage() {
     select: {
       id: true,
       toNumber: true,
-      Studio: {
-        select: {
-          id: true,
-          smsPhone: true,
-        },
-      },
+      fromNumber: true
     },
   });
 }
 
-export async function getStudioFromZohoId(owner_id) {
-  try {
-    const studio = await prisma.studio.findFirst({
-      where: { zohoId: owner_id },
-      select: {
-        id: true,
-        zohoId: true,
-        smsPhone: true,
-        callPhone: true,
-        name: true,
-        managerName: true,
-        active: true,
-      },
-    });
-    return studio;
-  } catch (error) {
-    throw new Error('Could not find studio');
-  }
-}
+
