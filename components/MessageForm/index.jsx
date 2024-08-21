@@ -3,7 +3,7 @@ import { useState } from 'react';
 import styles from './styles.module.css';
 import { getMessages, sendMessage } from '~/actions/twilio';
 import { sendError, sendSuccess } from '~/utils/toast';
-import { getStudioData } from '~/actions/zoho/studio';
+import { getStudioFromZohoId } from '~/actions/zoho/studio';
 
 const MessageForm = ({ contact, studio, setMessages }) => {
   const [newMessage, setNewMessage] = useState('');
@@ -25,7 +25,7 @@ const MessageForm = ({ contact, studio, setMessages }) => {
         'Admin user, lookup studio',
         JSON.stringify({ contact, studio })
       );
-      return await getStudioData({ zohoId: contact.Owner.id });
+      return await getStudioFromZohoId(contact.Owner.id);
     }
     return studio;
   };

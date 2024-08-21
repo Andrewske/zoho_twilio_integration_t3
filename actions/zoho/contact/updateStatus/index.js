@@ -1,9 +1,9 @@
 'use server';
 import { updateContact } from '~/actions/zoho/contact/updateContact';
-import { formatMobile } from '~/utils';
+// import { formatMobile } from '~/utils';
 
 export const updateStatus = async ({ studio, contact }) => {
-  if (formatMobile(contact?.Mobile) === process.env.KEVIN_MOBILE) return;
+  // if (formatMobile(contact?.Mobile) === process.env.KEVIN_MOBILE) return;
   const data = {
     data: [
       {
