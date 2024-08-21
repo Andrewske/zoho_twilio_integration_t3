@@ -119,7 +119,7 @@ async function convertNotSentYesMessages() {
         gt: new Date(new Date().getTime() - 1 * 60 * 60 * 1000),
       },
       message: {
-        eq: 'yes',
+        equals: 'yes',
         mode: 'insensitive'
       }
     },
