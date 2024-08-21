@@ -15,12 +15,14 @@ const followUpMessage =
 export async function sendFollowUp({ contact = null, studio = null, from = null, to = null }) {
 
     try {
+        // returns a message if it exists, otherwise creates a new messag
         const message = await findOrCreateMessage({ contact, studio, to, from });
 
         if (!message) {
             return;
         }
 
+        // We need to create a task if there is already a follow up message or if the contact is not a lead
         if (!contactIsLead(contact)) {
             return;
         }
@@ -34,7 +36,6 @@ export async function sendFollowUp({ contact = null, studio = null, from = null,
             messageId: message.id,
         });
 
-        console.log('response', response)
 
         const updatedMessage = await prisma.message.update({
             where: {
@@ -78,7 +79,9 @@ const findOrCreateMessage = async ({ contact, studio, from, to }) => {
     // Otherwise, we check if the contact has already received a follow up message
     const message = await prisma.message.findFirst({
         where: {
-            twilioMessageId: null,
+            twilioMessageId: {
+                equals: null
+            },
             toNumber: contact?.Mobile ?? to,
             isFollowUpMessage: true,
         },
@@ -114,6 +117,6 @@ const findOrCreateMessage = async ({ contact, studio, from, to }) => {
             });
         }
     }
-
     return message;
+
 }

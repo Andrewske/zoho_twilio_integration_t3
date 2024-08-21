@@ -50,10 +50,9 @@ export async function POST(request) {
     }
 
 
-
     // If the message is yes, we need to update the status of the lead and send a follow up message
-    if (isYesMessage(msg)) {
-      sendFollowUp({ contact, studio });
+    if (isYesMessage(msg) && !hasReceivedFollowUpMessage(contact)) {
+      await sendFollowUp({ contact, studio });
       return new Response(null, { status: 200 });
     }
 
@@ -116,30 +115,21 @@ const updateMessage = async ({ messageId, studio, contact }) => {
   });
 };
 
-// export async function getStudioInfo(to) {
-//   try {
-//     const { DEV_ZOHO_ID } = process.env
-//     const ignoreIds = [DEV_ZOHO_ID].filter(Boolean)
-
-//     const studio = await prisma.studio.findFirst({
-//       where: { smsPhone: to, zohoId: { notIn: ignoreIds } },
-//       select: { id: true, zohoId: true, smsPhone: true, active: true, callPhone: true },
-//     });
-
-//     if (!studio) {
-//       throw new Error('Could not find studio');
-//     }
-
-//     if (!studio.active) {
-//       throw new Error('Studio is not active');
-//     }
-
-//     return studio;
-//   } catch (error) {
-//     console.error(error.message);
-//     return null;
-//   }
-// }
+const hasReceivedFollowUpMessage = async (contact) => {
+  const message = await prisma.message.findFirst({
+    where: {
+      twilioMessageId: {
+        not: null
+      },
+      toNumber: contact?.Mobile,
+      isFollowUpMessage: true,
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  });
+  return !!message;
+}
 
 
 const createMessage = async ({ body }) => {
