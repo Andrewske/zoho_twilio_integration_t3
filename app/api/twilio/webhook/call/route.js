@@ -1,6 +1,6 @@
 import { logError } from "~/utils/logError";
-import { getStudioInfo } from "../route";
 import { formatMobile } from "~/utils";
+import { getStudioFromPhoneNumber } from "~/actions/zoho/studio";
 
 
 
@@ -13,7 +13,7 @@ export async function POST(request) {
 
         // console.log({ text, body, toNumber, request })
 
-        const studio = await getStudioInfo(toNumber);
+        const studio = await getStudioFromPhoneNumber(toNumber);
 
         let messageContent;
 
