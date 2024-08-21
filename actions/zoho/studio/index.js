@@ -3,11 +3,15 @@ import { prisma } from '~/utils/prisma.js';
 
 const studioFields = ['id', 'zohoId', 'smsPhone', 'callPhone', 'name', 'managerName', 'active'];
 
+const studioFieldsSelect = studioFields.reduce((acc, field) => {
+  acc[field] = true;
+  return acc;
+}, {});
 
 export async function getStudioFromZohoId(owner_id) {
   return await prisma.studio.findFirst({
     where: { zohoId: owner_id },
-    select: studioFields
+    select: studioFieldsSelect
   });
 }
 
