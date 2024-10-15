@@ -107,7 +107,7 @@ const MessageForm = ({ contact, studio, setMessages }) => {
       />
       <button
         type="submit"
-        className={styles.button}
+        className={`bg-gold ${styles.button}`}
         disabled={isSending}
       >
         Send

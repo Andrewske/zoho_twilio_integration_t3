@@ -4,8 +4,12 @@
   width: 100%;
 }
 
+.red {
+  background-color: '#ab192d';
+}
+
 .container {
-  background-color: var(--primary-color);
+  /* background-color: var(--primary-color); */
   color: var(--white-color);
   width: calc(min(400px, 100vw));
   overflow: hidden;
@@ -20,7 +24,7 @@
 }
 
 .to {
-  align-self: flex-end;
+  align-self: flex-end !important;
 }
 
 .subText {
