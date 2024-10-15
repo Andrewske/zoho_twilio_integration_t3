@@ -10,23 +10,17 @@ import {
 } from '../ui/dropdown-menu';
 
 const MessageList = ({ messages, contactName }) => {
-  const messagesEndRef = useRef(null);
-  const [prevMessageLength, setPrevMessageLength] = useState(0);
+  const wrapperRef = useRef(null);
   const [currentStudio, setCurrentStudio] = useState('All');
   const [allStudios, setAllStudios] = useState(['All']);
   const [filteredMessages, setFilteredMessages] = useState(messages);
 
   useEffect(() => {
-    const scrollableDiv = messagesEndRef.current.parentElement;
-    if (messages.length > prevMessageLength) {
-      setPrevMessageLength(messages.length);
-      scrollableDiv.scrollTop = scrollableDiv.scrollHeight;
-    }
-  }, [messages.length, prevMessageLength]);
-
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (wrapperRef.current) {
+      wrapperRef.current.scrollTo({
+        top: wrapperRef.current.scrollHeight,
+        behavior: 'smooth',
+      });
     }
   }, [filteredMessages]);
 
@@ -58,7 +52,10 @@ const MessageList = ({ messages, contactName }) => {
   // TODO: Write a function to check the database for any messages from the contact that are more recent than the last message in the list
 
   return (
-    <div className={styles.wrapper}>
+    <div
+      className={styles.wrapper}
+      ref={wrapperRef}
+    >
       <div className="fixed top-4 left-4 px-4 py-2 bg-gold text-black rounded-md shadow-md">
         <DropdownMenu>
           <DropdownMenuTrigger>{currentStudio}</DropdownMenuTrigger>
@@ -75,17 +72,15 @@ const MessageList = ({ messages, contactName }) => {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className={styles.wrapper}>
-        {filteredMessages &&
-          filteredMessages.map((message, index) => (
-            <Message
-              key={`message-${index}`}
-              message={message}
-              contactName={contactName}
-            />
-          ))}
-        <div ref={messagesEndRef} />
-      </div>
+
+      {filteredMessages &&
+        filteredMessages.map((message, index) => (
+          <Message
+            key={`message-${index}`}
+            message={message}
+            contactName={contactName}
+          />
+        ))}
     </div>
   );
 };
