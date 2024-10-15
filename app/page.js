@@ -9,25 +9,66 @@ import { Comment } from 'react-loader-spinner';
 import { sendError } from '~/utils/toast';
 import ToastContainer from '~/components/ToastContainer';
 
+
 export default function Home() {
   const { studio, contact } = useContext(ZohoContext);
   const [messages, setMessages] = useState(null);
 
+  // useEffect(() => {
+  //   const fetchMessages = async () => {
+  //     if (!messages && contact && studio?.id) {
+  //       console.log(JSON.stringify({ contact, studio }));
+  //       const messages = await getMessages({ contactMobile: contact.Mobile, studioId: studio?.id })
+
+  //       if (messages.length === 0) {
+  //         sendError(
+  //           `There are no messages to or from this lead. Be the first to send one!`
+  //         );
+  //       }
+
+
+  //       for (const message of messages) {
+  //         if (message.fromStudio) {
+  //           message.fromName = await getStudioFromPhoneNumber(formatMobile(message.from))?.name;
+  //           message.fromName = contact.Full_Name;
+  //         } else {
+  //           message.toName = false;
+  //         }
+
+  //       }
+
+  //       setMessages(messages);
+
+
+
+  //     }
+  //   }
+  //   fetchMessages();
+  // }, [contact, studio, messages]);
+
   useEffect(() => {
-    if (!messages && contact && studio?.id) {
-      console.log(JSON.stringify({ contact, studio }));
-      getMessages({ contactMobile: contact.Mobile, studioId: studio?.id }).then(
-        (messages) => {
-          if (messages.length === 0) {
-            sendError(
-              `There are no messages to or from this lead. Be the first to send one!`
-            );
-          }
-          setMessages(messages);
-        }
-      );
-    }
+    const fetchMessages = async () => {
+
+      if (!messages && contact && studio?.id) {
+        let messages = await getMessages({
+          contactMobile: contact.Mobile,
+          studioId: studio?.id,
+        })
+
+        if (messages.length === 0) {
+          sendError(
+            `There are no messages to or from this lead. Be the first to send one!`
+          );
+        } else console.log(messages);
+
+        setMessages(messages);
+      }
+    };
+
+    fetchMessages();
   }, [contact, studio, messages]);
+
+
 
   useEffect(() => {
     if (studio && !studio?.active) {
