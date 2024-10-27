@@ -1,13 +1,23 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import styles from './styles.module.css';
 import { getMessages, sendMessage } from '~/actions/twilio';
 import { sendError, sendSuccess } from '~/utils/toast';
 import { getStudioFromZohoId } from '~/actions/zoho/studio';
 
-const MessageForm = ({ contact, studio, setMessages }) => {
+const MessageForm = ({
+  contact,
+  studio,
+  setMessages,
+  smsPhone,
+  currentStudio,
+}) => {
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
+
+  useEffect(() => {
+    console.log(smsPhone);
+  }, [smsPhone]);
 
   const handleNewMessage = (event) => {
     setNewMessage(event.target.value);
@@ -33,7 +43,7 @@ const MessageForm = ({ contact, studio, setMessages }) => {
   const createMessageBody = (newMessage, contact, studio) => ({
     message: newMessage,
     to: contact.Mobile,
-    from: studio?.smsPhone,
+    from: smsPhone,
     studioId: studio?.id,
     contact,
   });
@@ -105,13 +115,18 @@ const MessageForm = ({ contact, studio, setMessages }) => {
         className={styles.input}
         onKeyDown={handleKeyDown}
       />
-      <button
-        type="submit"
-        className={`bg-gold ${styles.button}`}
-        disabled={isSending}
-      >
-        Send
-      </button>
+      <span className="flex flex-col gap-2">
+        <p className="text-sm align-top">
+          Sending As: {currentStudio == 'All' ? studio?.name : currentStudio}
+        </p>
+        <button
+          type="submit"
+          className={`bg-gold ${styles.button}`}
+          disabled={isSending}
+        >
+          Send
+        </button>
+      </span>
     </form>
   );
 };
