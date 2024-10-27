@@ -1,5 +1,5 @@
 'use client';
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect } from 'react';
 import styles from './styles.module.css';
 import Message from '../Message';
 import {
@@ -9,11 +9,14 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 
-const MessageList = ({ messages, contactName }) => {
+const MessageList = ({
+  messages,
+  contactName,
+  currentStudio,
+  setCurrentStudio,
+  allStudios,
+}) => {
   const wrapperRef = useRef(null);
-  const [currentStudio, setCurrentStudio] = useState('All');
-  const [allStudios, setAllStudios] = useState(['All']);
-  const [filteredMessages, setFilteredMessages] = useState(messages);
 
   useEffect(() => {
     if (wrapperRef.current) {
@@ -22,32 +25,7 @@ const MessageList = ({ messages, contactName }) => {
         behavior: 'smooth',
       });
     }
-  }, [filteredMessages]);
-
-  useEffect(() => {
-    if (messages.length > 0) {
-      const studioNames = messages.reduce((acc, message) => {
-        if (!acc.includes(message.studioName)) {
-          acc.push(message.studioName);
-        }
-        return acc;
-      }, []);
-
-      setAllStudios(['All', ...studioNames]);
-    }
   }, [messages]);
-
-  useEffect(() => {
-    if (currentStudio === 'All') {
-      setFilteredMessages(messages);
-
-      return;
-    }
-    const studioMessages = messages.filter(
-      (message) => message.studioName === currentStudio
-    );
-    setFilteredMessages(studioMessages);
-  }, [messages, currentStudio]);
 
   // TODO: Write a function to check the database for any messages from the contact that are more recent than the last message in the list
 
@@ -73,8 +51,8 @@ const MessageList = ({ messages, contactName }) => {
         </DropdownMenu>
       </div>
 
-      {filteredMessages &&
-        filteredMessages.map((message, index) => (
+      {messages &&
+        messages.map((message, index) => (
           <Message
             key={`message-${index}`}
             message={message}
