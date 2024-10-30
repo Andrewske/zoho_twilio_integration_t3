@@ -9,7 +9,9 @@ const Message = ({ message, contactName }) => (
   >
     <span
       className={`${
-        message.fromStudio && message.studioName === 'philip_admin'
+        message.fromStudio &&
+        (message.studioName == 'philip_admin' ||
+          message.studioName == 'Philip Gutierrez')
           ? 'bg-red'
           : 'bg-purple'
       } ${styles.container} ${message.fromStudio ? styles.to : ''} `}
