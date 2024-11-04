@@ -8,6 +8,7 @@ import { getStudioFromZohoId } from '~/actions/zoho/studio';
 const MessageForm = ({
   contact,
   studio,
+  contactOwner,
   setMessages,
   smsPhone,
   currentStudio,
@@ -117,7 +118,8 @@ const MessageForm = ({
       />
       <span className="flex flex-col gap-2">
         <p className="text-sm align-top">
-          Sending As: {currentStudio == 'All' ? studio?.name : currentStudio}
+          Sending As:{' '}
+          {currentStudio == 'All' ? contactOwner?.name : currentStudio}
         </p>
         <button
           type="submit"

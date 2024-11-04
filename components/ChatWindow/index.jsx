@@ -9,6 +9,7 @@ import { sendError } from '~/utils/toast';
 
 import MessageForm from '../MessageForm';
 import MessageList from '../MessageList';
+import { getStudioFromZohoId } from '~/actions/zoho/studio';
 
 const ChatWindow = ({ studioPhones }) => {
   const { studio, contact } = useContext(ZohoContext);
@@ -17,6 +18,17 @@ const ChatWindow = ({ studioPhones }) => {
   const [smsPhone, setSmsPhone] = useState(studio?.smsPhone);
   const [filteredMessages, setFilteredMessages] = useState(messages);
   const [allStudios, setAllStudios] = useState(['All']);
+  const [contactOwner, setContactOwner] = useState(studio);
+
+  useEffect(() => {
+    const findContactOwner = async () => {
+      if (contact) {
+        const contactOwner = await getStudioFromZohoId(contact.Owner.id);
+        setContactOwner(contactOwner);
+      }
+    };
+    findContactOwner();
+  }, [contact]);
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -59,7 +71,7 @@ const ChatWindow = ({ studioPhones }) => {
 
   useEffect(() => {
     if (currentStudio === 'All') {
-      setSmsPhone(studio?.smsPhone);
+      setSmsPhone(contactOwner?.smsPhone);
     } else {
       studioPhones.find((studioPhone) => {
         if (studioPhone.name === currentStudio) {
@@ -67,7 +79,7 @@ const ChatWindow = ({ studioPhones }) => {
         }
       });
     }
-  }, [currentStudio, studioPhones, studio]);
+  }, [currentStudio, studioPhones, studio, contactOwner]);
 
   useEffect(() => {
     if (currentStudio === 'All') {
@@ -120,6 +132,7 @@ const ChatWindow = ({ studioPhones }) => {
       />
       <MessageForm
         contact={contact}
+        contactOwner={contactOwner}
         studio={studio}
         smsPhone={smsPhone}
         setMessages={setMessages}
