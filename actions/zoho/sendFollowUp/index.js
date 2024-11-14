@@ -96,7 +96,7 @@ const findOrCreateMessage = async ({ contact, studio, from, to }) => {
             twilioMessageId: {
                 equals: null
             },
-            toNumber: contact?.Mobile ?? to,
+            toNumber: to,
             isFollowUpMessage: true,
         },
         orderBy: {
