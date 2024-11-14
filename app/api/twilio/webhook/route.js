@@ -122,7 +122,7 @@ const hasReceivedFollowUpMessage = async (contact) => {
       twilioMessageId: {
         not: null
       },
-      toNumber: contact?.Mobile,
+      toNumber: formatMobile(contact?.Mobile),
       isFollowUpMessage: true,
     },
     orderBy: {
