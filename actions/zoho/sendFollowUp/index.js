@@ -30,10 +30,12 @@ export async function sendFollowUp({ contact = null, studio = null, from = null,
             return;
         }
 
+        const southLake = await studioIsSouthlake(from);
+
         const response = await sendMessage({
             to,
             from,
-            message: studioIsSouthlake(from) ? followUpMessageSouthlake : followUpMessage,
+            message: southLake ? followUpMessageSouthlake : followUpMessage,
             studioId: studio.id,
             contact,
             messageId: message.id,
@@ -55,7 +57,7 @@ export async function sendFollowUp({ contact = null, studio = null, from = null,
             throw new Error('send_follow_up could not update message');
         }
 
-        if (!studioIsSouthlake(from)) {
+        if (!southLake) {
             await updateStatus({ studio, contact });
         }
 
@@ -72,8 +74,8 @@ export async function sendFollowUp({ contact = null, studio = null, from = null,
     }
 }
 
-const studioIsSouthlake = (from) => {
-    const studio = prisma.studio.findFirst({
+const studioIsSouthlake = async (from) => {
+    const studio = await prisma.studio.findFirst({
         where: {
             smsPhone: formatMobile(from),
         },
