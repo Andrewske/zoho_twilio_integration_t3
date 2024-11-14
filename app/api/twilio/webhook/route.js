@@ -54,9 +54,7 @@ export async function POST(request) {
 
 
     // If the message is yes, we need to update the status of the lead and send a follow up message
-
-    console.log({ 'yes': isYesMessage(msg), 'receivedfollowup': hasReceivedFollowUpMessage(contact) })
-    if (isYesMessage(msg) && !hasReceivedFollowUpMessage(contact)) {
+    if (isYesMessage(msg) && !(await hasReceivedFollowUpMessage(contact))) {
       await sendFollowUp({ contact, studio });
       return new Response(null, { status: 200 });
     }
