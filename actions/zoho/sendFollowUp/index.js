@@ -7,6 +7,8 @@ import { updateStatus } from '../contact/updateStatus';
 const followUpMessage =
     'Great! We have a limited number spots for new clients each week. What day of the week Monday to Friday works best for you?';
 
+const followUpMessageSouthlake = 'Great! We have a limited number spots for new clients each week. What day of the week Monday to Saturday works best for you?';
+
 // Checks if there is a contact
 // If there is not a contact, we create a message that will be picked up by the cron job
 // If there is a contact, we check if the contact has already received a follow up message
@@ -30,7 +32,7 @@ export async function sendFollowUp({ contact = null, studio = null, from = null,
         const response = await sendMessage({
             to,
             from,
-            message: followUpMessage,
+            message: studioIsSouthlake(from) ? followUpMessageSouthlake : followUpMessage,
             studioId: studio.id,
             contact,
             messageId: message.id,
@@ -52,7 +54,9 @@ export async function sendFollowUp({ contact = null, studio = null, from = null,
             throw new Error('send_follow_up could not update message');
         }
 
-        await updateStatus({ studio, contact });
+        if (!studioIsSouthlake(from)) {
+            await updateStatus({ studio, contact });
+        }
 
         return;
 
@@ -67,6 +71,15 @@ export async function sendFollowUp({ contact = null, studio = null, from = null,
     }
 }
 
+const studioIsSouthlake = (from) => {
+    const studio = prisma.studio.findFirst({
+        where: {
+            smsPhone: from,
+        },
+    });
+
+    return studio?.name === 'Southlake';
+}
 const contactIsLead = (contact) => {
     try {
         return contact?.isLead && contact?.Lead_Status == 'New';
