@@ -2,6 +2,7 @@ import { prisma } from '~/utils/prisma';
 import { sendMessage } from '~/actions/twilio';
 import { logError } from '~/utils/logError';
 import { updateStatus } from '../contact/updateStatus';
+import { formatMobile } from '~/utils';
 
 
 const followUpMessage =
@@ -74,7 +75,7 @@ export async function sendFollowUp({ contact = null, studio = null, from = null,
 const studioIsSouthlake = (from) => {
     const studio = prisma.studio.findFirst({
         where: {
-            smsPhone: from,
+            smsPhone: formatMobile(from),
         },
     });
 
