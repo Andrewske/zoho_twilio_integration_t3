@@ -104,9 +104,9 @@ const ChatWindow = ({ studioPhones }) => {
         return acc;
       }, []);
 
-      setAllStudios(['All', ...studioNames]);
+      setAllStudios([...new Set(['All', ...studioNames, studio?.name])]);
     }
-  }, [messages]);
+  }, [messages, studio]);
 
   return !messages || !studio?.active ? (
     <Comment
