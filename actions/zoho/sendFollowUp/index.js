@@ -3,6 +3,7 @@ import { sendMessage } from '~/actions/twilio';
 import { logError } from '~/utils/logError';
 import { updateStatus } from '../contact/updateStatus';
 import { formatMobile } from '~/utils';
+import { createTask } from '../tasks';
 
 
 const followUpMessage =
@@ -27,6 +28,7 @@ export async function sendFollowUp({ contact = null, studio = null, from = null,
 
         // We need to create a task if there is already a follow up message or if the contact is not a lead
         if (!contactIsLead(contact)) {
+            createTask({ studioId: studio.id, zohoId: studio?.zohoId, contact, message });
             return;
         }
 
