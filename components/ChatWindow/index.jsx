@@ -2,11 +2,9 @@
 import styles from './styles.module.css';
 import { getMessages } from '~/actions/twilio';
 import { useContext, useState, useEffect } from 'react';
-
 import { ZohoContext } from '~/providers/ZohoProvider';
 import { Comment } from 'react-loader-spinner';
 import { sendError } from '~/utils/toast';
-
 import MessageForm from '../MessageForm';
 import MessageList from '../MessageList';
 import { getStudioFromZohoId } from '~/actions/zoho/studio';
@@ -17,52 +15,61 @@ const ChatWindow = ({ studioPhones }) => {
   const [currentStudio, setCurrentStudio] = useState('All');
   const [smsPhone, setSmsPhone] = useState(studio?.smsPhone);
   const [filteredMessages, setFilteredMessages] = useState(messages);
-  const [allStudios, setAllStudios] = useState(['All']);
+  const [allStudios, setAllStudios] = useState([]);
   const [contactOwner, setContactOwner] = useState(studio);
 
   useEffect(() => {
-    const findContactOwner = async () => {
-      if (contact) {
+    const findOwnerFetchMessageSetStudios = async () => {
+      if (contact && studio) {
         const contactOwner = await getStudioFromZohoId(contact.Owner.id);
         setContactOwner(contactOwner);
 
-        if (contactOwner.name !== 'Southlake') {
-          setAllStudios([...new Set(['philip_admin'])]);
+        const isSouthlake = contactOwner.name === 'Southlake';
+        let studioNames = [];
+
+        if (!messages) {
+          const messages = await getMessages({
+            contactMobile: contact.Mobile,
+            studioId: studio.id,
+          });
+
+          if (messages.length > 0) {
+            setMessages(messages);
+
+            const newStudioNames = messages.reduce((acc, message) => {
+              if (
+                !acc.includes(message.studioName) &&
+                message.studioName !== 'Unknown'
+              ) {
+                acc.push(message.studioName);
+              }
+              return acc;
+            }, []);
+
+            studioNames = isSouthlake
+              ? newStudioNames
+              : ['All', 'philip_admin', ...newStudioNames];
+          } else {
+            // If there are no messages, set studioNames based on isSouthlake
+            studioNames = isSouthlake ? ['Southlake'] : ['philip_admin'];
+
+            sendError(
+              `There are no messages to or from this lead. Be the first to send one!`
+            );
+          }
+
+          // Simplified final assignment of studioNames
+          // if (!isSouthlake) {
+          //   studioNames.push('philip_admin');
+          // }
+
+          setAllStudios([...new Set(studioNames)]);
+          setCurrentStudio(studioNames[0]);
         }
       }
     };
-    findContactOwner();
-  }, [contact, allStudios]);
-
-  useEffect(() => {
-    const fetchMessages = async () => {
-      if (!messages && contact && studio?.id) {
-        let messages = await getMessages({
-          contactMobile: contact.Mobile,
-          studioId: studio?.id,
-        });
-
-        if (messages.length === 0) {
-          sendError(
-            `There are no messages to or from this lead. Be the first to send one!`
-          );
-        } else console.log(messages);
-
-        setMessages(messages);
-      }
-    };
-
-    fetchMessages();
-  }, [contact, studio, messages]);
-
-  useEffect(() => {
-    if (studio && !studio?.active) {
-      sendError(
-        `Hi ${studio?.name}, this feature is currently still in development. Please check back soon!`,
-        false
-      );
-    }
-  }, [studio]);
+    findOwnerFetchMessageSetStudios();
+  }, [contact, studio, messages, allStudios]);
 
   useEffect(() => {
     if (studio && !studio?.active) {
@@ -76,41 +83,21 @@ const ChatWindow = ({ studioPhones }) => {
   useEffect(() => {
     if (currentStudio === 'All') {
       setSmsPhone(contactOwner?.smsPhone);
-    } else {
-      studioPhones.find((studioPhone) => {
-        if (studioPhone.name === currentStudio) {
-          setSmsPhone(studioPhone.smsPhone);
-        }
-      });
-    }
-  }, [currentStudio, studioPhones, studio, contactOwner]);
-
-  useEffect(() => {
-    if (currentStudio === 'All') {
       setFilteredMessages(messages);
-      return;
-    }
-    const studioMessages = messages.filter(
-      (message) => message.studioName === currentStudio
-    );
-    setFilteredMessages(studioMessages);
-  }, [messages, currentStudio]);
+    } else {
+      const studioPhone = studioPhones.find(
+        (studioPhone) => studioPhone.name === currentStudio
+      );
+      if (studioPhone) {
+        setSmsPhone(studioPhone.smsPhone);
+      }
 
-  useEffect(() => {
-    if (messages && messages.length > 0) {
-      const studioNames = messages.reduce((acc, message) => {
-        if (
-          !acc.includes(message.studioName) &&
-          message.studioName !== 'Unknown'
-        ) {
-          acc.push(message.studioName);
-        }
-        return acc;
-      }, []);
-
-      setAllStudios([...new Set(['All', ...studioNames, studio?.name])]);
+      const studioMessages = messages.filter(
+        (message) => message.studioName === currentStudio
+      );
+      setFilteredMessages(studioMessages);
     }
-  }, [messages, studio]);
+  }, [currentStudio, studioPhones, messages, contactOwner]);
 
   return !messages || !studio?.active ? (
     <Comment

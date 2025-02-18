@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import styles from './styles.module.css';
 import { getMessages, sendMessage } from '~/actions/twilio';
 import { sendError, sendSuccess } from '~/utils/toast';
@@ -15,10 +15,6 @@ const MessageForm = ({
 }) => {
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
-
-  useEffect(() => {
-    console.log(smsPhone);
-  }, [smsPhone]);
 
   const handleNewMessage = (event) => {
     setNewMessage(event.target.value);
