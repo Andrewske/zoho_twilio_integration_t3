@@ -91,7 +91,7 @@ const ChatWindow = ({ studioPhones }) => {
       if (studioPhone) {
         setSmsPhone(studioPhone.smsPhone);
       }
-      if (messages & (messages.length > 0)) {
+      if (messages && messages.length > 0) {
         const studioMessages = messages.filter(
           (message) => message.studioName === currentStudio
         );
