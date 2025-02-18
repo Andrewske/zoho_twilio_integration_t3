@@ -87,6 +87,9 @@ const getAllStudioNames = async (studioId) => {
         smsPhone: true,
         name: true
       },
+      where: {
+        active: true
+      }
     })
 
     const studioNamesDict = studioNames.reduce((acc, studio) => {
