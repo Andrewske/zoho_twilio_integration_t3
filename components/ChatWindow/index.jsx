@@ -25,10 +25,14 @@ const ChatWindow = ({ studioPhones }) => {
       if (contact) {
         const contactOwner = await getStudioFromZohoId(contact.Owner.id);
         setContactOwner(contactOwner);
+
+        if (contactOwner.name !== 'Southlake') {
+          setAllStudios([...new Set([...allStudios, 'philip_admin'])]);
+        }
       }
     };
     findContactOwner();
-  }, [contact]);
+  }, [contact, allStudios]);
 
   useEffect(() => {
     const fetchMessages = async () => {
