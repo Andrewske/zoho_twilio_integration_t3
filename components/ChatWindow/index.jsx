@@ -20,11 +20,11 @@ const ChatWindow = ({ studioPhones }) => {
 
   useEffect(() => {
     const findMessages = async () => {
-      if (contact) {
+      if (contact && studio) {
         try {
           const fetchedMessages = await getMessages({
             contactMobile: contact.Mobile,
-            studioId: studio.id,
+            studioId: studio?.id,
           });
 
           if (fetchedMessages.length === 0) {
