@@ -27,7 +27,7 @@ const ChatWindow = ({ studioPhones }) => {
         setContactOwner(contactOwner);
 
         if (contactOwner.name !== 'Southlake') {
-          setAllStudios([...new Set([...allStudios, 'philip_admin'])]);
+          setAllStudios([...new Set(['philip_admin'])]);
         }
       }
     };
