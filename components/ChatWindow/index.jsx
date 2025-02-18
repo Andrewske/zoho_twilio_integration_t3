@@ -91,11 +91,12 @@ const ChatWindow = ({ studioPhones }) => {
       if (studioPhone) {
         setSmsPhone(studioPhone.smsPhone);
       }
-
-      const studioMessages = messages.filter(
-        (message) => message.studioName === currentStudio
-      );
-      setFilteredMessages(studioMessages);
+      if (messages & (messages.length > 0)) {
+        const studioMessages = messages.filter(
+          (message) => message.studioName === currentStudio
+        );
+        setFilteredMessages(studioMessages);
+      }
     }
   }, [currentStudio, studioPhones, messages, contactOwner]);
 
