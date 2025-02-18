@@ -20,38 +20,44 @@ const ChatWindow = ({ studioPhones }) => {
 
   useEffect(() => {
     const findMessages = async () => {
-      if (contact && !messages) {
-        const messages = await getMessages({
-          contactMobile: contact.Mobile,
-          studioId: studio.id,
-        });
+      if (contact) {
+        try {
+          const fetchedMessages = await getMessages({
+            contactMobile: contact.Mobile,
+            studioId: studio.id,
+          });
 
-        if (messages.length === 0) {
-          sendError(
-            `There are no messages to or from this lead. Be the first to send one!`
-          );
+          if (fetchedMessages.length === 0) {
+            sendError(
+              `There are no messages to or from this lead. Be the first to send one!`
+            );
+          }
+
+          setMessages(fetchedMessages);
+        } catch (error) {
+          console.error('Error fetching messages:', error);
+          sendError('Failed to fetch messages. Please try again later.');
         }
-
-        setMessages(messages);
       }
     };
+
     findMessages();
-  }, [messages, contact, studio]);
+  }, [contact, studio]); // Removed messages from dependencies
 
   useEffect(() => {
     const findOwner = async () => {
       if (contact) {
         const newContactOwner = await getStudioFromZohoId(contact.Owner.id);
-        if (newContactOwner !== contactOwner) {
-          setContactOwner(newContactOwner);
-        }
+        setContactOwner(newContactOwner);
       }
     };
     findOwner();
-  }, [contact, contactOwner]);
+  }, [contact]);
 
   useEffect(() => {
     const findStudios = async () => {
+      if (!contactOwner) return; // Early return if contactOwner is not set
+
       const isSouthlake = contactOwner.name === 'Southlake';
       let studioNames = [];
 
@@ -70,7 +76,6 @@ const ChatWindow = ({ studioPhones }) => {
           ? newStudioNames
           : ['All', 'philip_admin', ...newStudioNames];
       } else {
-        // If there are no messages, set studioNames based on isSouthlake
         studioNames = isSouthlake ? ['Southlake'] : ['philip_admin'];
       }
 
@@ -79,7 +84,7 @@ const ChatWindow = ({ studioPhones }) => {
     };
 
     findStudios();
-  }, [contact, studio, messages, allStudios, contactOwner]);
+  }, [contactOwner, messages]);
 
   useEffect(() => {
     if (studio && !studio?.active) {
