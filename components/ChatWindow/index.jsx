@@ -19,57 +19,67 @@ const ChatWindow = ({ studioPhones }) => {
   const [contactOwner, setContactOwner] = useState(studio);
 
   useEffect(() => {
-    const findOwnerFetchMessageSetStudios = async () => {
-      if (contact && studio) {
-        const contactOwner = await getStudioFromZohoId(contact.Owner.id);
-        setContactOwner(contactOwner);
+    const findMessages = async () => {
+      if (contact && !messages) {
+        const messages = await getMessages({
+          contactMobile: contact.Mobile,
+          studioId: studio.id,
+        });
 
-        const isSouthlake = contactOwner.name === 'Southlake';
-        let studioNames = [];
+        if (messages.length === 0) {
+          sendError(
+            `There are no messages to or from this lead. Be the first to send one!`
+          );
+        }
 
-        if (!messages) {
-          const messages = await getMessages({
-            contactMobile: contact.Mobile,
-            studioId: studio.id,
-          });
+        setMessages(messages);
+      }
+    };
+    findMessages();
+  }, [messages, contact, studio]);
 
-          if (messages.length > 0) {
-            setMessages(messages);
-
-            const newStudioNames = messages.reduce((acc, message) => {
-              if (
-                !acc.includes(message.studioName) &&
-                message.studioName !== 'Unknown'
-              ) {
-                acc.push(message.studioName);
-              }
-              return acc;
-            }, []);
-
-            studioNames = isSouthlake
-              ? newStudioNames
-              : ['All', 'philip_admin', ...newStudioNames];
-          } else {
-            // If there are no messages, set studioNames based on isSouthlake
-            studioNames = isSouthlake ? ['Southlake'] : ['philip_admin'];
-
-            sendError(
-              `There are no messages to or from this lead. Be the first to send one!`
-            );
-          }
-
-          // Simplified final assignment of studioNames
-          // if (!isSouthlake) {
-          //   studioNames.push('philip_admin');
-          // }
-
-          setAllStudios([...new Set(studioNames)]);
-          setCurrentStudio(studioNames[0]);
+  useEffect(() => {
+    const findOwner = async () => {
+      if (contact) {
+        const newContactOwner = await getStudioFromZohoId(contact.Owner.id);
+        if (newContactOwner !== contactOwner) {
+          setContactOwner(newContactOwner);
         }
       }
     };
-    findOwnerFetchMessageSetStudios();
-  }, [contact, studio, messages, allStudios]);
+    findOwner();
+  }, [contact, contactOwner]);
+
+  useEffect(() => {
+    const findStudios = async () => {
+      const isSouthlake = contactOwner.name === 'Southlake';
+      let studioNames = [];
+
+      if (messages && messages.length > 0) {
+        const newStudioNames = messages.reduce((acc, message) => {
+          if (
+            !acc.includes(message.studioName) &&
+            message.studioName !== 'Unknown'
+          ) {
+            acc.push(message.studioName);
+          }
+          return acc;
+        }, []);
+
+        studioNames = isSouthlake
+          ? newStudioNames
+          : ['All', 'philip_admin', ...newStudioNames];
+      } else {
+        // If there are no messages, set studioNames based on isSouthlake
+        studioNames = isSouthlake ? ['Southlake'] : ['philip_admin'];
+      }
+
+      setAllStudios([...new Set(studioNames)]);
+      setCurrentStudio(studioNames[0]);
+    };
+
+    findStudios();
+  }, [contact, studio, messages, allStudios, contactOwner]);
 
   useEffect(() => {
     if (studio && !studio?.active) {
