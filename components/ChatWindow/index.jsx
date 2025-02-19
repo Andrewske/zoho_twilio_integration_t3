@@ -8,6 +8,7 @@ import { sendError } from '~/utils/toast';
 import MessageForm from '../MessageForm';
 import MessageList from '../MessageList';
 import { getStudioFromZohoId } from '~/actions/zoho/studio';
+import { usePostHog } from 'posthog-js/react';
 
 const ChatWindow = ({ studioPhones }) => {
   const { studio, contact } = useContext(ZohoContext);
@@ -17,6 +18,7 @@ const ChatWindow = ({ studioPhones }) => {
   const [filteredMessages, setFilteredMessages] = useState(messages);
   const [allStudios, setAllStudios] = useState([]);
   const [contactOwner, setContactOwner] = useState(studio);
+  const posthog = usePostHog();
 
   useEffect(() => {
     const findMessages = async () => {
@@ -114,6 +116,14 @@ const ChatWindow = ({ studioPhones }) => {
       }
     }
   }, [currentStudio, studioPhones, messages, contactOwner]);
+
+  useEffect(() => {
+    if (studio) {
+      posthog.identify(studio?.id, {
+        studioName: studio?.name,
+      });
+    }
+  }, [studio, posthog]);
 
   return !messages || !studio?.active ? (
     <Comment

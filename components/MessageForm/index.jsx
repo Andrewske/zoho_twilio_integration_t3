@@ -4,6 +4,7 @@ import styles from './styles.module.css';
 import { getMessages, sendMessage } from '~/actions/twilio';
 import { sendError, sendSuccess } from '~/utils/toast';
 import { getStudioFromZohoId } from '~/actions/zoho/studio';
+import { usePostHog } from 'posthog-js/react';
 
 const MessageForm = ({
   contact,
@@ -15,6 +16,7 @@ const MessageForm = ({
 }) => {
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const posthog = usePostHog();
 
   const handleNewMessage = (event) => {
     setNewMessage(event.target.value);
@@ -62,6 +64,10 @@ const MessageForm = ({
       sendError(error.message);
     } finally {
       setIsSending(false);
+      posthog.capture('message_sent', {
+        contactId: contact.id,
+        studioId: studio?.id,
+      });
     }
   };
 

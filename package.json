@@ -25,6 +25,7 @@
     "dotenv": "^16.4.5",
     "lucide-react": "^0.453.0",
     "next": "14.0.1",
+    "posthog-js": "^1.219.6",
     "prisma": "^5.13.0",
     "react": "^18",
     "react-dom": "^18",
