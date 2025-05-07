@@ -1,14 +1,27 @@
-import { prisma } from '~/utils/prisma';
 import { sendMessage } from '~/actions/twilio';
-import { logError } from '~/utils/logError';
 import { formatMobile } from '~/utils';
+import { logError } from '~/utils/logError';
+import { prisma } from '~/utils/prisma';
 
 export async function POST(request) {
   try {
     const { leadId, ownerId, mobile, firstName } = await parseRequest(request);
     const studio = await getStudioFromZohoId(ownerId);
 
-    console.log(studio)
+
+
+    const admin = await prisma.studio.findFirst({
+      where: {
+        name: {
+          contains: 'philip_admin'
+        }
+      },
+      select: {
+        smsPhone: true
+      }
+    })
+
+    const smsPhone = studio.name.includes('Southlake') ? studio.smsPhone : admin.smsPhone;
 
     if (!studio.active) return new Response(null, { status: 200 });
 
@@ -19,19 +32,22 @@ export async function POST(request) {
       smsOptOut: false,
       isLead: true,
     };
-    
+
     const zohoWebhookId = await findOrCreateWelcomeMessage({
       contact,
-      from: studio.smsPhone,
+      from: smsPhone,
       to: mobile,
       studioId: studio.id,
     });
+
+
 
     if (!zohoWebhookId) return new Response(null, { status: 200 });
 
     if (studio.smsPhone) {
       const message = createMessage(firstName, studio);
-      await sendAndLogMessage(mobile, studio, message, zohoWebhookId, contact);
+
+      await sendAndLogMessage(mobile, { smsPhone, id: studio.id }, message, zohoWebhookId, contact);
     } else {
       throw new Error('Can find studio sms phone');
     }
@@ -52,7 +68,15 @@ function createMessage(
   first_name,
   { name: studioName, callPhone, managerName }
 ) {
-  return (
+  return studioName.includes('Design District') ? (
+    `Hi ${first_name}! This is ` +
+    `Fred Astaire Dance Studios ${studioName}. ` +
+    `I would love to get you scheduled for your Introductory Program! ` +
+    `We have limited space for new clients. ` +
+    `Reply "YES" to book your first lesson! ` +
+    `Or call us at ${callPhone ?? ''}. ` +
+    `If you need to opt-out, reply "STOP"`
+  ) : (
     `Hi ${first_name}! This is ${managerName} with ` +
     `Fred Astaire Dance Studios - ${studioName}. ` +
     `I would love to get you scheduled for your Introductory Program! ` +
