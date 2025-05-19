@@ -1,14 +1,14 @@
 'use client';
-import styles from './styles.module.css';
-import { getMessages } from '~/actions/twilio';
-import { useContext, useState, useEffect } from 'react';
-import { ZohoContext } from '~/providers/ZohoProvider';
+import { usePostHog } from 'posthog-js/react';
+import { useContext, useEffect, useState } from 'react';
 import { Comment } from 'react-loader-spinner';
+import { getMessages } from '~/actions/twilio';
+import { getStudioFromZohoId } from '~/actions/zoho/studio';
+import { ZohoContext } from '~/providers/ZohoProvider';
 import { sendError } from '~/utils/toast';
 import MessageForm from '../MessageForm';
 import MessageList from '../MessageList';
-import { getStudioFromZohoId } from '~/actions/zoho/studio';
-import { usePostHog } from 'posthog-js/react';
+import styles from './styles.module.css';
 
 const ChatWindow = ({ studioPhones }) => {
   const { studio, contact } = useContext(ZohoContext);
@@ -99,7 +99,13 @@ const ChatWindow = ({ studioPhones }) => {
 
   useEffect(() => {
     if (currentStudio === 'All') {
-      setSmsPhone(contactOwner?.smsPhone);
+      setSmsPhone(
+        contactOwner?.name.includes('Southlake')
+          ? contactOwner?.smsPhone
+          : studioPhones.find(
+              (studioPhone) => studioPhone.name === 'philip_admin'
+            ).smsPhone
+      );
       setFilteredMessages(messages);
     } else {
       const studioPhone = studioPhones.find(
