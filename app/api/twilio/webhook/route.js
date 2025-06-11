@@ -1,11 +1,11 @@
-import { createTask } from '~/actions/zoho/tasks';
-import { prisma } from '~/utils/prisma';
-import { smsOptOut } from '~/actions/zoho/contact/smsOptOut';
 import { lookupContact } from '~/actions/zoho/contact/lookupContact';
-import { logError } from '~/utils/logError';
-import { formatMobile } from '~/utils';
-import { getStudioFromPhoneNumber, getStudioFromZohoId } from '~/actions/zoho/studio';
+import { smsOptOut } from '~/actions/zoho/contact/smsOptOut';
 import { sendFollowUp } from '~/actions/zoho/sendFollowUp';
+import { getStudioFromPhoneNumber, getStudioFromZohoId } from '~/actions/zoho/studio';
+import { createTask } from '~/actions/zoho/tasks';
+import { formatMobile } from '~/utils';
+import { logError } from '~/utils/logError';
+import { prisma } from '~/utils/prisma';
 
 // export const runtime = 'edge'; // 'nodejs' is the default
 // export const dynamic = 'force-dynamic'; // static by default, unless reading the request
@@ -28,8 +28,7 @@ export async function POST(request) {
     // Get the studio of the number messaged
     let studio = await getStudioFromPhoneNumber(to);
 
-    // Create the message record
-    const messageId = await createMessage({ body, studio });
+
 
     // Find the contact, studioId is used for account.accessToken
     const contact = await lookupContact({
@@ -37,14 +36,15 @@ export async function POST(request) {
       studioId: studio?.id,
     });
 
-    console.log('contact', contact)
-
     if (!contact) {
-      if (isYesMessage(msg)) {
-        sendFollowUp({ to: from, from: to });
-      }
-      return new Response(null, { status: 200 });
+      // if (isYesMessage(msg)) {
+      //   sendFollowUp({ to: from, from: to });
+      // }
+      return new Response('contact not found', { status: 500, headers: { 'Retry-After': '60' } });
     }
+
+    // Create the message record
+    const messageId = await createMessage({ body, studio });
 
     // If to is Admin number then we need to use the contacts owner as the studio
     if (isAdminNumber(to)) {
