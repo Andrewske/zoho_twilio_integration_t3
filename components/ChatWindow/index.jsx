@@ -67,9 +67,16 @@ const ChatWindow = ({ studioPhones }) => {
 
   useEffect(() => {
     const buildAvailableSenders = async () => {
-      if (!studio || !studioPhones) return;
+      if (!studio || !studioPhones) {
+        console.log('📞 buildAvailableSenders early return:', { hasStudio: !!studio, hasStudioPhones: !!studioPhones });
+        return;
+      }
+
+      console.log('📞 Building available senders for studio:', studio.name);
+      console.log('📞 Studio phones data:', studioPhones);
 
       const isAdminUser = studio.name === 'philip_admin' || studio.name === 'KevSandbox';
+      console.log('📞 Is admin user:', isAdminUser);
       let senders = [];
 
       if (isAdminUser) {
@@ -109,26 +116,40 @@ const ChatWindow = ({ studioPhones }) => {
         ];
       } else {
         // Regular studio can send as themselves (if they have Zoho Voice) + Admin
+        console.log('📞 Processing regular studio senders');
         senders = [];
         
         const currentStudioPhone = studioPhones.find(s => s.name === studio.name);
+        console.log('📞 Current studio phone data:', currentStudioPhone);
+        console.log('📞 Looking for studio name:', studio.name);
+        console.log('📞 Available studio names:', studioPhones.map(s => s.name));
+        
         if (currentStudioPhone?.zohoVoicePhone) {
+          console.log('📞 Adding studio as sender with Zoho Voice:', currentStudioPhone.zohoVoicePhone);
           senders.push({
             id: studio.name,
             label: studio.name,
             phone: currentStudioPhone.zohoVoicePhone,
             provider: 'zoho_voice'
           });
+        } else {
+          console.log('📞 Studio not added - missing zohoVoicePhone:', { 
+            found: !!currentStudioPhone, 
+            zohoVoicePhone: currentStudioPhone?.zohoVoicePhone 
+          });
         }
         
+        const adminStudio = studioPhones.find(s => s.name === 'philip_admin');
+        console.log('📞 Admin studio data:', adminStudio);
         senders.push({
           id: 'admin',
           label: 'Admin',
-          phone: studioPhones.find(s => s.name === 'philip_admin')?.twilioPhone,
+          phone: adminStudio?.twilioPhone,
           provider: 'twilio'
         });
       }
 
+      console.log('📞 Final available senders:', senders);
       setAvailableSenders(senders);
 
       // Set default sender based on most recent message
