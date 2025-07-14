@@ -12,9 +12,10 @@ import {
 const MessageList = ({
   messages,
   contactName,
-  currentStudio,
-  setCurrentStudio,
-  allStudios,
+  selectedSender,
+  setSelectedSender,
+  availableSenders,
+  setSmsPhone,
 }) => {
   const wrapperRef = useRef(null);
 
@@ -36,15 +37,20 @@ const MessageList = ({
     >
       <div className="fixed top-4 left-4 px-4 py-2 bg-gold text-black rounded-md shadow-md">
         <DropdownMenu>
-          <DropdownMenuTrigger>{currentStudio}</DropdownMenuTrigger>
+          <DropdownMenuTrigger>
+            Sending as: {selectedSender?.label || 'Loading...'}
+          </DropdownMenuTrigger>
           <DropdownMenuContent>
-            {allStudios.map((studio, index) => (
+            {availableSenders.map((sender, index) => (
               <DropdownMenuItem
-                key={`studio-${index}`}
-                onClick={() => setCurrentStudio(studio)}
+                key={`sender-${index}`}
+                onClick={() => {
+                  setSelectedSender(sender);
+                  setSmsPhone(sender.phone);
+                }}
                 className="capitalize"
               >
-                {studio.split('_').join(' ')}
+                {sender.label}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>

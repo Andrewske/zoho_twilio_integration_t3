@@ -84,7 +84,7 @@ const getAllStudioNames = async (studioId) => {
   try {
     let studioNames = await prisma.studio.findMany({
       select: {
-        smsPhone: true,
+        twilioPhone: true,
         name: true
       },
       where: {
@@ -93,7 +93,9 @@ const getAllStudioNames = async (studioId) => {
     })
 
     const studioNamesDict = studioNames.reduce((acc, studio) => {
-      acc[studio.smsPhone] = studio.name.split('-').join('-')
+      if (studio.twilioPhone) {
+        acc[studio.twilioPhone] = studio.name.split('-').join('-')
+      }
       return acc;
     }, {});
 
