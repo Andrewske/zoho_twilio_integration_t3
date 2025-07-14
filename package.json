@@ -35,8 +35,7 @@
     "rollbar": "^2.26.2",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
-    "twilio": "^4.19.0",
-    "zoho_twilio_integration_next": "link:"
+    "twilio": "^4.19.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.1.4",
