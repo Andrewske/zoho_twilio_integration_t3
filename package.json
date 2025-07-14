@@ -7,7 +7,8 @@
     "build": "prisma generate  && next build",
     "start": "next start",
     "lint": "next lint \"*/**/*.{js,jsx,ts,tsx}\"",
-    "test": "jest --watch"
+    "test": "jest --watch",
+    "db:push": "prisma db push"
   },
   "dependencies": {
     "@next/bundle-analyzer": "^14.1.0",

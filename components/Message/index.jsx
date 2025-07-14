@@ -22,7 +22,17 @@ const Message = ({ message, contactName }) => (
     >
       <span>
         {message.fromStudio
-          ? message.studioName.split('_').join(' ')
+          ? (() => {
+              const studioName = message.studioName.split('_').join(' ');
+              const provider = message.provider || 'twilio';
+              
+              // Show "Admin" for philip_admin messages
+              if (message.studioName === 'philip_admin' || message.studioName === 'Philip Gutierrez') {
+                return 'Admin';
+              }
+              
+              return `${studioName} (${provider})`;
+            })()
           : contactName}
       </span>
       <span>{format(new Date(message.date), 'MMM do h:mm aaa')}</span>

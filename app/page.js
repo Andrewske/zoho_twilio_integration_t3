@@ -13,7 +13,8 @@ export default async function Home() {
     },
     select: {
       name: true,
-      smsPhone: true,
+      twilioPhone: true,
+      zohoVoicePhone: true,
     },
   });
 

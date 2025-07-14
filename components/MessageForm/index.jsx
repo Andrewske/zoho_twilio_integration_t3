@@ -1,7 +1,8 @@
 'use client';
 import { useState } from 'react';
 import styles from './styles.module.css';
-import { getMessages, sendMessage } from '~/actions/twilio';
+import { getMessages } from '~/actions/messages';
+import { sendMessage } from '~/actions/messages/sendMessage';
 import { sendError, sendSuccess } from '~/utils/toast';
 import { getStudioFromZohoId } from '~/actions/zoho/studio';
 import { usePostHog } from 'posthog-js/react';
@@ -9,10 +10,9 @@ import { usePostHog } from 'posthog-js/react';
 const MessageForm = ({
   contact,
   studio,
-  contactOwner,
   setMessages,
   smsPhone,
-  currentStudio,
+  selectedSender,
 }) => {
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -39,13 +39,15 @@ const MessageForm = ({
     return studio;
   };
 
-  const createMessageBody = (newMessage, contact, studio) => ({
-    message: newMessage,
-    to: contact.Mobile,
-    from: smsPhone,
-    studioId: studio?.id,
-    contact,
-  });
+  const createMessageBody = (newMessage, contact, selectedSender) => {
+    return {
+      message: newMessage,
+      to: contact.Mobile,
+      from: smsPhone,
+      selectedSender, // Pass the selected sender info to server
+      contact,
+    };
+  };
 
   const handleSendMessage = async (body) => {
     try {
@@ -57,8 +59,8 @@ const MessageForm = ({
         throw new Error(response.error);
       }
 
-      if (response?.twilioMessageId) {
-        sendSuccess('Message sent!');
+      if (response?.success) {
+        sendSuccess(`Message sent via ${response.provider === 'twilio' ? 'Twilio' : 'Zoho Voice'}!`);
       }
     } catch (error) {
       sendError(error.message);
@@ -76,6 +78,7 @@ const MessageForm = ({
       const messages = await getMessages({
         contactMobile: contact.Mobile,
         studioId: studio?.id,
+        contactId: contact?.id,
       });
 
       // If there are any messages, set them
@@ -90,11 +93,11 @@ const MessageForm = ({
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const validatedStudio = await validateStudio(studio);
+    await validateStudio(studio);
 
     setIsSending(true);
 
-    const body = createMessageBody(newMessage, contact, validatedStudio);
+    const body = createMessageBody(newMessage, contact, selectedSender);
 
     await handleSendMessage(body);
     await handleGetMessages();
@@ -120,8 +123,7 @@ const MessageForm = ({
       />
       <span className="flex flex-col gap-2">
         <p className="text-sm align-top">
-          Sending As:{' '}
-          {currentStudio == 'All' ? contactOwner?.name : currentStudio}
+          Sending As: {selectedSender?.label || 'Loading...'}
         </p>
         <button
           type="submit"
