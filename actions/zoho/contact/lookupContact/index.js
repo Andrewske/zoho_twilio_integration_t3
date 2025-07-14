@@ -66,12 +66,14 @@ const getContactFromModules = async ({ mobile, account, studioId, modules }) => 
 
 export const lookupContact = async ({ mobile, studioId }) => {
   try {
+    console.log(`🔍 Starting lookupContact for mobile: ${mobile}, studioId: ${studioId}`);
+    
     if (!mobile) {
       throw new Error('lookupContact: No mobile provided to lookupContact');
     }
 
     const account = await getZohoAccount({ studioId });
-
+    console.log(`🔑 Got Zoho account: ${account?.clientId}, hasToken: ${!!account?.accessToken}`);
 
     if (!account?.accessToken) {
       throw new Error(
@@ -80,6 +82,7 @@ export const lookupContact = async ({ mobile, studioId }) => {
     }
 
     const zohoModules = ['Leads', 'Contacts'];
+    console.log(`📋 Searching in modules: ${zohoModules.join(', ')} for mobile: ${formatMobile(mobile)}`);
 
     const contact = await getContactFromModules({
       mobile,
@@ -93,9 +96,11 @@ export const lookupContact = async ({ mobile, studioId }) => {
         `lookupContact: Could not find ${mobile} for ${studioId}`
       );
     }
+    
+    console.log(`✅ Found contact: ${contact.Full_Name} in ${contact.isLead ? 'Leads' : 'Contacts'}`);
     return contact;
   } catch (error) {
-    console.error(error.message);
+    console.error(`❌ lookupContact failed: ${error.message}`);
     logError({
       message: 'Error in lookupContact:',
       error,
