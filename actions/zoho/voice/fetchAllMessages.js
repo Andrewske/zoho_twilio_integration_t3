@@ -1,28 +1,8 @@
-import { fetchMessagesForContact, transformSmsLogToMessage } from './index.js';
+import { fetchMessagesForContact } from './index.js';
 import { prisma } from '~/utils/prisma.js';
-
-/**
- * Normalize phone number to 10 digits (remove +1, spaces, etc.)
- * @param {string} phoneNumber - Phone number in any format
- * @returns {string} 10-digit phone number
- */
-function normalizePhoneNumber(phoneNumber) {
-    // Remove all non-digit characters
-    const cleaned = phoneNumber.replace(/\D/g, '');
-    
-    // If it's 11 digits starting with 1, remove the 1
-    if (cleaned.length === 11 && cleaned.startsWith('1')) {
-        return cleaned.substring(1);
-    }
-    
-    // If it's already 10 digits, return as-is
-    if (cleaned.length === 10) {
-        return cleaned;
-    }
-    
-    // For other cases, return the cleaned version
-    return cleaned;
-}
+import { PhoneFormatter } from '~/utils/phoneNumber';
+import { StudioMappings } from '~/utils/studioMappings';
+import { MessageTransformers } from '~/utils/messageTransformers';
 
 /**
  * Fetch and save Zoho Voice messages for a contact without requiring studio config
@@ -68,54 +48,19 @@ async function fetchAndSaveZohoVoiceMessages(params) {
             return [];
         }
 
-        // Get all studios with Zoho Voice numbers for mapping
-        const studios = await prisma.studio.findMany({
-            where: {
-                zohoVoicePhone: { not: null }
-            },
-            select: {
-                id: true,
-                name: true,
-                zohoVoicePhone: true
-            }
-        });
+        // Get phone to studio mapping using centralized utility
+        const phoneToStudio = await StudioMappings.getPhoneToStudioMap();
 
-        // Create phone number to studio mapping
-        const phoneToStudio = {};
-        studios.forEach(studio => {
-            if (studio.zohoVoicePhone) {
-                // Normalize the studio phone to 10 digits
-                const normalizedStudioPhone = normalizePhoneNumber(studio.zohoVoicePhone);
-                
-                // Store multiple formats for matching against Zoho Voice API responses
-                phoneToStudio[studio.zohoVoicePhone] = studio; // Original format
-                phoneToStudio[normalizedStudioPhone] = studio; // 10 digits
-                phoneToStudio[`1${normalizedStudioPhone}`] = studio; // 11 digits with 1
-                phoneToStudio[`+1 ${normalizedStudioPhone}`] = studio; // +1 format
-                phoneToStudio[`+${normalizedStudioPhone}`] = studio; // + format
-            }
-        });
-
-        // Transform and determine studio for each message
-        const messagesToSave = newSmsLogs.map(log => {
+        // Transform messages using centralized utility
+        const messagesToSave = MessageTransformers.bulkZohoVoiceToDb(newSmsLogs, phoneToStudio, contactId);
+        
+        // Log studio mapping for debugging
+        messagesToSave.forEach((msg, index) => {
+            const log = newSmsLogs[index];
             const isIncoming = log.messageType === 'INCOMING';
             const studioPhone = isIncoming ? log.senderId : log.customerNumber;
             const studio = phoneToStudio[studioPhone];
-            
             console.log(`📞 Message ${log.logid}: ${log.messageType}, studio phone: ${studioPhone}, found studio: ${studio?.name || 'Unknown'}`);
-            
-            return {
-                fromNumber: normalizePhoneNumber(isIncoming ? log.customerNumber : log.senderId),
-                toNumber: normalizePhoneNumber(isIncoming ? log.senderId : log.customerNumber),
-                studioId: studio?.id || null,
-                contactId,
-                message: log.message || '',
-                provider: 'zoho_voice',
-                zohoMessageId: log.logid,
-                isWelcomeMessage: false,
-                isFollowUpMessage: false,
-                createdAt: new Date(log.submittedTime)
-            };
         });
 
         // Save messages to database

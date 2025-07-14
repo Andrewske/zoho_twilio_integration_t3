@@ -2,10 +2,11 @@
 import { formatMobile } from '~/utils';
 import { logError } from '~/utils/logError';
 import { prisma } from '~/utils/prisma';
+import { StudioMappings } from '~/utils/studioMappings';
+import { MessageTransformers } from '~/utils/messageTransformers';
+import { PrismaSelectors } from '~/utils/prismaSelectors';
 import { getMessages as getTwilioMessages } from '../twilio';
-import { fetchAndSaveMessages } from '../zoho/voice/index.js';
 import { fetchAndSaveZohoVoiceMessages } from '../zoho/voice/fetchAllMessages';
-import refreshAndRetry from '../zoho/token/refreshAndRetry';
 import { getZohoAccount } from '../zoho';
 
 /**
@@ -126,50 +127,15 @@ async function getMessagesFromDatabase(contactMobile, studioId) {
           { toNumber: formattedMobile }
         ]
       },
-      include: {
-        Studio: {
-          select: { name: true, twilioPhone: true, zohoVoicePhone: true }
-        }
-      },
+      select: PrismaSelectors.message.withStudio,
       orderBy: { createdAt: 'asc' }
     });
 
-    // Get all studio names for phone number mapping
-    const allStudios = await prisma.studio.findMany({
-      select: {
-        id: true,
-        name: true,
-        twilioPhone: true,
-        zohoVoicePhone: true
-      }
-    });
-    
-    const phoneToStudioName = {};
-    allStudios.forEach(studio => {
-      if (studio.twilioPhone) phoneToStudioName[studio.twilioPhone] = studio.name;
-      if (studio.zohoVoicePhone) phoneToStudioName[studio.zohoVoicePhone] = studio.name;
-    });
+    // Get phone to studio name mapping using centralized utility
+    const phoneToStudioName = await StudioMappings.getStudioNamesDict();
 
-    return messages.map(message => {
-      const isFromCustomer = message.fromNumber === formattedMobile;
-      const studioPhone = isFromCustomer ? message.toNumber : message.fromNumber;
-      const studioName = message.Studio?.name || phoneToStudioName[studioPhone] || 'Unknown';
-      
-      return {
-        id: message.id,
-        to: formatMobile(message.toNumber),
-        from: formatMobile(message.fromNumber),
-        body: message.message,
-        date: message.createdAt,
-        fromStudio: !isFromCustomer,
-        studioName,
-        provider: message.provider,
-        twilioMessageId: message.twilioMessageId,
-        zohoMessageId: message.zohoMessageId,
-        isWelcomeMessage: message.isWelcomeMessage,
-        isFollowUpMessage: message.isFollowUpMessage
-      };
-    });
+    // Use centralized message transformer
+    return MessageTransformers.bulkDbToUI(messages, formattedMobile, phoneToStudioName);
   } catch (error) {
     logError({
       message: 'Error getting messages from database',
@@ -181,42 +147,8 @@ async function getMessagesFromDatabase(contactMobile, studioId) {
   }
 }
 
-/**
- * Get studio names mapping for both Twilio and Zoho Voice phones
- * @returns {Promise<Object>} Phone number to studio name mapping
- */
+// Re-export from centralized utility for backward compatibility
 export const getAllStudioNames = async () => {
-  try {
-    const studios = await prisma.studio.findMany({
-      select: {
-        twilioPhone: true,
-        zohoVoicePhone: true,
-        name: true
-      },
-      where: {
-        active: true
-      }
-    });
-
-    const studioNamesDict = {};
-    
-    studios.forEach(studio => {
-      if (studio.twilioPhone) {
-        studioNamesDict[studio.twilioPhone] = studio.name;
-      }
-      if (studio.zohoVoicePhone) {
-        studioNamesDict[studio.zohoVoicePhone] = studio.name;
-      }
-    });
-
-    return studioNamesDict;
-  } catch (error) {
-    logError({
-      message: 'Error getting studio names',
-      error,
-      level: 'error',
-      data: {},
-    });
-    throw error;
-  }
+  const { StudioMappings } = await import('~/utils/studioMappings');
+  return await StudioMappings.getStudioNamesDict();
 };

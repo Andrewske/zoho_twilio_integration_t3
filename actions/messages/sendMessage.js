@@ -1,8 +1,135 @@
 'use server';
-import { logError } from '~/utils/logError';
 import { prisma } from '~/utils/prisma';
+import { PhoneFormatter } from '~/utils/phoneNumber';
+import { StudioMappings } from '~/utils/studioMappings';
+import { withMessageErrorHandling } from '~/utils/errorHandling';
 import { sendMessage as sendTwilioMessage } from '../twilio';
 import { sendSmsWithRetry as sendZohoVoiceMessage } from '../zoho/voice/index.js';
+
+/**
+ * Resolve studio ID based on selected sender
+ * @param {string} studioId - Default studio ID
+ * @param {Object} selectedSender - Selected sender object
+ * @returns {Promise<string>} Resolved studio ID
+ */
+async function resolveStudioId(studioId, selectedSender) {
+  if (!selectedSender) {
+    return studioId;
+  }
+
+  if (selectedSender.id === 'admin') {
+    const adminStudio = await StudioMappings.getStudioByName('philip_admin');
+    return adminStudio?.id;
+  }
+
+  const senderStudio = await StudioMappings.getStudioByName(selectedSender.id);
+  return senderStudio?.id;
+}
+
+/**
+ * Determine provider based on studio phone numbers and 'from' number
+ * @param {Object} studio - Studio object with phone numbers
+ * @param {string} from - From phone number
+ * @returns {string} Provider name ('zoho_voice' or 'twilio')
+ */
+function determineProvider(studio, from) {
+  // Direct match with studio phone numbers
+  if (from === studio.zohoVoicePhone && studio.zohoVoicePhone) {
+    return 'zoho_voice';
+  }
+  
+  if (from === studio.twilioPhone && studio.twilioPhone) {
+    return 'twilio';
+  }
+
+  // Fallback: prefer Zoho Voice if available, otherwise Twilio
+  if (studio.zohoVoicePhone) {
+    return 'zoho_voice';
+  }
+  
+  if (studio.twilioPhone) {
+    return 'twilio';
+  }
+
+  throw new Error('No phone numbers configured for studio');
+}
+
+/**
+ * Get the appropriate phone number for the provider
+ * @param {Object} studio - Studio object
+ * @param {string} provider - Provider name
+ * @returns {string} Phone number for the provider
+ */
+function getProviderPhone(studio, provider) {
+  switch (provider) {
+    case 'zoho_voice':
+      return studio.zohoVoicePhone;
+    case 'twilio':
+      return studio.twilioPhone;
+    default:
+      throw new Error(`Unknown provider: ${provider}`);
+  }
+}
+
+/**
+ * Send SMS via Zoho Voice and save to database
+ * @param {Object} params - Send parameters
+ * @returns {Promise<Object>} Send response
+ */
+async function sendViaZohoVoice({ studioId, to, from, message, contact }) {
+  const response = await sendZohoVoiceMessage({
+    studioId,
+    to,
+    message,
+    prisma
+  });
+  
+  // Save to database
+  await prisma.message.create({
+    data: {
+      studioId,
+      contactId: contact?.id,
+      fromNumber: PhoneFormatter.normalize(from),
+      toNumber: PhoneFormatter.normalize(to),
+      message,
+      provider: 'zoho_voice',
+      zohoMessageId: response?.logid || null,
+    },
+  });
+
+  return { 
+    success: true, 
+    provider: 'zoho_voice',
+    messageId: response?.logid 
+  };
+}
+
+/**
+ * Send SMS via Twilio and handle formatting
+ * @param {Object} params - Send parameters
+ * @returns {Promise<Object>} Send response
+ */
+async function sendViaTwilio({ to, from, message, studioId, contact }) {
+  // Format phone numbers for Twilio
+  const formattedTo = PhoneFormatter.forTwilio(to);
+  const formattedFrom = PhoneFormatter.forTwilio(from);
+  
+  console.log('🚀 Twilio - Original:', { to, from }, 'Formatted:', { to: formattedTo, from: formattedFrom });
+  
+  const response = await sendTwilioMessage({ 
+    to: formattedTo, 
+    from: formattedFrom, 
+    message, 
+    studioId, 
+    contact 
+  });
+  
+  return {
+    success: true,
+    provider: 'twilio',
+    twilioMessageId: response?.twilioMessageId
+  };
+}
 
 /**
  * Send SMS message through appropriate provider (Twilio or Zoho Voice)
@@ -11,192 +138,61 @@ import { sendSmsWithRetry as sendZohoVoiceMessage } from '../zoho/voice/index.js
  * @param {string} params.from - Sender phone number  
  * @param {string} params.message - Message content
  * @param {string} params.studioId - Studio ID
+ * @param {Object} params.selectedSender - Selected sender object
  * @param {Object} params.contact - Contact object
  * @returns {Promise<Object>} Send response
  */
-export const sendMessage = async ({ to, from, message, studioId, selectedSender, contact }) => {
-  try {
-    console.log('🚀 SendMessage called with:', { to, from, message, studioId, selectedSender });
-    
-    // Determine which studio to use based on selectedSender or fallback to studioId
-    let actualStudioId = studioId;
-    
-    if (selectedSender) {
-      if (selectedSender.id === 'admin') {
-        // Get philip_admin studio ID
-        const adminStudio = await prisma.studio.findFirst({
-          where: { name: 'philip_admin' },
-          select: { id: true }
-        });
-        actualStudioId = adminStudio?.id;
-        console.log('🚀 Using admin studio ID:', actualStudioId);
-      } else {
-        // Get studio ID by name
-        const senderStudio = await prisma.studio.findFirst({
-          where: { name: selectedSender.id },
-          select: { id: true }
-        });
-        actualStudioId = senderStudio?.id;
-        console.log('🚀 Using sender studio ID:', actualStudioId, 'for sender:', selectedSender.id);
-      }
-    }
+const _sendMessage = async ({ to, from, message, studioId, selectedSender, contact }) => {
+  console.log('🚀 SendMessage called with:', { to, from, message, studioId, selectedSender });
+  
+  // Validate contact opt-out status
+  if (contact?.SMS_Opt_Out) {
+    throw new Error('Contact has opted out of SMS');
+  }
 
-    if (!actualStudioId) {
-      throw new Error('No studio ID available for sending');
-    }
+  // Resolve the actual studio to use
+  const actualStudioId = await resolveStudioId(studioId, selectedSender);
+  if (!actualStudioId) {
+    throw new Error('No studio ID available for sending');
+  }
 
-    // Get studio information to determine which provider to use
-    const studio = await prisma.studio.findUnique({
-      where: { id: actualStudioId },
-      select: {
-        name: true,
-        twilioPhone: true,
-        zohoVoicePhone: true,
-        active: true
-      }
-    });
+  // Get studio information
+  const studio = await StudioMappings.getStudioById(actualStudioId);
+  if (!studio) {
+    throw new Error('Studio not found');
+  }
+  
+  if (!studio.active) {
+    throw new Error('Studio is not active');
+  }
 
-    console.log('🚀 Found studio:', studio);
+  console.log('🚀 Found studio:', studio);
 
-    if (!studio) {
-      throw new Error('Studio not found');
-    }
+  // Determine provider and get appropriate phone number
+  const provider = determineProvider(studio, from);
+  const providerPhone = getProviderPhone(studio, provider);
+  
+  console.log('🚀 Using provider:', provider, 'with phone:', providerPhone);
 
-    if (contact?.SMS_Opt_Out) {
-      throw new Error('Contact has opted out of SMS');
-    }
+  // Send via appropriate provider
+  const sendParams = { 
+    studioId: actualStudioId, 
+    to, 
+    from: providerPhone, 
+    message, 
+    contact 
+  };
 
-    let response;
-    let provider;
-
-    // Determine which provider to use based on the 'from' phone number
-    console.log('🚀 Checking provider - from:', from, 'studio.zohoVoicePhone:', studio.zohoVoicePhone, 'studio.twilioPhone:', studio.twilioPhone);
-    
-    if (from === studio.zohoVoicePhone && studio.zohoVoicePhone) {
-      // Send via Zoho Voice
-      try {
-        response = await sendZohoVoiceMessage({
-          studioId: actualStudioId,
-          to,
-          message,
-          prisma
-        });
-        
-        // Save to database
-        await prisma.message.create({
-          data: {
-            studioId: actualStudioId,
-            contactId: contact?.id,
-            fromNumber: from,
-            toNumber: to,
-            message,
-            provider: 'zoho_voice',
-            zohoMessageId: response?.logid || null,
-          },
-        });
-
-        return { 
-          success: true, 
-          provider: 'zoho_voice',
-          messageId: response?.logid 
-        };
-      } catch (error) {
-        console.error('Zoho Voice send failed:', error);
-        logError({
-          message: 'Zoho Voice send failed',
-          error,
-          level: 'error',
-          data: { to, from, message, studioId: actualStudioId },
-        });
-        throw error;
-      }
-    } else if (from === studio.twilioPhone && studio.twilioPhone) {
-      // Send via Twilio
-      console.log('🚀 Sending via Twilio');
-      return await sendViaTwilio({ to, from, message, studioId: actualStudioId, contact });
-    } else {
-      // If 'from' doesn't match either phone, choose best available
-      if (studio.zohoVoicePhone) {
-        return await sendMessage({ to, from: studio.zohoVoicePhone, message, studioId: actualStudioId, selectedSender, contact });
-      } else if (studio.twilioPhone) {
-        return await sendMessage({ to, from: studio.twilioPhone, message, studioId: actualStudioId, selectedSender, contact });
-      } else {
-        throw new Error('No phone numbers configured for studio');
-      }
-    }
-
-  } catch (error) {
-    logError({
-      message: 'Error sending unified message',
-      error,
-      level: 'error',
-      data: { to, from, message, studioId },
-    });
-    throw error;
+  switch (provider) {
+    case 'zoho_voice':
+      return await sendViaZohoVoice(sendParams);
+    case 'twilio':
+      return await sendViaTwilio(sendParams);
+    default:
+      throw new Error(`Unknown provider: ${provider}`);
   }
 };
 
-/**
- * Send message via Twilio
- * @param {Object} params - Twilio message parameters
- * @returns {Promise<Object>} Twilio send response
- */
-/**
- * Format phone number for Twilio (needs +1 prefix)
- */
-function formatPhoneForTwilio(phoneNumber) {
-  if (!phoneNumber) return phoneNumber;
-  
-  // Remove all non-digit characters
-  const cleaned = phoneNumber.replace(/\D/g, '');
-  
-  // If it's 10 digits, add +1
-  if (cleaned.length === 10) {
-    return `+1${cleaned}`;
-  }
-  
-  // If it's 11 digits starting with 1, add +
-  if (cleaned.length === 11 && cleaned.startsWith('1')) {
-    return `+${cleaned}`;
-  }
-  
-  // If it already starts with +, return as-is
-  if (phoneNumber.startsWith('+')) {
-    return phoneNumber;
-  }
-  
-  // Fallback: add + to whatever we have
-  return `+${cleaned}`;
-}
+// Apply error handling wrapper
+export const sendMessage = withMessageErrorHandling(_sendMessage, 'unified');
 
-async function sendViaTwilio({ to, from, message, studioId, contact }) {
-  try {
-    // Format phone numbers for Twilio
-    const formattedTo = formatPhoneForTwilio(to);
-    const formattedFrom = formatPhoneForTwilio(from);
-    
-    console.log('🚀 Twilio - Original:', { to, from }, 'Formatted:', { to: formattedTo, from: formattedFrom });
-    
-    const response = await sendTwilioMessage({ 
-      to: formattedTo, 
-      from: formattedFrom, 
-      message, 
-      studioId, 
-      contact 
-    });
-    
-    return {
-      success: true,
-      provider: 'twilio',
-      twilioMessageId: response?.twilioMessageId
-    };
-  } catch (error) {
-    logError({
-      message: 'Error sending Twilio message',
-      error,
-      level: 'error',
-      data: { to, from, message, studioId },
-    });
-    throw error;
-  }
-}

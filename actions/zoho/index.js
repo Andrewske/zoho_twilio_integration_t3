@@ -1,39 +1,11 @@
 'use server';
-import { logError } from '~/utils/logError';
-import {
-  getStudioAccounts,
-  getZohoAccountFromAccounts
-} from './account';
-import { refreshAccessToken } from './token';
-
+// Re-export from centralized AccountManager utility
 export const getZohoAccount = async ({ studioId }) => {
-  try {
-    const studioAccounts = await getStudioAccounts({ studioId });
-    let account = await getZohoAccountFromAccounts(studioAccounts);
-
-    // Check if the access token is expired
-    if (isAccessTokenExpired(account)) {
-      console.log('Access token is expired, refreshing...');
-      return await refreshAccessToken(account);
-    }
-
-
-    return account;
-  } catch (error) {
-    console.error(error);
-    logError({
-      message: 'Error getting Zoho account',
-      error,
-      data: { studioId },
-    });
-    throw new Error('Error getting Zoho account');
-  }
+  const { AccountManager } = await import('~/utils/accountManager');
+  return await AccountManager.getZohoAccount(studioId);
 };
 
-
-export const isAccessTokenExpired = (account) => {
-  const { updatedAt, expiresIn } = account;
-  const updatedAtDate = new Date(updatedAt);
-  updatedAtDate.setTime(updatedAtDate.getTime() + expiresIn * 1000);
-  return updatedAtDate < new Date(Date.now());
+export const isAccessTokenExpired = async (account) => {
+  const { AccountManager } = await import('~/utils/accountManager');
+  return AccountManager.isAccessTokenExpired(account);
 };
