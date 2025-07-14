@@ -1,12 +1,10 @@
 generator client {
   provider = "prisma-client-js"
-  // engineType = "library"
 }
 
 datasource db {
   provider = "postgresql"
-  url = env("DATABASE_URL") // uses connection pooling
-  // directUrl = env("DATABASE_URL") // uses a direct connection
+  url      = env("DATABASE_URL")
 }
 
 model Account {
@@ -16,48 +14,48 @@ model Account {
   updatedAt     DateTime        @default(now()) @updatedAt @map("updated_at")
   clientId      String
   clientSecret  String
-  refreshToken  String?         @db.Text
-  accessToken   String?         @db.Text
-  authCode      String?         @db.Text
+  refreshToken  String?
+  accessToken   String?
+  authCode      String?
   expiresIn     Int?
   scope         String?
   apiDomain     String?
   StudioAccount StudioAccount[]
   TokenRefresh  TokenRefresh[]
-
-
 }
 
 model TokenRefresh {
-  id            String         @id @default(cuid())
-  accountId     String         
-  accessToken   String         @db.Text
-  createdAt     DateTime       @default(now()) @map("created_at")
-  updatedAt     DateTime       @default(now()) @updatedAt @map("updated_at")
-  Account       Account        @relation(fields: [accountId], references: [id])
+  id          String   @id @default(cuid())
+  accountId   String
+  accessToken String
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+  Account     Account  @relation(fields: [accountId], references: [id])
 
   @@index([accountId])
 }
 
 model Studio {
-  id            String          @id @default(cuid())
-  zohoId        String
-  name          String
-  managerName   String?
-  smsPhone      String     
-  callPhone     String?
-  active        Boolean         @default(false)
-  StudioAccount StudioAccount[]
-  ZohoWebhook   ZohoWebhook[]
-  TwilioMessage TwilioMessage[]
-  Message       Message[]
+  id             String          @id @default(cuid())
+  zohoId         String
+  name           String
+  managerName    String?
+  smsPhone       String?
+  callPhone      String?
+  active         Boolean         @default(false)
+  twilioPhone    String?
+  zohoVoicePhone String?
+  Message        Message[]
+  StudioAccount  StudioAccount[]
+  TwilioMessage  TwilioMessage[]
+  ZohoWebhook    ZohoWebhook[]
 }
 
 model StudioAccount {
   studioId  String
   accountId String
-  Studio    Studio  @relation(fields: [studioId], references: [id])
   Account   Account @relation(fields: [accountId], references: [id])
+  Studio    Studio  @relation(fields: [studioId], references: [id])
 
   @@id([studioId, accountId])
   @@index([studioId])
@@ -65,46 +63,56 @@ model StudioAccount {
 }
 
 model ZohoWebhook {
-  id                      String   @id @default(cuid())
-  studioId                String?
-  contactId               String?
-  firstName               String?
-  mobile                  String?
-  twilioMessageId         String?
-  sentWelcomeMessage      Boolean  @default(false)
-  sentFollowUpMessage     Boolean  @default(false)
-  createdAt     DateTime        @default(now()) @map("created_at")
-  updatedAt     DateTime        @default(now()) @updatedAt @map("updated_at")
-  Studio                  Studio?   @relation(fields: [studioId], references: [id]) // Adjusted to use studioId
-  @@index([studioId]) // Adjusted to index studioId
+  id                  String   @id @default(cuid())
+  contactId           String?
+  firstName           String?
+  mobile              String?
+  twilioMessageId     String?
+  sentWelcomeMessage  Boolean  @default(false)
+  sentFollowUpMessage Boolean  @default(false)
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @default(now()) @updatedAt @map("updated_at")
+  studioId            String?
+  Studio              Studio?  @relation(fields: [studioId], references: [id])
+
+  @@index([studioId])
 }
 
 model TwilioMessage {
-  id                      String    @id @default(cuid())
-  studioId                String?
-  contactId               String?
-  from                    String
-  to                      String
-  message                 String?   @db.Text
-  twilioMessageId         String
-  createdAt               DateTime  @default(now()) @map("created_at")
-  updatedAt               DateTime  @default(now()) @updatedAt @map("updated_at")
-  Studio                  Studio?   @relation(fields: [studioId], references: [id])
+  id              String   @id @default(cuid())
+  studioId        String?
+  contactId       String?
+  from            String
+  to              String
+  message         String?
+  twilioMessageId String
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+  Studio          Studio?  @relation(fields: [studioId], references: [id])
+
   @@index([studioId])
 }
 
 model Message {
-  id                      String    @id @default(cuid())
-  fromNumber              String
-  toNumber                String
-  studioId                String?
-  contactId               String?
-  message                 String?   @db.Text
-  twilioMessageId         String?
-  isWelcomeMessage        Boolean   @default(false)
-  isFollowUpMessage       Boolean   @default(false)
-  createdAt               DateTime  @default(now()) @map("created_at")
-  updatedAt               DateTime  @default(now()) @updatedAt @map("updated_at")
-  Studio                  Studio?   @relation(fields: [studioId], references: [id])
+  id                String          @id @default(cuid())
+  fromNumber        String
+  toNumber          String
+  studioId          String?
+  contactId         String?
+  message           String?
+  twilioMessageId   String?
+  isWelcomeMessage  Boolean         @default(false)
+  isFollowUpMessage Boolean         @default(false)
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @default(now()) @updatedAt @map("updated_at")
+  provider          MessageProvider @default(twilio)
+  zohoMessageId     String?
+  Studio            Studio?         @relation(fields: [studioId], references: [id])
+
   @@index([studioId])
+}
+
+enum MessageProvider {
+  twilio
+  zoho_voice
 }
