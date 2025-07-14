@@ -19,6 +19,8 @@ import { getZohoAccount } from '../zoho';
  */
 export const getMessages = async ({ contactMobile, studioId, contactId }) => {
   try {
+    console.log(`📨 Starting getMessages for mobile: ${contactMobile}, studioId: ${studioId}, contactId: ${contactId}`);
+    
     // Get studio information to determine which services it uses
     const studio = await prisma.studio.findUnique({
       where: { id: studioId },
@@ -34,10 +36,13 @@ export const getMessages = async ({ contactMobile, studioId, contactId }) => {
       throw new Error('Studio not found');
     }
 
+    console.log(`🏢 Studio found: ${studio.name}, twilioPhone: ${studio.twilioPhone}, zohoVoicePhone: ${studio.zohoVoicePhone}`);
+
     let allMessages = [];
     
     // Get messages from database first (both Twilio and Zoho Voice)
     const dbMessages = await getMessagesFromDatabase(contactMobile, studioId);
+    console.log(`💾 Database messages found: ${dbMessages.length}`);
     
     // Always try to fetch Zoho Voice messages if we have a contactId
     if (contactId) {
@@ -97,6 +102,7 @@ export const getMessages = async ({ contactMobile, studioId, contactId }) => {
       (a, b) => new Date(a.date || a.createdAt) - new Date(b.date || b.createdAt)
     );
 
+    console.log(`✅ Returning ${sortedMessages.length} total messages`);
     return sortedMessages;
 
   } catch (error) {
@@ -119,6 +125,7 @@ export const getMessages = async ({ contactMobile, studioId, contactId }) => {
 async function getMessagesFromDatabase(contactMobile, studioId) {
   try {
     const formattedMobile = formatMobile(contactMobile);
+    console.log(`🔍 Searching database for messages with mobile: ${formattedMobile}`);
     
     const messages = await prisma.message.findMany({
       where: {
@@ -131,11 +138,16 @@ async function getMessagesFromDatabase(contactMobile, studioId) {
       orderBy: { createdAt: 'asc' }
     });
 
+    console.log(`📊 Raw database messages found: ${messages.length}`);
+
     // Get phone to studio name mapping using centralized utility
     const phoneToStudioName = await StudioMappings.getStudioNamesDict();
 
     // Use centralized message transformer
-    return MessageTransformers.bulkDbToUI(messages, formattedMobile, phoneToStudioName);
+    const transformedMessages = MessageTransformers.bulkDbToUI(messages, formattedMobile, phoneToStudioName);
+    console.log(`🔄 Transformed messages: ${transformedMessages.length}`);
+    
+    return transformedMessages;
   } catch (error) {
     logError({
       message: 'Error getting messages from database',
