@@ -18,8 +18,17 @@ const ChatWindow = ({ studioPhones }) => {
   const posthog = usePostHog();
 
   useEffect(() => {
+    console.log('🎯 ChatWindow useEffect triggered:', { 
+      hasContact: !!contact, 
+      hasStudio: !!studio,
+      contactMobile: contact?.Mobile,
+      studioId: studio?.id,
+      studioName: studio?.name
+    });
+
     const findMessages = async () => {
       if (contact && studio) {
+        console.log('✅ Both contact and studio exist, calling getMessages');
         try {
           const fetchedMessages = await getMessages({
             contactMobile: contact.Mobile,
@@ -36,8 +45,19 @@ const ChatWindow = ({ studioPhones }) => {
           setMessages(fetchedMessages);
         } catch (error) {
           console.error('Error fetching messages:', error);
-          sendError('Failed to fetch messages. Please try again later.');
+          console.error('Error details:', {
+            message: error.message,
+            stack: error.stack,
+            contactMobile: contact?.Mobile,
+            studioId: studio?.id
+          });
+          sendError(`Failed to fetch messages: ${error.message}`);
         }
+      } else {
+        console.log('❌ Missing contact or studio:', { 
+          hasContact: !!contact,
+          hasStudio: !!studio 
+        });
       }
     };
 
