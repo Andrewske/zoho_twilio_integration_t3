@@ -15,6 +15,7 @@ export default async function Home() {
       name: true,
       twilioPhone: true,
       zohoVoicePhone: true,
+      zohoId: true,
     },
   });
 

@@ -80,29 +80,40 @@ const ChatWindow = ({ studioPhones }) => {
       let senders = [];
 
       if (isAdminUser) {
-        // Admin users can send as any studio with Zoho Voice + Admin
-        const availableStudios = studioPhones.filter(s => 
-          s.zohoVoicePhone && 
-          s.name !== 'philip_admin' && 
-          s.name !== 'KevSandbox'
-        );
+        // Admin users can send as contact owner + Admin
+        senders = [];
         
-        console.log('📞 Available studios for admin:', availableStudios);
+        console.log('📞 Contact owner info:', contact?.Owner);
         
-        senders = [
-          ...availableStudios.map(s => ({
-            id: s.name,
-            label: s.name,
-            phone: s.zohoVoicePhone,
-            provider: 'zoho_voice'
-          })),
-          {
-            id: 'admin',
-            label: 'Admin',
-            phone: studioPhones.find(s => s.name === 'philip_admin')?.twilioPhone,
-            provider: 'twilio'
+        // Find the contact's owner studio
+        if (contact?.Owner?.id) {
+          console.log('📞 Looking for contact owner studio with zohoId:', contact.Owner.id);
+          console.log('📞 Available studios with zohoIds:', studioPhones.map(s => ({ name: s.name, zohoId: s.zohoId })));
+          
+          const ownerStudio = studioPhones.find(s => {
+            return s.zohoId === contact.Owner.id;
+          });
+          
+          console.log('📞 Contact owner studio found:', ownerStudio);
+          
+          if (ownerStudio?.zohoVoicePhone) {
+            console.log('📞 Adding contact owner as sender:', ownerStudio.name);
+            senders.push({
+              id: ownerStudio.name,
+              label: `${ownerStudio.name} (Owner)`,
+              phone: ownerStudio.zohoVoicePhone,
+              provider: 'zoho_voice'
+            });
           }
-        ];
+        }
+        
+        // Always add Admin option
+        senders.push({
+          id: 'admin',
+          label: 'Admin',
+          phone: studioPhones.find(s => s.name === 'philip_admin')?.twilioPhone,
+          provider: 'twilio'
+        });
       } else {
         // Regular studio can send as themselves (if they have Zoho Voice) + Admin
         console.log('📞 Processing regular studio senders');
