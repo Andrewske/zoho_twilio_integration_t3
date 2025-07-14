@@ -1,26 +1,7 @@
 
-/**
- * Format phone number for Zoho Voice API (expects international format)
- * @param {string} phoneNumber - Raw phone number
- * @returns {string} Formatted phone number with country code
- */
-function formatPhoneForZohoVoice(phoneNumber) {
-    // Remove any non-digit characters
-    const cleaned = phoneNumber.replace(/\D/g, '');
-    
-    // If it's a 10-digit US number, add 1 prefix (no + symbol)
-    if (cleaned.length === 10) {
-        return `1${cleaned}`;
-    }
-    
-    // If it's 11 digits starting with 1, return as-is
-    if (cleaned.length === 11 && cleaned.startsWith('1')) {
-        return cleaned;
-    }
-    
-    // For other formats, return just the digits
-    return cleaned;
-}
+import { PhoneFormatter } from '~/utils/phoneNumber';
+import { MessageTransformers } from '~/utils/messageTransformers';
+import { AccountManager } from '~/utils/accountManager';
 
 /**
  * Fetch SMS logs from Zoho Voice API
@@ -98,7 +79,7 @@ async function fetchSmsLogs(params) {
 async function fetchMessagesForContact(customerNumber, accessToken, options = {}) {
     try {
         // Format phone number for Zoho Voice API (needs international format)
-        const formattedNumber = formatPhoneForZohoVoice(customerNumber);
+        const formattedNumber = PhoneFormatter.forZohoVoice(customerNumber);
         console.log(`📞 Formatted phone number: ${customerNumber} -> ${formattedNumber}`);
         
         const response = await fetchSmsLogs({
@@ -120,29 +101,8 @@ async function fetchMessagesForContact(customerNumber, accessToken, options = {}
     }
 }
 
-/**
- * Transform Zoho Voice SMS log to our Message model format
- * @param {Object} smsLog - SMS log from Zoho Voice API
- * @param {string} studioId - Studio ID
- * @param {string} contactId - Contact ID from Zoho CRM
- * @returns {Object} Message object for database insertion
- */
-function transformSmsLogToMessage(smsLog, studioId, contactId) {
-    const isIncoming = smsLog.messageType === 'INCOMING';
-    
-    return {
-        fromNumber: isIncoming ? smsLog.customerNumber : smsLog.senderId,
-        toNumber: isIncoming ? smsLog.senderId : smsLog.customerNumber,
-        studioId,
-        contactId,
-        message: smsLog.message || '',
-        provider: 'zoho_voice',
-        zohoMessageId: smsLog.logid,
-        isWelcomeMessage: false,
-        isFollowUpMessage: false,
-        createdAt: new Date(smsLog.submittedTime)
-    };
-}
+// Use centralized MessageTransformers utility
+const transformSmsLogToMessage = MessageTransformers.zohoVoiceToDb;
 
 /**
  * Fetch and save Zoho Voice messages for a contact
@@ -221,8 +181,8 @@ async function sendSms(params) {
     const { accessToken, from, to, message } = params;
 
     // Format phone numbers for Zoho Voice API (ensure international format)
-    const formattedFrom = formatPhoneForZohoVoice(from);
-    const formattedTo = formatPhoneForZohoVoice(to);
+    const formattedFrom = PhoneFormatter.forZohoVoice(from);
+    const formattedTo = PhoneFormatter.forZohoVoice(to);
 
     // Try different parameter combinations to fix "Extra parameter found" error
     const requestVariations = [
@@ -357,16 +317,9 @@ async function sendSmsWithRetry(params) {
             throw new Error(`Studio ${studioId} does not have a Zoho Voice phone number configured`);
         }
 
-        // Get access token (simplified - you'll need to implement proper token management)
-        const studioAccounts = await prisma.studioAccount.findMany({
-            where: { studioId },
-            include: { Account: true }
-        });
-
-        const zohoAccount = studioAccounts
-            .map(sa => sa.Account)
-            .find(account => account.platform === 'zoho');
-
+        // Get Zoho account using centralized AccountManager
+        const zohoAccount = await AccountManager.getZohoAccount(studioId);
+        
         if (!zohoAccount?.accessToken) {
             throw new Error('No Zoho access token available');
         }

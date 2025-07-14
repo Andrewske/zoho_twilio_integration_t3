@@ -1,151 +1,74 @@
 'use server';
 import twilio from 'twilio';
 import { formatMobile } from '~/utils';
-import { logError } from '~/utils/logError';
 import { prisma } from '~/utils/prisma';
+import { logError } from '~/utils/logError';
+import { StudioMappings } from '~/utils/studioMappings';
+import { MessageTransformers } from '~/utils/messageTransformers';
+import { withAccountErrorHandling, withApiErrorHandling } from '~/utils/errorHandling';
 
-export const getTwilioAccount = async (id) => {
-  try {
-    const studioAccounts = await prisma.studioAccount.findMany({
-      where: {
-        studioId: id,
-      },
-      include: {
-        Account: true,
-      },
-    });
-
-    const twilioAccount = studioAccounts
-      .map((sa) => sa.Account)
-      .find((account) => account.platform === 'twilio');
-
-    return twilioAccount;
-  } catch (error) {
-    logError({
-      message: 'Error getting Twilio account',
-      error,
-      level: 'error',
-      data: { id },
-    });
-    throw error;
-  }
+// Re-export from centralized AccountManager utility  
+export const getTwilioAccount = async (studioId) => {
+  const { AccountManager } = await import('~/utils/accountManager');
+  return await AccountManager.getTwilioAccount(studioId);
 };
 
 export const getTwilioClient = ({ clientId, clientSecret }) =>
   twilio(clientId, clientSecret, { region: 'US1', edge: 'umatilla' });
 
-export const getMessagesToContact = async (client, contactMobile, studioNames) => {
-  try {
-    const response = await client.messages.list({ to: contactMobile });
-    return response.map((message) => ({
-      to: formatMobile(message.to),
-      from: formatMobile(message.from),
-      body: message.body,
-      date: message.dateSent,
-      fromStudio: true,
-      studioName: studioNames[formatMobile(message.from)] ?? 'Unknown',
-      id: 1,
-    }));
-  } catch (error) {
-    logError({
-      message: 'Error getting messages to contact',
-      error,
-      level: 'info',
-      data: { contactMobile },
-    });
-    throw error;
-  }
+const _getMessagesToContact = async (client, contactMobile, studioNames) => {
+  const response = await client.messages.list({ to: contactMobile });
+  return response.map((message) => 
+    MessageTransformers.twilioToUI(message, studioNames, true)
+  );
 };
 
-export const getMessagesFromContact = async (client, contactMobile, studioNames) => {
-  try {
-    const response = await client.messages.list({ from: contactMobile });
-    return response.map((message) => ({
-      to: formatMobile(message.to),
-      from: formatMobile(message.from),
-      body: message.body,
-      date: message.dateSent,
-      fromStudio: false,
-      studioName: studioNames[formatMobile(message.to)] ?? 'Unknown',
-      id: 0
-    }));
-  } catch (error) {
-    logError({
-      message: 'Error getting messages from contact',
-      error,
-      level: 'info',
-      data: { contactMobile },
-    });
-    throw error;
-  }
+export const getMessagesToContact = withApiErrorHandling(_getMessagesToContact, 'twilio');
+
+const _getMessagesFromContact = async (client, contactMobile, studioNames) => {
+  const response = await client.messages.list({ from: contactMobile });
+  return response.map((message) => 
+    MessageTransformers.twilioToUI(message, studioNames, false)
+  );
 };
 
-const getAllStudioNames = async (studioId) => {
-  try {
-    let studioNames = await prisma.studio.findMany({
-      select: {
-        twilioPhone: true,
-        name: true
-      },
-      where: {
-        active: true
-      }
-    })
+export const getMessagesFromContact = withApiErrorHandling(_getMessagesFromContact, 'twilio');
 
-    const studioNamesDict = studioNames.reduce((acc, studio) => {
-      if (studio.twilioPhone) {
-        acc[studio.twilioPhone] = studio.name.split('-').join('-')
-      }
-      return acc;
-    }, {});
-
-    return studioNamesDict;
-  } catch (error) {
-    logError({
-      message: 'Error getting studio names',
-      error,
-      level: 'error',
-      data: { studioId },
-    });
-    throw error;
-  }
-}
-
-export const getMessages = async ({ contactMobile, studioId }) => {
-  try {
-    const twilioAccount = await getTwilioAccount(studioId);
-
-    if (!twilioAccount) {
-      throw new Error('Could not find Twilio account');
-    }
-    const client = getTwilioClient(twilioAccount);
-
-    const studioNames = await getAllStudioNames(studioId);
-    const messagesToContact = await getMessagesToContact(client, contactMobile, studioNames);
-    const messagesFromContact = await getMessagesFromContact(
-      client,
-      contactMobile,
-      studioNames
-    );
-
-    // console.log(messagesToContact, messagesFromContact);
-
-    const finalMessages = [...messagesToContact, ...messagesFromContact].sort(
-      (a, b) => new Date(a.date) - new Date(b.date)
-    );
-
-    return finalMessages;
-
-  } catch (error) {
-    logError({
-      message: 'Error getting messages',
-      error,
-      level: 'warning',
-      data: { contactMobile, studioId },
-    });
-    throw error;
-  }
+// Use centralized StudioMappings utility
+const getAllStudioNames = async () => {
+  return await StudioMappings.getStudioNamesDict();
 };
+
+const _getMessages = async ({ contactMobile, studioId }) => {
+  const twilioAccount = await getTwilioAccount(studioId);
+
+  if (!twilioAccount) {
+    throw new Error('Could not find Twilio account');
+  }
+
+  // Extract clientId and clientSecret for Twilio client
+  const client = getTwilioClient({ 
+    clientId: twilioAccount.clientId, 
+    clientSecret: twilioAccount.clientSecret 
+  });
+
+  const studioNames = await getAllStudioNames();
+  const messagesToContact = await getMessagesToContact(client, contactMobile, studioNames);
+  const messagesFromContact = await getMessagesFromContact(
+    client,
+    contactMobile,
+    studioNames
+  );
+
+  const finalMessages = [...messagesToContact, ...messagesFromContact].sort(
+    (a, b) => new Date(a.date) - new Date(b.date)
+  );
+
+  return finalMessages;
+};
+
+// Apply error handling wrapper
+export const getMessages = withApiErrorHandling(_getMessages, 'twilio');
 
 
 // Create a route to send a new text message
@@ -167,7 +90,10 @@ export const sendMessage = async ({
     throw new Error('Could not find Twilio account');
   }
 
-  const client = getTwilioClient(twilioAccount);
+  const client = getTwilioClient({ 
+    clientId: twilioAccount.clientId, 
+    clientSecret: twilioAccount.clientSecret 
+  });
 
   try {
     const sendRecord = await client.messages.create({
