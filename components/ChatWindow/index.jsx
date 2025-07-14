@@ -80,28 +80,17 @@ const ChatWindow = ({ studioPhones }) => {
       let senders = [];
 
       if (isAdminUser) {
-        // Admin users can send as any studio that has been in conversation + Admin
-        let studiosInConversation = [];
+        // Admin users can send as any studio with Zoho Voice + Admin
+        const availableStudios = studioPhones.filter(s => 
+          s.zohoVoicePhone && 
+          s.name !== 'philip_admin' && 
+          s.name !== 'KevSandbox'
+        );
         
-        if (messages && messages.length > 0) {
-          // Get unique studio names from conversation history
-          const studioNamesInConvo = [...new Set(
-            messages
-              .filter(msg => msg.fromStudio && msg.studioName !== 'Unknown')
-              .map(msg => msg.studioName === 'Admin' || msg.studioName === 'philip_admin' ? 'admin' : msg.studioName)
-          )];
-          
-          // Filter studios that are in conversation and have Zoho Voice
-          studiosInConversation = studioPhones.filter(s => 
-            s.zohoVoicePhone && 
-            s.name !== 'philip_admin' && 
-            s.name !== 'KevSandbox' &&
-            studioNamesInConvo.includes(s.name)
-          );
-        }
+        console.log('📞 Available studios for admin:', availableStudios);
         
         senders = [
-          ...studiosInConversation.map(s => ({
+          ...availableStudios.map(s => ({
             id: s.name,
             label: s.name,
             phone: s.zohoVoicePhone,
