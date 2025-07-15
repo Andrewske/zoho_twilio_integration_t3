@@ -139,14 +139,28 @@ const ChatWindow = ({ studioPhones }) => {
           });
         }
         
-        const adminStudio = studioPhones.find(s => s.name === 'philip_admin');
-        console.log('📞 Admin studio data:', adminStudio);
-        senders.push({
-          id: 'admin',
-          label: 'Admin',
-          phone: adminStudio?.twilioPhone,
-          provider: 'twilio'
-        });
+        // Add Twilio phone for Southlake (they can only send as themselves)
+        if (studio.name === 'Southlake' && currentStudioPhone?.twilioPhone) {
+          console.log('📞 Adding Southlake as sender with Twilio:', currentStudioPhone.twilioPhone);
+          senders.push({
+            id: studio.name,
+            label: studio.name,
+            phone: currentStudioPhone.twilioPhone,
+            provider: 'twilio'
+          });
+        }
+        
+        // Add Admin option (but not for Southlake)
+        if (studio.name !== 'Southlake') {
+          const adminStudio = studioPhones.find(s => s.name === 'philip_admin');
+          console.log('📞 Admin studio data:', adminStudio);
+          senders.push({
+            id: 'admin',
+            label: 'Admin',
+            phone: adminStudio?.twilioPhone,
+            provider: 'twilio'
+          });
+        }
       }
 
       console.log('📞 Final available senders:', senders);
@@ -160,6 +174,8 @@ const ChatWindow = ({ studioPhones }) => {
         let defaultSender;
         if (lastStudioName === 'Admin' || lastStudioName === 'philip_admin') {
           defaultSender = senders.find(s => s.id === 'admin');
+        } else if (lastStudioName === 'Southlake') {
+          defaultSender = senders.find(s => s.id === 'Southlake');
         } else {
           defaultSender = senders.find(s => s.id === lastStudioName) || senders[0];
         }
