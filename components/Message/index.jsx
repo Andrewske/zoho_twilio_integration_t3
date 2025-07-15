@@ -10,7 +10,8 @@ const Message = ({ message, contactName }) => (
     <span
       className={`${
         message.studioName == 'philip_admin' ||
-        message.studioName == 'Philip Gutierrez'
+        message.studioName == 'Philip Gutierrez' ||
+        message.studioName == 'Southlake'
           ? 'bg-red'
           : message.provider === 'zoho_voice'
           ? 'bg-purple'
@@ -28,9 +29,14 @@ const Message = ({ message, contactName }) => (
               const studioName = message.studioName.split('_').join(' ');
               const provider = message.provider || 'twilio';
               
-              // Show "Admin" for philip_admin messages
+              // Show "Admin" for admin messages
               if (message.studioName === 'philip_admin' || message.studioName === 'Philip Gutierrez') {
                 return 'Admin';
+              }
+              
+              // Show "Southlake" for Southlake messages
+              if (message.studioName === 'Southlake') {
+                return 'Southlake';
               }
               
               return `${studioName} (${provider})`;
