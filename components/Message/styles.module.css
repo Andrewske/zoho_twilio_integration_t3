@@ -5,7 +5,15 @@
 }
 
 .red {
-  background-color: '#ab192d';
+  background-color: #ab192d;
+}
+
+.purple {
+  background-color: #7c3aed;
+}
+
+.grey {
+  background-color: #6b7280;
 }
 
 .container {

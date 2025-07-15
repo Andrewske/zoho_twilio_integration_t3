@@ -12,7 +12,9 @@ const Message = ({ message, contactName }) => (
         message.studioName == 'philip_admin' ||
         message.studioName == 'Philip Gutierrez'
           ? 'bg-red'
-          : 'bg-purple'
+          : message.provider === 'zoho_voice'
+          ? 'bg-purple'
+          : 'bg-gray-500'
       } ${styles.container} ${message.fromStudio ? styles.to : ''} `}
     >
       {message.body}

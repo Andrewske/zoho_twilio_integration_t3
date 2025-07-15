@@ -21,7 +21,6 @@ export const fetchAndSetContact = async ({ entity, entityId, setContact }) => {
       if (entity === 'Tasks') {
         const description = response?.data[0]?.Description;
         phoneNumber = parseDescription(description);
-        console.log('phoneNumber', phoneNumber);
       } else {
         phoneNumber = mobile ?? phone;
       }
