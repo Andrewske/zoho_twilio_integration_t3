@@ -8,7 +8,7 @@ import { getZohoRecord } from '~/utils/zohoApi';
 export const fetchAndSetContact = async ({ entity, entityId, setContact }) => {
   try {
     const response = await getZohoRecord(entity, entityId);
-    console.log('contact', response);
+    console.log('contact-response', response);
 
     if (response && response.data && response.data[0]) {
       const {
@@ -21,6 +21,7 @@ export const fetchAndSetContact = async ({ entity, entityId, setContact }) => {
       if (entity === 'Tasks') {
         const description = response?.data[0]?.Description;
         phoneNumber = parseDescription(description);
+        console.log('phoneNumber', phoneNumber);
       } else {
         phoneNumber = mobile ?? phone;
       }
@@ -33,7 +34,7 @@ export const fetchAndSetContact = async ({ entity, entityId, setContact }) => {
             mobile: phoneNumber,
             studioId: studio?.id,
           });
-          console.log('contact', contact);
+          console.log('set-contact', contact);
           setContact(contact);
         } else {
           sendError('This lead is not assigned to an active studio.', false);
