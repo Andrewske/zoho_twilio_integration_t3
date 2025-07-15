@@ -3,8 +3,8 @@
  * Centralizes account retrieval logic for different platforms
  */
 
-import { prisma } from './prisma.js';
-import { withAccountErrorHandling, createTypedError, ErrorTypes } from './errorHandling.js';
+import { prisma } from './prisma';
+import { withAccountErrorHandling, createTypedError, ErrorTypes } from './errorHandling';
 
 /**
  * Account management utilities for different platforms
