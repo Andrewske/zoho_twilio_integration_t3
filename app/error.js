@@ -20,7 +20,7 @@ export default function Error({ error, reset }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[400px] p-8 text-center">
       <h2 className="text-2xl font-bold text-red-600 mb-4">Something went wrong!</h2>
-      <p className="text-gray-600 mb-6">We've logged this error and will look into it.</p>
+      <p className="text-gray-600 mb-6">We&apos;ve logged this error and will look into it.</p>
       <button
         className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
         onClick={() => reset()}

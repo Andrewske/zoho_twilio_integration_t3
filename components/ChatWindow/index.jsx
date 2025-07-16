@@ -189,7 +189,7 @@ const ChatWindow = ({ studioPhones }) => {
     };
 
     buildAvailableSenders();
-  }, [studio, studioPhones, messages]);
+  }, [studio, studioPhones, messages, contact]);
 
   useEffect(() => {
     if (studio && !studio?.active) {
