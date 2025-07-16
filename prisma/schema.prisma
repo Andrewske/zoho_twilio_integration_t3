@@ -49,6 +49,7 @@ model Studio {
   StudioAccount  StudioAccount[]
   TwilioMessage  TwilioMessage[]
   ZohoWebhook    ZohoWebhook[]
+  ZohoTask       ZohoTask[]
 }
 
 model StudioAccount {
@@ -108,7 +109,26 @@ model Message {
   provider          MessageProvider @default(twilio)
   zohoMessageId     String?
   Studio            Studio?         @relation(fields: [studioId], references: [id])
+  ZohoTask          ZohoTask[]
 
+  @@index([studioId])
+}
+
+model ZohoTask {
+  id          String   @id @default(cuid())
+  zohoTaskId  String   @unique
+  messageId   String?
+  studioId    String
+  contactId   String?
+  taskSubject String?
+  taskStatus  String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+  
+  Message     Message? @relation(fields: [messageId], references: [id])
+  Studio      Studio   @relation(fields: [studioId], references: [id])
+  
+  @@index([messageId])
   @@index([studioId])
 }
 
