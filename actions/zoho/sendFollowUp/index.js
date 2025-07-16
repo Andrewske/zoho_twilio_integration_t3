@@ -16,21 +16,35 @@ const followUpMessageSouthlake = 'Great! We have a limited number spots for new 
 // If there is a contact, we check if the contact has already received a follow up message
 // If the contact has not received a follow up message and the contact is a lead, we send a follow up message
 // Then update the contact's status to 'Contacted, Not Booked'
-export async function sendFollowUp({ contact = null, studio = null, from = null, to = null }) {
-    console.log({ to, from, sendFollowUp: true })
+export async function sendFollowUp({ contact = null, studio = null, from = null, to = null, messageId = null }) {
     try {
         // returns a message if it exists, otherwise creates a new messag
-        const message = await findOrCreateMessage({ contact, studio, to, from });
+        const message = await findOrCreateMessage({ contact, studio, to, from, messageId });
 
         if (!message) {
             return;
         }
 
-        // We need to create a task if there is already a follow up message or if the contact is not a lead
-        if (!contactIsLead(contact)) {
-            createTask({ studioId: studio.id, zohoId: studio?.zohoId, contact, message });
-            return;
+        const taskData = await createTask({
+            studioId: studio?.id,
+            zohoId: studio?.zohoId,
+            contact,
+            message: { to, from, msg },
+          });
+
+        if (taskData?.zohoTaskId) {
+        await prisma.zohoTask.create({
+            data: {
+            zohoTaskId: taskData.zohoTaskId,
+            messageId: messageId,
+            studioId: studio?.id,
+            contactId: taskData.contactId,
+            taskSubject: taskData.taskSubject,
+            taskStatus: taskData.taskStatus,
+            },
+        });
         }
+    
 
         const southLake = await studioIsSouthlake(from);
 
@@ -93,9 +107,13 @@ const contactIsLead = (contact) => {
     }
 }
 
-const findOrCreateMessage = async ({ contact, studio, from, to }) => {
+const findOrCreateMessage = async ({ contact, studio, from, to , messageId}) => {
     // Otherwise, we check if the contact has already received a follow up message
-    const message = await prisma.message.findFirst({
+    const message = await prisma.message.findFirst( messageId ? {
+        where: {
+            id: messageId,
+        },
+    } : {
         where: {
             twilioMessageId: {
                 equals: null

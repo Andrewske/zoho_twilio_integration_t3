@@ -2,6 +2,7 @@
   "name": "zoho_twilio_integration_next",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev --experimental-https",
     "build": "prisma generate  && next build",

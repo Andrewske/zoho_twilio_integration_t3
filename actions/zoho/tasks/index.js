@@ -66,12 +66,20 @@ export const createTask = async ({ studioId, zohoId, contact, message }) => {
     const taskData = createTaskData({ zohoId, message, contact });
     const { apiDomain, accessToken } = await getZohoAccount({ studioId });
 
-    await postTaskToZoho({ apiDomain, accessToken, taskData });
+    const zohoTaskResponse = await postTaskToZoho({ apiDomain, accessToken, taskData });
+    
+    return {
+      zohoTaskId: zohoTaskResponse?.details?.id,
+      taskSubject: taskData.Subject,
+      taskStatus: taskData.Status,
+      contactId: contact?.id,
+    };
   } catch (error) {
     logError({
       message: 'Error creating task:',
       error,
       data: { studioId, zohoId, contactId: contact?.id },
     });
+    throw error;
   }
 };

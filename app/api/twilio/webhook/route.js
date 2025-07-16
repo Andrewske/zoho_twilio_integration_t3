@@ -55,7 +55,7 @@ export async function POST(request) {
 
     // If the message is yes, we need to update the status of the lead and send a follow up message
     if (isYesMessage(msg) && !(await hasReceivedFollowUpMessage(contact))) {
-      await sendFollowUp({ contact, studio, to: from, from: to });
+      await sendFollowUp({ contact, studio, to: from, from: to, messageId });
       return new Response(null, { status: 200 });
     }
 
@@ -66,7 +66,7 @@ export async function POST(request) {
     }
 
 
-    await createTask({
+    const taskData = await createTask({
       studioId: studio?.id,
       zohoId: studio?.zohoId,
       contact,
@@ -74,6 +74,20 @@ export async function POST(request) {
     });
 
     await updateMessage({ messageId, studio, contact });
+
+    // Store the ZohoTask record if task was created successfully
+    if (taskData?.zohoTaskId) {
+      await prisma.zohoTask.create({
+        data: {
+          zohoTaskId: taskData.zohoTaskId,
+          messageId: messageId,
+          studioId: studio?.id,
+          contactId: taskData.contactId,
+          taskSubject: taskData.taskSubject,
+          taskStatus: taskData.taskStatus,
+        },
+      });
+    }
 
   } catch (error) {
     console.error(error);
