@@ -108,6 +108,7 @@ async function sendAndLogMessage(
       where: { id: zohoWebhookId },
       data: {
         twilioMessageId: response?.twilioMessageId,
+        message,
       },
     });
   } catch (error) {

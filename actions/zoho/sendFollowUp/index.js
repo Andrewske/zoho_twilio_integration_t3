@@ -66,6 +66,7 @@ export async function sendFollowUp({ contact = null, studio = null, from = null,
                 studioId: studio.id,
                 contactId: contact?.id,
                 twilioMessageId: response.twilioMessageId,
+                message: southLake ? followUpMessageSouthlake : followUpMessage,
             },
         });
 
