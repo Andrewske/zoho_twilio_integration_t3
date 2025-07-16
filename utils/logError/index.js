@@ -1,6 +1,7 @@
-import * as Sentry from "@sentry/nextjs";
+import posthog from 'posthog-js';
+
 /**
- * Logs an error message and details, and reports it to Sentry.
+ * Logs an error message and details, and reports it to PostHog.
  * 
  * @param {Object} params - The parameters for the logError function.
  * @param {string} params.message - The error message.
@@ -19,9 +20,9 @@ export const logError = ({ message, error = null, level = 'error', data = {} }) 
 
     try {
         logToConsole(timestamp, message, errorData, error);
-        reportToSentry(error, level, errorData);
-    } catch (error) {
-        console.error('Error logging error:', error)
+        reportToPostHog(error, level, errorData, message);
+    } catch (captureError) {
+        console.error('Error logging error:', captureError)
     }
 
 };
@@ -38,10 +39,14 @@ function logToConsole(timestamp, message, errorData, error) {
     console.log(`${timestamp} - ${message} - ${errorData} - ${error?.message} - ${error?.code}`);
 }
 
-function reportToSentry(error, level, data) {
-    Sentry.withScope((scope) => {
-        scope.setLevel(level);
-        scope.setExtra('data', data);
-        Sentry.captureException(error);
-    });
+function reportToPostHog(error, level, data, message) {
+    // Only capture if PostHog is initialized (not on localhost/dev)
+    if (typeof window !== 'undefined' && posthog.__loaded) {
+        posthog.captureException(error, {
+            level,
+            message,
+            extra_data: data,
+            timestamp: new Date().toISOString()
+        });
+    }
 }
