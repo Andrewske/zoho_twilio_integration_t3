@@ -28,8 +28,6 @@ const MessageList = ({
     }
   }, [messages]);
 
-  console.log(messages.slice(0,10))
-
   // TODO: Write a function to check the database for any messages from the contact that are more recent than the last message in the list
 
   return (
