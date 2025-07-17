@@ -171,13 +171,13 @@ const ChatWindow = ({ studioPhones }) => {
       // Set default sender based on most recent message
       if (messages && messages.length > 0 && senders.length > 0) {
         const lastMessage = messages[messages.length - 1];
-        
+        const lastStudioName = lastMessage.studioName;
         const isAdmin = adminNumbers.includes(lastMessage.from) || adminNumbers.includes(lastMessage.to)
         
         let defaultSender;
         if (isAdmin) {
           defaultSender = senders.find(s => s.id === 'admin');
-        } else if (lastMessage.studioName === 'Southlake') {
+        } else if (lastStudioName === 'Southlake') {
           defaultSender = senders.find(s => s.id === 'Southlake');
         } else {
           defaultSender = senders.find(s => s.id === lastStudioName) || senders[0];
