@@ -9,6 +9,8 @@ import MessageForm from '../MessageForm';
 import MessageList from '../MessageList';
 import styles from './styles.module.css';
 
+const adminNumbers = ['3466161442', '4697185726']
+
 const ChatWindow = ({ studioPhones }) => {
   const { studio, contact } = useContext(ZohoContext);
   const [messages, setMessages] = useState(null);
@@ -169,12 +171,13 @@ const ChatWindow = ({ studioPhones }) => {
       // Set default sender based on most recent message
       if (messages && messages.length > 0 && senders.length > 0) {
         const lastMessage = messages[messages.length - 1];
-        const lastStudioName = lastMessage.studioName;
+        
+        const isAdmin = adminNumbers.includes(lastMessage.from) || adminNumbers.includes(lastMessage.to)
         
         let defaultSender;
-        if (lastStudioName === 'Admin' || lastStudioName === 'philip_admin') {
+        if (isAdmin) {
           defaultSender = senders.find(s => s.id === 'admin');
-        } else if (lastStudioName === 'Southlake') {
+        } else if (lastMessage.studioName === 'Southlake') {
           defaultSender = senders.find(s => s.id === 'Southlake');
         } else {
           defaultSender = senders.find(s => s.id === lastStudioName) || senders[0];
