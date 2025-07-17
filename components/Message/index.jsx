@@ -2,23 +2,18 @@
 import { format } from 'date-fns';
 import styles from './styles.module.css';
 
+const adminNumbers = ['3466161442', '4697185726']
+
 const Message = ({ message, contactName }) => {
-  if (contactName === 'Stephanie Ng') {
-    console.log(message)
-  }
   return (
   <div
     className={styles.wrapper}
     data-testid="message"
   >
     <span
-      name={message.studioName}
       to={message.to}
-
       className={`${
-        message.studioName == 'philip_admin' ||
-        message.studioName == 'Philip Gutierrez' ||
-        message.studioName == 'Southlake'
+        adminNumbers.includes(message.to) || adminNumbers.includes(message.from)
           ? 'bg-red'
           : message.provider === 'zoho_voice'
           ? 'bg-purple'
@@ -37,13 +32,8 @@ const Message = ({ message, contactName }) => {
               const provider = message.provider || 'twilio';
               
               // Show "Admin" for admin messages
-              if (message.studioName === 'philip_admin' || message.studioName === 'Philip Gutierrez') {
-                return 'Admin';
-              }
-              
-              // Show "Southlake" for Southlake messages
-              if (message.studioName === 'Southlake') {
-                return 'Southlake';
+              if (adminNumbers.includes(message.from)) {
+                return message.studioName === 'Southlake' ? 'Southlake' : 'Admin';
               }
               
               return `${studioName} (${provider})`;
