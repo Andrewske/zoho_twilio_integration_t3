@@ -2,7 +2,11 @@
 import { format } from 'date-fns';
 import styles from './styles.module.css';
 
-const Message = ({ message, contactName }) => (
+const Message = ({ message, contactName }) => {
+  if (contactName === 'Stephanie Ng') {
+    console.log(message)
+  }
+  return (
   <div
     className={styles.wrapper}
     data-testid="message"
@@ -49,6 +53,6 @@ const Message = ({ message, contactName }) => (
       <span>{format(new Date(message.date), 'MMM do h:mm aaa')}</span>
     </span>
   </div>
-);
+)}
 
 export default Message;
