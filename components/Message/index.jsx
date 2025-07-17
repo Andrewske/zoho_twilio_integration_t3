@@ -9,6 +9,8 @@ const Message = ({ message, contactName }) => (
   >
     <span
       name={message.studioName}
+      to={message.to}
+
       className={`${
         message.studioName == 'philip_admin' ||
         message.studioName == 'Philip Gutierrez' ||
