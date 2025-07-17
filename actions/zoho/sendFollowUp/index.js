@@ -134,8 +134,8 @@ const findOrCreateMessage = async ({ contact, studio, from, to , messageId}) => 
                 data: {
                     contactId: null,
                     studioId: null,
-                    fromNumber: from,
-                    toNumber: to,
+                    fromNumber: formatMobile(from),
+                    toNumber: formatMobile(to),
                     isFollowUpMessage: true,
                 },
             });
@@ -147,8 +147,8 @@ const findOrCreateMessage = async ({ contact, studio, from, to , messageId}) => 
                 data: {
                     contactId: contact?.id,
                     studioId: studio?.id,
-                    fromNumber: studio.smsPhone,
-                    toNumber: contact.Mobile,
+                    fromNumber: formatMobile(studio.smsPhone),
+                    toNumber: formatMobile(contact.Mobile),
                     isFollowUpMessage: true,
                 },
             });

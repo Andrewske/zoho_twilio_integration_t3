@@ -185,8 +185,8 @@ const findOrCreateWelcomeMessage = async ({ contact, from, to, studioId }) => {
       data: {
         contactId: contact?.id,
         studioId: studioId,
-        fromNumber: from,
-        toNumber: to,
+        fromNumber: formatMobile(from),
+        toNumber: formatMobile(to),
         isWelcomeMessage: true,
       },
     });

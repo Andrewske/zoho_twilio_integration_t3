@@ -156,8 +156,8 @@ const createMessage = async ({ body }) => {
 
   const { id } = await prisma.message.create({
     data: {
-      fromNumber: from,
-      toNumber: to,
+      fromNumber: formatMobile(from),
+      toNumber: formatMobile(to),
       message: msg,
       twilioMessageId,
     },

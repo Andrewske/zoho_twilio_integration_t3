@@ -111,8 +111,8 @@ export const sendMessage = async ({
         data: {
           studioId,
           contactId: contact?.id,
-          fromNumber: from,
-          toNumber: to,
+          fromNumber: formatMobile(from),
+          toNumber: formatMobile(to),
           message,
           twilioMessageId: sendRecord.sid,
         },
