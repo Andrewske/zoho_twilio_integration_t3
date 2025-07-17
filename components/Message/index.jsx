@@ -8,6 +8,7 @@ const Message = ({ message, contactName }) => (
     data-testid="message"
   >
     <span
+      name={message.studioName}
       className={`${
         message.studioName == 'philip_admin' ||
         message.studioName == 'Philip Gutierrez' ||
