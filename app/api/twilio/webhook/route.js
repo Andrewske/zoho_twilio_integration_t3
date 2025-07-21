@@ -55,7 +55,7 @@ export async function POST(request) {
 
     // If the message is yes, we need to update the status of the lead and send a follow up message
     if (isYesMessage(msg) && !(await hasReceivedFollowUpMessage(contact))) {
-      await sendFollowUp({ contact, studio, to: from, from: to, msg, messageId });
+      await sendFollowUp({ contact, studio, to: from, from: to, msg });
       return new Response(null, { status: 200 });
     }
 
