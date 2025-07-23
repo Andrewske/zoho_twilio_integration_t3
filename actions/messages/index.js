@@ -9,9 +9,6 @@ import { getMessages as getTwilioMessages } from '../twilio';
 import { getZohoAccount } from '../zoho';
 import { fetchAndSaveZohoVoiceMessages } from '../zoho/voice/fetchAllMessages';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-
 /**
  * Get unified messages for a contact from both Twilio and Zoho Voice
  * @param {Object} params - Parameters
