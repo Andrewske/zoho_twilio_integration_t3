@@ -1,7 +1,7 @@
 
-import { PhoneFormatter } from '~/utils/phoneNumber';
-import { MessageTransformers } from '~/utils/messageTransformers';
 import { AccountManager } from '~/utils/accountManager';
+import { MessageTransformers } from '~/utils/messageTransformers';
+import { PhoneFormatter } from '~/utils/phoneNumber';
 
 /**
  * Fetch SMS logs from Zoho Voice API
@@ -27,22 +27,22 @@ async function fetchSmsLogs(params) {
     } = params;
 
     const url = new URL('https://voice.zoho.com/rest/json/v1/sms/logs');
-    
+
     // Add query parameters
     // if (from > 0) {
     //     url.searchParams.append('from', from.toString());
     // }
     // url.searchParams.append('size', size.toString());
     // url.searchParams.append('messageType', messageType);
-    
+
     if (customerNumber) {
         url.searchParams.append('customerNumber', customerNumber);
     }
-    
+
     if (fromDate) {
         url.searchParams.append('fromDate', fromDate);
     }
-    
+
     if (toDate) {
         url.searchParams.append('toDate', toDate);
     }
@@ -81,7 +81,7 @@ async function fetchMessagesForContact(customerNumber, accessToken, options = {}
         // Format phone number for Zoho Voice API (needs international format)
         const formattedNumber = PhoneFormatter.forZohoVoice(customerNumber);
         console.log(`📞 Formatted phone number: ${customerNumber} -> ${formattedNumber}`);
-        
+
         const response = await fetchSmsLogs({
             accessToken,
             customerNumber: formattedNumber,
@@ -91,6 +91,7 @@ async function fetchMessagesForContact(customerNumber, accessToken, options = {}
         });
 
         if (response.status === 'success' && response.smsLogQuery) {
+            console.log(JSON.stringify(response, null, 2))
             return response.smsLogQuery;
         }
 
@@ -116,13 +117,13 @@ const transformSmsLogToMessage = MessageTransformers.zohoVoiceToDb;
  */
 async function fetchAndSaveMessages(params) {
     const { customerNumber, studioId, contactId, accessToken, prisma } = params;
-    
+
     try {
         console.log(`📞 Fetching Zoho Voice messages for customer: ${customerNumber}`);
         // Fetch messages from Zoho Voice
         const smsLogs = await fetchMessagesForContact(customerNumber, accessToken);
         console.log(`📞 Found ${smsLogs.length} SMS logs from Zoho Voice`);
-        
+
         if (!smsLogs.length) {
             return [];
         }
@@ -139,17 +140,17 @@ async function fetchAndSaveMessages(params) {
         });
 
         const existingIds = new Set(existingMessageIds.map(msg => msg.zohoMessageId));
-        
+
         // Filter out messages we already have
         const newSmsLogs = smsLogs.filter(log => !existingIds.has(log.logid));
-        
+
         if (!newSmsLogs.length) {
             console.log(`No new Zoho Voice messages for contact ${contactId}`);
             return [];
         }
 
         // Transform and save new messages
-        const messagesToSave = newSmsLogs.map(log => 
+        const messagesToSave = newSmsLogs.map(log =>
             transformSmsLogToMessage(log, studioId, contactId)
         );
 
@@ -159,9 +160,9 @@ async function fetchAndSaveMessages(params) {
         });
 
         console.log(`Saved ${savedMessages.count} new Zoho Voice messages for contact ${contactId}`);
-        
+
         return messagesToSave;
-        
+
     } catch (error) {
         console.error('Error fetching and saving Zoho Voice messages:', error);
         throw error;
@@ -242,7 +243,7 @@ async function sendSms(params) {
     for (let i = 0; i < requestVariations.length; i++) {
         const variation = requestVariations[i];
         const { contentType, body: requestBody } = variation;
-        
+
         console.log(`📤 Zoho Voice Send Attempt ${i + 1} (${variation.variation}):`, {
             url: 'https://voice.zoho.com/rest/json/v1/sms/send',
             method: 'POST',
@@ -257,7 +258,7 @@ async function sendSms(params) {
 
         try {
             const fetchBody = contentType === 'application/json' ? JSON.stringify(requestBody) : requestBody;
-            
+
             const response = await fetch('https://voice.zoho.com/rest/json/v1/sms/send', {
                 method: 'POST',
                 headers: {
@@ -277,7 +278,7 @@ async function sendSms(params) {
                 const errorBody = await response.text();
                 console.error(`📤 Zoho Voice Send Error ${i + 1} (${variation.variation}):`, errorBody);
                 lastError = new Error(`Zoho Voice SMS send error: ${response.status} ${response.statusText} - ${errorBody}`);
-                
+
                 // If this isn't the last attempt, continue to next variation
                 if (i < requestVariations.length - 1) {
                     console.log(`📤 Trying next parameter variation...`);
@@ -305,7 +306,7 @@ async function sendSms(params) {
  */
 async function sendSmsWithRetry(params) {
     const { studioId, to, message, prisma } = params;
-    
+
     try {
         // Get studio's Zoho Voice phone number
         const studio = await prisma.studio.findUnique({
@@ -319,7 +320,7 @@ async function sendSmsWithRetry(params) {
 
         // Get Zoho account using centralized AccountManager
         const zohoAccount = await AccountManager.getZohoAccount(studioId);
-        
+
         if (!zohoAccount?.accessToken) {
             throw new Error('No Zoho access token available');
         }
@@ -337,10 +338,6 @@ async function sendSmsWithRetry(params) {
 }
 
 export {
-    fetchSmsLogs,
-    fetchMessagesForContact,
-    transformSmsLogToMessage,
-    fetchAndSaveMessages,
-    sendSms,
-    sendSmsWithRetry
+    fetchAndSaveMessages, fetchMessagesForContact, fetchSmsLogs, sendSms,
+    sendSmsWithRetry, transformSmsLogToMessage
 };
