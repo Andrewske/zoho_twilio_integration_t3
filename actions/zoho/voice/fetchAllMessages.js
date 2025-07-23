@@ -1,8 +1,6 @@
-import { fetchMessagesForContact } from './index.js';
-import { prisma } from '~/utils/prisma.js';
-import { PhoneFormatter } from '~/utils/phoneNumber';
-import { StudioMappings } from '~/utils/studioMappings';
 import { MessageTransformers } from '~/utils/messageTransformers';
+import { StudioMappings } from '~/utils/studioMappings';
+import { fetchMessagesForContact } from './index.js';
 
 /**
  * Fetch and save Zoho Voice messages for a contact without requiring studio config
@@ -15,14 +13,14 @@ import { MessageTransformers } from '~/utils/messageTransformers';
  */
 async function fetchAndSaveZohoVoiceMessages(params) {
     const { customerNumber, contactId, accessToken, prisma } = params;
-    
+
     try {
         console.log(`📞 Fetching Zoho Voice messages for customer: ${customerNumber}`);
-        
+
         // Fetch messages from Zoho Voice API
-        const smsLogs = await fetchMessagesForContact(customerNumber, accessToken);
+        const smsLogs = await fetchMessagesForContact(customerNumber, accessToken)
         console.log(`📞 Found ${smsLogs.length} SMS logs from Zoho Voice`);
-        
+
         if (!smsLogs.length) {
             return [];
         }
@@ -39,10 +37,10 @@ async function fetchAndSaveZohoVoiceMessages(params) {
         });
 
         const existingIds = new Set(existingMessageIds.map(msg => msg.zohoMessageId));
-        
+
         // Filter out messages we already have
         const newSmsLogs = smsLogs.filter(log => !existingIds.has(log.logid));
-        
+
         if (!newSmsLogs.length) {
             console.log(`📞 No new Zoho Voice messages for contact ${contactId}`);
             return [];
@@ -53,7 +51,7 @@ async function fetchAndSaveZohoVoiceMessages(params) {
 
         // Transform messages using centralized utility
         const messagesToSave = MessageTransformers.bulkZohoVoiceToDb(newSmsLogs, phoneToStudio, contactId);
-        
+
         // Log studio mapping for debugging
         messagesToSave.forEach((msg, index) => {
             const log = newSmsLogs[index];
@@ -70,9 +68,9 @@ async function fetchAndSaveZohoVoiceMessages(params) {
         });
 
         console.log(`📞 Saved ${savedMessages.count} new Zoho Voice messages for contact ${contactId}`);
-        
+
         return messagesToSave;
-        
+
     } catch (error) {
         console.error('📞 Error fetching and saving Zoho Voice messages:', error);
         throw error;
