@@ -20,20 +20,11 @@ async function fetchSmsLogs(params) {
         accessToken,
         customerNumber,
         fromDate,
-        toDate,
-        messageType = 'all',
-        from = 0,
-        size = 100
+        toDate
     } = params;
 
     const url = new URL('https://voice.zoho.com/rest/json/v1/sms/logs');
 
-    // Add query parameters
-    // if (from > 0) {
-    //     url.searchParams.append('from', from.toString());
-    // }
-    // url.searchParams.append('size', size.toString());
-    // url.searchParams.append('messageType', messageType);
 
     if (customerNumber) {
         url.searchParams.append('customerNumber', customerNumber);
@@ -54,7 +45,10 @@ async function fetchSmsLogs(params) {
         method: 'GET',
         headers: {
             'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
         }
     });
 
