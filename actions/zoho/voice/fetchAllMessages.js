@@ -1,3 +1,4 @@
+'use server'
 import { MessageTransformers } from '~/utils/messageTransformers';
 import { StudioMappings } from '~/utils/studioMappings';
 import { fetchMessagesForContact } from './index.js';

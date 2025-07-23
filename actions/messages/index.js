@@ -1,13 +1,16 @@
 'use server';
 import { formatMobile } from '~/utils';
 import { logError } from '~/utils/logError';
-import { prisma } from '~/utils/prisma';
-import { StudioMappings } from '~/utils/studioMappings';
 import { MessageTransformers } from '~/utils/messageTransformers';
+import { prisma } from '~/utils/prisma';
 import { PrismaSelectors } from '~/utils/prismaSelectors';
+import { StudioMappings } from '~/utils/studioMappings';
 import { getMessages as getTwilioMessages } from '../twilio';
-import { fetchAndSaveZohoVoiceMessages } from '../zoho/voice/fetchAllMessages';
 import { getZohoAccount } from '../zoho';
+import { fetchAndSaveZohoVoiceMessages } from '../zoho/voice/fetchAllMessages';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 /**
  * Get unified messages for a contact from both Twilio and Zoho Voice
@@ -20,7 +23,8 @@ import { getZohoAccount } from '../zoho';
 export const getMessages = async ({ contactMobile, studioId, contactId }) => {
   try {
     console.log(`📨 Starting getMessages for mobile: ${contactMobile}, studioId: ${studioId}, contactId: ${contactId}`);
-    
+    console.log(`⏰ Request Timestamp: ${new Date().toISOString()}`);
+
     // Get studio information to determine which services it uses
     const studio = await prisma.studio.findUnique({
       where: { id: studioId },
@@ -39,18 +43,18 @@ export const getMessages = async ({ contactMobile, studioId, contactId }) => {
     console.log(`🏢 Studio found: ${studio.name}, twilioPhone: ${studio.twilioPhone}, zohoVoicePhone: ${studio.zohoVoicePhone}`);
 
     let allMessages = [];
-    
+
     // Get messages from database first (both Twilio and Zoho Voice)
     const dbMessages = await getMessagesFromDatabase(contactMobile, studioId);
     console.log(`💾 Database messages found: ${dbMessages.length}`);
-    
+
     // Always try to fetch Zoho Voice messages if we have a contactId
     if (contactId) {
       console.log(`🔍 Fetching Zoho Voice messages for contact: ${contactId}, mobile: ${formatMobile(contactMobile)}`);
       try {
         const account = await getZohoAccount({ studioId });
         console.log(`🔍 Got Zoho account: ${account?.clientId}`);
-        
+
         if (account?.accessToken) {
           await fetchAndSaveZohoVoiceMessages({
             customerNumber: formatMobile(contactMobile),
@@ -61,7 +65,7 @@ export const getMessages = async ({ contactMobile, studioId, contactId }) => {
         } else {
           console.log('🔍 No Zoho access token available');
         }
-        
+
         // Refresh database messages after saving new ones
         const updatedDbMessages = await getMessagesFromDatabase(contactMobile, studioId);
         allMessages.push(...updatedDbMessages);
@@ -78,18 +82,18 @@ export const getMessages = async ({ contactMobile, studioId, contactId }) => {
     if (studio.twilioPhone) {
       try {
         const twilioMessages = await getTwilioMessages({ contactMobile, studioId });
-        
+
         // Filter out Twilio messages that are already in database
         const existingTwilioIds = new Set(
           allMessages
             .filter(msg => msg.provider === 'twilio' && msg.twilioMessageId)
             .map(msg => msg.twilioMessageId)
         );
-        
-        const newTwilioMessages = twilioMessages.filter(msg => 
+
+        const newTwilioMessages = twilioMessages.filter(msg =>
           !existingTwilioIds.has(msg.twilioMessageId)
         );
-        
+
         allMessages.push(...newTwilioMessages);
       } catch (error) {
         console.error('Error fetching Twilio messages:', error);
@@ -126,7 +130,7 @@ async function getMessagesFromDatabase(contactMobile, studioId) {
   try {
     const formattedMobile = formatMobile(contactMobile);
     console.log(`🔍 Searching database for messages with mobile: ${formattedMobile}`);
-    
+
     const messages = await prisma.message.findMany({
       where: {
         OR: [
@@ -146,7 +150,7 @@ async function getMessagesFromDatabase(contactMobile, studioId) {
     // Use centralized message transformer
     const transformedMessages = MessageTransformers.bulkDbToUI(messages, formattedMobile, phoneToStudioName);
     console.log(`🔄 Transformed messages: ${transformedMessages.length}`);
-    
+
     return transformedMessages;
   } catch (error) {
     logError({
