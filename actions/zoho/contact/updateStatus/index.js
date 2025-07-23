@@ -10,7 +10,7 @@ export const updateStatus = async ({ studio, contact }) => {
         Owner: {
           id: studio?.zohoId,
         },
-        Lead_Status: 'Contacted, Not Booked',
+        Lead_Status: 'Contacted - Not Booked',
       },
     ],
   };
