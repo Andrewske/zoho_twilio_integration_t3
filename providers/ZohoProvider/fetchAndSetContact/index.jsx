@@ -11,11 +11,7 @@ export const fetchAndSetContact = async ({ entity, entityId, setContact }) => {
     console.log('contact-response', response);
 
     if (response && response.data && response.data[0]) {
-      const {
-        Mobile: mobile,
-        Phone: phone,
-        Owner: { id: ownerId },
-      } = response.data[0];
+      const { Mobile: mobile, Phone: phone, Owner: owner } = response.data[0];
 
       let phoneNumber = null;
       if (entity === 'Tasks') {
@@ -26,17 +22,30 @@ export const fetchAndSetContact = async ({ entity, entityId, setContact }) => {
       }
 
       if (phoneNumber) {
-        const studio = await getStudioFromZohoId(ownerId);
+        const studio = await getStudioFromZohoId(owner.id);
 
-        if (studio?.active) {
-          const contact = await lookupContact({
-            mobile: phoneNumber,
-            studioId: studio?.id,
-          });
-          console.log('set-contact', contact);
-          setContact(contact);
-        } else {
+        if (!studio?.active) {
           sendError('This lead is not assigned to an active studio.', false);
+          return;
+        }
+
+        const contact = await lookupContact({
+          mobile: phoneNumber,
+          studioId: studio?.id,
+        });
+
+        if (!contact) {
+          setContact({
+            Full_Name: 'Unknown',
+            Lead_Status: 'None',
+            Mobile: phoneNumber,
+            Owner: owner,
+            SMS_Opt_Out: false,
+            id: 'None',
+            isLead: true,
+          });
+        } else {
+          setContact(contact);
         }
       } else {
         sendError(
