@@ -104,13 +104,9 @@ async function sendAndLogMessage(
       messageId: zohoWebhookId,
     });
 
-    await prisma.message.update({
-      where: { id: zohoWebhookId },
-      data: {
-        twilioMessageId: response?.twilioMessageId,
-        message,
-      },
-    });
+    if (response.errorMessage) {
+      throw new Error(response.errorMessage);
+    }
   } catch (error) {
     logError({
       message: 'Error sendAndLogMessagee:',

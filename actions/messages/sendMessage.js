@@ -1,8 +1,8 @@
 'use server';
-import { prisma } from '~/utils/prisma';
-import { PhoneFormatter } from '~/utils/phoneNumber';
-import { StudioMappings } from '~/utils/studioMappings';
 import { withMessageErrorHandling } from '~/utils/errorHandling';
+import { PhoneFormatter } from '~/utils/phoneNumber';
+import { prisma } from '~/utils/prisma';
+import { StudioMappings } from '~/utils/studioMappings';
 import { sendMessage as sendTwilioMessage } from '../twilio';
 import { sendSmsWithRetry as sendZohoVoiceMessage } from '../zoho/voice/index.js';
 
@@ -37,7 +37,7 @@ function determineProvider(studio, from) {
   if (from === studio.zohoVoicePhone && studio.zohoVoicePhone) {
     return 'zoho_voice';
   }
-  
+
   if (from === studio.twilioPhone && studio.twilioPhone) {
     return 'twilio';
   }
@@ -46,7 +46,7 @@ function determineProvider(studio, from) {
   if (studio.zohoVoicePhone) {
     return 'zoho_voice';
   }
-  
+
   if (studio.twilioPhone) {
     return 'twilio';
   }
@@ -83,7 +83,7 @@ async function sendViaZohoVoice({ studioId, to, from, message, contact }) {
     message,
     prisma
   });
-  
+
   // Save to database
   await prisma.message.create({
     data: {
@@ -97,10 +97,10 @@ async function sendViaZohoVoice({ studioId, to, from, message, contact }) {
     },
   });
 
-  return { 
-    success: true, 
+  return {
+    success: true,
     provider: 'zoho_voice',
-    messageId: response?.logid 
+    messageId: response?.logid
   };
 }
 
@@ -113,17 +113,27 @@ async function sendViaTwilio({ to, from, message, studioId, contact }) {
   // Format phone numbers for Twilio
   const formattedTo = PhoneFormatter.forTwilio(to);
   const formattedFrom = PhoneFormatter.forTwilio(from);
-  
+
   console.log('🚀 Twilio - Original:', { to, from }, 'Formatted:', { to: formattedTo, from: formattedFrom });
-  
-  const response = await sendTwilioMessage({ 
-    to: formattedTo, 
-    from: formattedFrom, 
-    message, 
-    studioId, 
-    contact 
+
+  const response = await sendTwilioMessage({
+    to: "25098992771", //formattedTo,
+    from: formattedFrom,
+    message,
+    studioId,
+    contact
   });
-  
+
+  if (response.errorCode) {
+    return {
+      success: false,
+      provider: 'twilio',
+      errorCode: response.errorCode,
+      errorMessage: response.errorMessage,
+      status: 'failed',
+    }
+  }
+
   return {
     success: true,
     provider: 'twilio',
@@ -135,7 +145,7 @@ async function sendViaTwilio({ to, from, message, studioId, contact }) {
  * Send SMS message through appropriate provider (Twilio or Zoho Voice)
  * @param {Object} params - Message parameters
  * @param {string} params.to - Recipient phone number
- * @param {string} params.from - Sender phone number  
+ * @param {string} params.from - Sender phone number
  * @param {string} params.message - Message content
  * @param {string} params.studioId - Studio ID
  * @param {Object} params.selectedSender - Selected sender object
@@ -144,7 +154,7 @@ async function sendViaTwilio({ to, from, message, studioId, contact }) {
  */
 const _sendMessage = async ({ to, from, message, studioId, selectedSender, contact }) => {
   console.log('🚀 SendMessage called with:', { to, from, message, studioId, selectedSender });
-  
+
   // Validate contact opt-out status
   if (contact?.SMS_Opt_Out) {
     throw new Error('Contact has opted out of SMS');
@@ -161,7 +171,7 @@ const _sendMessage = async ({ to, from, message, studioId, selectedSender, conta
   if (!studio) {
     throw new Error('Studio not found');
   }
-  
+
   if (!studio.active) {
     throw new Error('Studio is not active');
   }
@@ -171,16 +181,16 @@ const _sendMessage = async ({ to, from, message, studioId, selectedSender, conta
   // Determine provider and get appropriate phone number
   const provider = determineProvider(studio, from);
   const providerPhone = getProviderPhone(studio, provider);
-  
+
   console.log('🚀 Using provider:', provider, 'with phone:', providerPhone);
 
   // Send via appropriate provider
-  const sendParams = { 
-    studioId: actualStudioId, 
-    to, 
-    from: providerPhone, 
-    message, 
-    contact 
+  const sendParams = {
+    studioId: actualStudioId,
+    to,
+    from: providerPhone,
+    message,
+    contact
   };
 
   switch (provider) {
@@ -195,4 +205,3 @@ const _sendMessage = async ({ to, from, message, studioId, selectedSender, conta
 
 // Apply error handling wrapper
 export const sendMessage = withMessageErrorHandling(_sendMessage, 'unified');
-

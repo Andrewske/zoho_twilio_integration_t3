@@ -19,6 +19,7 @@
 # misc
 .DS_Store
 *.pem
+lib/*.json
 
 # debug
 npm-debug.log*
@@ -46,4 +47,3 @@ TODO.md
 
 # Sentry Config File
 .sentryclirc
-
