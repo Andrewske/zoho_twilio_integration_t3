@@ -9,6 +9,8 @@ import { createTask } from '../tasks';
 const followUpMessage =
     'Great! We have a limited number spots for new clients each week. What day of the week Monday to Friday works best for you?';
 
+const followUpMessageRichmond = 'Great! We have a limited number spots for new clients each week. What day of the week Tuesday to Saturday works best for you?';
+
 const followUpMessageSouthlake = 'Great! We have a limited number spots for new clients each week. What day of the week Monday to Saturday works best for you?';
 
 // Checks if there is a contact
@@ -48,31 +50,17 @@ export async function sendFollowUp({ contact = null, studio = null, from = null,
 
         const southLake = await studioIsSouthlake(from);
 
+        const richmond = await studioIsRichmond(contact.Owner);
+
         const response = await sendMessage({
             to,
             from,
-            message: southLake ? followUpMessageSouthlake : followUpMessage,
+            message: southLake ? followUpMessageSouthlake : richmond ? followUpMessageRichmond : followUpMessage,
             studioId: studio.id,
             contact,
             messageId: message.id,
         });
 
-
-        const updatedMessage = await prisma.message.update({
-            where: {
-                id: message.id,
-            },
-            data: {
-                studioId: studio.id,
-                contactId: contact?.id,
-                twilioMessageId: response.twilioMessageId,
-                message: southLake ? followUpMessageSouthlake : followUpMessage,
-            },
-        });
-
-        if (!updatedMessage) {
-            throw new Error('send_follow_up could not update message');
-        }
 
         if (!southLake) {
             await updateStatus({ studio, contact });
@@ -89,6 +77,10 @@ export async function sendFollowUp({ contact = null, studio = null, from = null,
         });
         throw error;
     }
+}
+
+const studioIsRichmond = async (studio) => {
+    return studio?.name === 'Richmond';
 }
 
 const studioIsSouthlake = async (from) => {

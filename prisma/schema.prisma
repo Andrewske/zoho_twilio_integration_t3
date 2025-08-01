@@ -101,13 +101,16 @@ model Message {
   studioId          String?
   contactId         String?
   message           String?
-  twilioMessageId   String?
+  twilioMessageId   String?         @unique
   isWelcomeMessage  Boolean         @default(false)
   isFollowUpMessage Boolean         @default(false)
   createdAt         DateTime        @default(now()) @map("created_at")
   updatedAt         DateTime        @default(now()) @updatedAt @map("updated_at")
   provider          MessageProvider @default(twilio)
   zohoMessageId     String?
+  status            String?         @default("delivered")
+  errorCode         Int?
+  errorMessage      String?
   Studio            Studio?         @relation(fields: [studioId], references: [id])
   ZohoTask          ZohoTask[]
 
@@ -124,10 +127,10 @@ model ZohoTask {
   taskStatus  String?
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
-  
+
   Message     Message? @relation(fields: [messageId], references: [id])
   Studio      Studio   @relation(fields: [studioId], references: [id])
-  
+
   @@index([messageId])
   @@index([studioId])
 }

@@ -21,7 +21,7 @@ export const MessageTransformers = {
     const isFromCustomer = dbMessage.fromNumber === formattedMobile;
     const studioPhone = isFromCustomer ? dbMessage.toNumber : dbMessage.fromNumber;
     const studioName = dbMessage.Studio?.name || phoneToStudioName[studioPhone] || 'Unknown';
-    
+
     return {
       id: dbMessage.id,
       to: PhoneFormatter.normalize(dbMessage.toNumber),
@@ -34,7 +34,9 @@ export const MessageTransformers = {
       twilioMessageId: dbMessage.twilioMessageId,
       zohoMessageId: dbMessage.zohoMessageId,
       isWelcomeMessage: dbMessage.isWelcomeMessage || false,
-      isFollowUpMessage: dbMessage.isFollowUpMessage || false
+      isFollowUpMessage: dbMessage.isFollowUpMessage || false,
+      errorMessage: dbMessage.errorMessage || null,
+      status: dbMessage.status || 'delivered',
     };
   },
 
@@ -48,7 +50,7 @@ export const MessageTransformers = {
    */
   zohoVoiceToDb(smsLog, studioId, contactId) {
     const isIncoming = smsLog.messageType === 'INCOMING';
-    
+
     return {
       fromNumber: PhoneFormatter.normalize(isIncoming ? smsLog.customerNumber : smsLog.senderId),
       toNumber: PhoneFormatter.normalize(isIncoming ? smsLog.senderId : smsLog.customerNumber),
@@ -73,14 +75,14 @@ export const MessageTransformers = {
   twilioToUI(twilioMessage, phoneToStudioName = {}, fromStudio = true) {
     const normalizedFrom = PhoneFormatter.normalize(twilioMessage.from);
     const normalizedTo = PhoneFormatter.normalize(twilioMessage.to);
-    
+
     return {
       to: normalizedTo,
       from: normalizedFrom,
       body: twilioMessage.body,
       date: twilioMessage.dateSent,
       fromStudio,
-      studioName: fromStudio 
+      studioName: fromStudio
         ? (phoneToStudioName[normalizedFrom] || 'Unknown')
         : (phoneToStudioName[normalizedTo] || 'Unknown'),
       provider: 'twilio',
@@ -122,7 +124,7 @@ export const MessageTransformers = {
     const isIncoming = smsLog.messageType === 'INCOMING';
     const fromNumber = PhoneFormatter.normalize(isIncoming ? smsLog.customerNumber : smsLog.senderId);
     const toNumber = PhoneFormatter.normalize(isIncoming ? smsLog.senderId : smsLog.customerNumber);
-    
+
     return {
       id: smsLog.logid,
       to: toNumber,
@@ -130,7 +132,7 @@ export const MessageTransformers = {
       body: smsLog.message || '',
       date: new Date(smsLog.submittedTime),
       fromStudio: !isIncoming,
-      studioName: !isIncoming 
+      studioName: !isIncoming
         ? (phoneToStudioName[fromNumber] || 'Unknown')
         : (phoneToStudioName[toNumber] || 'Unknown'),
       provider: 'zoho_voice',
@@ -149,8 +151,8 @@ export const MessageTransformers = {
    */
   bulkDbToUI(dbMessages, contactMobile, phoneToStudioName = {}) {
     const formattedMobile = PhoneFormatter.normalize(contactMobile);
-    
-    return dbMessages.map(dbMessage => 
+
+    return dbMessages.map(dbMessage =>
       this.dbToUI(dbMessage, formattedMobile, phoneToStudioName)
     );
   },
@@ -167,7 +169,7 @@ export const MessageTransformers = {
       const isIncoming = log.messageType === 'INCOMING';
       const studioPhone = isIncoming ? log.senderId : log.customerNumber;
       const studio = phoneToStudio[studioPhone];
-      
+
       return {
         fromNumber: PhoneFormatter.normalize(isIncoming ? log.customerNumber : log.senderId),
         toNumber: PhoneFormatter.normalize(isIncoming ? log.senderId : log.customerNumber),

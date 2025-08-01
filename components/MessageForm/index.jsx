@@ -1,11 +1,11 @@
 'use client';
+import { usePostHog } from 'posthog-js/react';
 import { useState } from 'react';
-import styles from './styles.module.css';
 import { getMessages } from '~/actions/messages';
 import { sendMessage } from '~/actions/messages/sendMessage';
-import { sendError, sendSuccess } from '~/utils/toast';
 import { getStudioFromZohoId } from '~/actions/zoho/studio';
-import { usePostHog } from 'posthog-js/react';
+import { sendError, sendSuccess } from '~/utils/toast';
+import styles from './styles.module.css';
 
 const MessageForm = ({
   contact,
@@ -54,16 +54,19 @@ const MessageForm = ({
       const response = await sendMessage(body);
       setNewMessage('');
 
-      if (response?.error) {
-        sendError(response.error);
-        throw new Error(response.error);
+      if (response?.status === 'failed') {
+        throw new Error(response.errorMessage);
       }
 
       if (response?.success) {
-        sendSuccess(`Message sent via ${response.provider === 'twilio' ? 'Twilio' : 'Zoho Voice'}!`);
+        sendSuccess(
+          `Message sent via ${
+            response.provider === 'twilio' ? 'Twilio' : 'Zoho Voice'
+          }!`
+        );
       }
     } catch (error) {
-      sendError(error.message);
+      sendError(error.message, false);
     } finally {
       setIsSending(false);
       posthog.capture('message_sent', {

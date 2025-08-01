@@ -1,21 +1,23 @@
 'use client';
-import styles from './styles.module.css'
+import styles from './styles.module.css';
 
 // import { getMessages } from '~/actions/twilio';
 import { useContext, useState } from 'react';
-import { ZohoContext } from '~/providers/ZohoProvider';
-import ChatWindow from '~/components/ChatWindow';
 import { Comment } from 'react-loader-spinner';
+import ChatWindow from '~/components/ChatWindow';
+import { ZohoContext } from '~/providers/ZohoProvider';
 // import { sendError } from '~/utils/toast';
-import ToastContainer from '~/components/ToastContainer';
-import { lookupContact } from '~/actions/zoho/contact/lookupContact';
+import { toast } from 'react-toastify';
+import { sendMessage } from '~/actions/messages/sendMessage';
 import { printDatabaseURL } from '~/actions/testing_server';
+import { lookupContact } from '~/actions/zoho/contact/lookupContact';
 import { createTask } from '~/actions/zoho/tasks';
-
+import ToastContainer from '~/components/ToastContainer';
 
 export default function Page() {
     const { studio, contact } = useContext(ZohoContext);
     const [messages, setMessages] = useState(null);
+
 
     // useEffect(() => {
     //     revalidatePath('/testing')
@@ -24,6 +26,21 @@ export default function Page() {
 
     // const secretPassword = process.env.SECRET_PASSWORD;
 
+    const handleSendMessage = async () => {
+        const response = await sendMessage({
+            to: '5558992771',
+            from: '3466161442',
+            message: 'hi there! is there any way to reschedule the lesson we have for tonight? we\'re vinny and rebecca- i believe it\'s at 0715',
+            studioId: 'b2395e84-3a4b-4792-a67b-57ddb8d7e744',
+            selectedSender: { id: 'admin' },
+        })
+
+        if (response.success) {
+            toast.success('Message sent successfully')
+        } else {
+            toast.error(`Message failed: ${response.errorMessage}`, { autoClose: false })
+        }
+    }
 
     // Existing code
 
@@ -115,6 +132,7 @@ export default function Page() {
     return (
         <main className={styles.wrapper}>
             <div className={styles.buttonsContainer}>
+                <button className={styles.button} onClick={() => handleSendMessage()}>Send Message</button>
                 <button className={styles.button} onClick={() => handleLookupContactClick()}>Lookup Contact</button>
                 <button className={styles.button} onClick={() => handleCreateTask()}>Create Task</button>
                 <button className={styles.button} onClick={() => handleSendWelcomeMessage()}>Send Welcome Message</button>
@@ -145,4 +163,3 @@ export default function Page() {
         </main>
     );
 }
-

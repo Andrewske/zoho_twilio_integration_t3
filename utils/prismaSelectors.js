@@ -74,6 +74,8 @@ export const PrismaSelectors = {
       zohoMessageId: true,
       isWelcomeMessage: true,
       isFollowUpMessage: true,
+      errorMessage: true,
+      status: true,
       Studio: {
         select: {
           id: true,
