@@ -117,7 +117,7 @@ async function sendViaTwilio({ to, from, message, studioId, contact }) {
   console.log('🚀 Twilio - Original:', { to, from }, 'Formatted:', { to: formattedTo, from: formattedFrom });
 
   const response = await sendTwilioMessage({
-    to: "25098992771", //formattedTo,
+    to: formattedTo,
     from: formattedFrom,
     message,
     studioId,
