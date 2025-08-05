@@ -52,7 +52,7 @@ export async function sendFollowUp({ contact = null, studio = null, from = null,
 
         const richmond = await studioIsRichmond(contact.Owner);
 
-        const response = await sendMessage({
+        await sendMessage({
             to,
             from,
             message: southLake ? followUpMessageSouthlake : richmond ? followUpMessageRichmond : followUpMessage,
@@ -80,7 +80,7 @@ export async function sendFollowUp({ contact = null, studio = null, from = null,
 }
 
 const studioIsRichmond = async (studio) => {
-    return studio?.name === 'Richmond';
+    return studio?.name === 'Richmond FADS';
 }
 
 const studioIsSouthlake = async (from) => {
