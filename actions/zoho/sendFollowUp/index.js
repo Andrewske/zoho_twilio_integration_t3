@@ -31,7 +31,7 @@ export async function sendFollowUp({ contact = null, studio = null, from = null,
             studioId: studio?.id,
             zohoId: studio?.zohoId,
             contact,
-            message: { to, from, msg },
+            message: { from: to, to: from, msg },
         });
 
         if (taskData?.zohoTaskId) {
