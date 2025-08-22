@@ -1,8 +1,8 @@
 'use server'
+import { fetchMessagesForContact } from '~/actions/zoho/voice';
 import { deduplicateZohoVoiceMessages } from '~/utils/messageDeduplication';
 import { MessageTransformers } from '~/utils/messageTransformers';
 import { StudioMappings } from '~/utils/studioMappings';
-import { fetchMessagesForContact } from '~/utils/zoho/voice/fetchMessagesForContact';
 
 /**
  * Fetch and save Zoho Voice messages for a contact without requiring studio config
