@@ -1,7 +1,6 @@
 'use server'
 import { MessageTransformers } from '~/utils/messageTransformers';
-import { StudioMappings } from '~/utils/studioMappings';
-import { fetchMessagesForContact } from './index.js';
+import { deduplicateZohoVoiceMessages } from '~/utils/messageDeduplication';
 
 /**
  * Fetch and save Zoho Voice messages for a contact without requiring studio config
@@ -26,22 +25,25 @@ async function fetchAndSaveZohoVoiceMessages(params) {
             return [];
         }
 
-        // Check which messages we already have
-        const existingMessageIds = await prisma.message.findMany({
-            where: {
-                provider: 'zoho_voice',
-                zohoMessageId: {
-                    in: smsLogs.map(log => log.logid)
-                }
-            },
-            select: { zohoMessageId: true }
-        });
-
-        const existingIds = new Set(existingMessageIds.map(msg => msg.zohoMessageId));
-
-        // Filter out messages we already have
-        const newSmsLogs = smsLogs.filter(log => !existingIds.has(log.logid));
-
+        // Enhanced deduplication: check both zohoMessageId and content/timing matches
+        const { newMessages: newSmsLogs, messagesToUpdate } = await deduplicateZohoVoiceMessages(
+            smsLogs, 
+            prisma, 
+            customerNumber
+        );
+        
+        // Update existing messages with zohoMessageId if found
+        if (messagesToUpdate.length > 0) {
+            console.log(`🔄 Updating ${messagesToUpdate.length} existing messages with zohoMessageId`);
+            
+            for (const update of messagesToUpdate) {
+                await prisma.message.update({
+                    where: { id: update.messageId },
+                    data: { zohoMessageId: update.zohoMessageId }
+                });
+            }
+        }
+        
         if (!newSmsLogs.length) {
             console.log(`📞 No new Zoho Voice messages for contact ${contactId}`);
             return [];

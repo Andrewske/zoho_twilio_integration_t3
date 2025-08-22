@@ -83,24 +83,31 @@ async function sendViaZohoVoice({ studioId, to, from, message, contact }) {
     message,
     prisma
   });
+  
+  // Create message with zohoMessageId if available from response
+  const messageData = {
+    studioId,
+    contactId: contact?.id,
+    fromNumber: PhoneFormatter.normalize(from),
+    toNumber: PhoneFormatter.normalize(to),
+    message,
+    provider: 'zoho_voice',
+    zohoMessageId: response?.logid || null,
+  };
 
-  // Save to database
-  await prisma.message.create({
-    data: {
-      studioId,
-      contactId: contact?.id,
-      fromNumber: PhoneFormatter.normalize(from),
-      toNumber: PhoneFormatter.normalize(to),
-      message,
-      provider: 'zoho_voice',
-      zohoMessageId: response?.logid || null,
-    },
+  const savedMessage = await prisma.message.create({ data: messageData });
+  
+  console.log('📤 Zoho Voice message saved:', {
+    messageId: savedMessage.id,
+    zohoMessageId: response?.logid,
+    hasZohoId: !!response?.logid
   });
 
   return {
     success: true,
     provider: 'zoho_voice',
-    messageId: response?.logid
+    messageId: response?.logid,
+    dbMessageId: savedMessage.id
   };
 }
 

@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint .",
     "test": "jest --watch",
-    "db:push": "prisma db push"
+    "db:push": "prisma db push",
+    "cleanup:duplicates": "node scripts/cleanup-duplicate-messages.js",
+    "cleanup:duplicates:dry": "node scripts/cleanup-duplicate-messages.js --dry-run"
   },
   "dependencies": {
     "@next/bundle-analyzer": "^14.1.0",
