@@ -1,6 +1,8 @@
 'use server'
-import { MessageTransformers } from '~/utils/messageTransformers';
 import { deduplicateZohoVoiceMessages } from '~/utils/messageDeduplication';
+import { MessageTransformers } from '~/utils/messageTransformers';
+import { StudioMappings } from '~/utils/studioMappings';
+import { fetchMessagesForContact } from '~/utils/zoho/voice/fetchMessagesForContact';
 
 /**
  * Fetch and save Zoho Voice messages for a contact without requiring studio config
@@ -27,15 +29,15 @@ async function fetchAndSaveZohoVoiceMessages(params) {
 
         // Enhanced deduplication: check both zohoMessageId and content/timing matches
         const { newMessages: newSmsLogs, messagesToUpdate } = await deduplicateZohoVoiceMessages(
-            smsLogs, 
-            prisma, 
+            smsLogs,
+            prisma,
             customerNumber
         );
-        
+
         // Update existing messages with zohoMessageId if found
         if (messagesToUpdate.length > 0) {
             console.log(`🔄 Updating ${messagesToUpdate.length} existing messages with zohoMessageId`);
-            
+
             for (const update of messagesToUpdate) {
                 await prisma.message.update({
                     where: { id: update.messageId },
@@ -43,7 +45,7 @@ async function fetchAndSaveZohoVoiceMessages(params) {
                 });
             }
         }
-        
+
         if (!newSmsLogs.length) {
             console.log(`📞 No new Zoho Voice messages for contact ${contactId}`);
             return [];
