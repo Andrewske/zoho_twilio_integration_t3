@@ -38,10 +38,9 @@ export async function GET(request) {
       });
     }
 
-    const studio = await getStudioFromPhoneNumber(unsentFollowUpMessages[0].fromNumber);
-
     const followUpPromises = unsentFollowUpMessages.map(async (message) => {
       try {
+        const studio = await getStudioFromPhoneNumber(message.fromNumber);
         const contact = await lookupContact({ mobile: message.toNumber, studioId: studio?.id });
         await sendFollowUp({
           contact,
