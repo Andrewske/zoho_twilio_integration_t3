@@ -109,7 +109,7 @@ export async function sendFollowUp({ contact = null, studio = null, from = null,
         }
 
         const southLake = await studioIsSouthlake(from);
-        const richmond = await studioIsRichmond(contact.Owner);
+        const richmond = studioIsRichmond(contact.Owner);
 
         await sendMessage({
             to,
@@ -137,7 +137,7 @@ export async function sendFollowUp({ contact = null, studio = null, from = null,
     }
 }
 
-const studioIsRichmond = async (studio) => {
+const studioIsRichmond = (studio) => {
     return studio?.name === 'Richmond FADS';
 }
 

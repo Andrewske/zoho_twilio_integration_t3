@@ -32,7 +32,7 @@ export async function POST(request) {
 
     // FIX #1: Save message IMMEDIATELY - before any Zoho calls
     // This ensures we never lose incoming messages even if contact lookup fails
-    messageId = await createMessage({ body, studio });
+    messageId = await createMessage({ body });
 
     // Find the contact, studioId is used for account.accessToken
     const contact = await lookupContact({
@@ -120,7 +120,7 @@ export async function parseRequest(request) {
 }
 
 const isYesMessage = (msg) => msg.toLowerCase().trim() === 'yes';
-const isStopMessage = (msg) => msg.toLowerCase().trim() == 'stop';
+const isStopMessage = (msg) => msg.toLowerCase().trim() === 'stop';
 
 const isAdminNumber = (to) => to == process.env.ADMIN_NUMBER;
 const updateMessage = async ({ messageId, studio, contact }) => {
