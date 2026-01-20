@@ -66,6 +66,8 @@ export async function GET(request) {
 }
 
 async function getUnsentFollowUpMessages() {
+  // FIX #5: Extended lookback from 1 hour to 24 hours
+  // This catches messages where contact wasn't found initially but may be indexed now
   return await prisma.message.findMany({
     where: {
       twilioMessageId: {
@@ -73,7 +75,7 @@ async function getUnsentFollowUpMessages() {
       },
       isFollowUpMessage: true,
       createdAt: {
-        gt: new Date(new Date().getTime() - 1 * 60 * 60 * 1000),
+        gt: new Date(Date.now() - 24 * 60 * 60 * 1000),
       },
     },
     select: {

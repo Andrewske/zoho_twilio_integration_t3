@@ -20,11 +20,72 @@ const followUpMessageSouthlake = 'Great! We have a limited number spots for new 
 // Then update the contact's status to 'Contacted - Not Booked'
 export async function sendFollowUp({ contact = null, studio = null, from = null, to = null, msg = null }) {
     try {
-        // returns a message if it exists, otherwise creates a new messag
-        const message = await findOrCreateMessage({ contact, studio, to, from });
+        // Determine what actions to take
+        const shouldSendFollowUp = contact && contactIsLead(contact);
+        const shouldCreateTask = !!contact; // Always create task if we have a contact
+
+        // FIX #3: Always create task when we have a contact, even if follow-up won't be sent
+        // This prevents lost leads when status was changed before customer replied
+        if (shouldCreateTask && !shouldSendFollowUp) {
+            console.log(`Creating task without follow-up: contact is ${contact?.isLead ? 'lead' : 'contact'} with status ${contact?.Lead_Status}`);
+
+            const taskData = await createTask({
+                studioId: studio?.id,
+                zohoId: studio?.zohoId,
+                contact,
+                message: { from: to, to: from, msg },
+            });
+
+            if (taskData?.zohoTaskId) {
+                await prisma.zohoTask.create({
+                    data: {
+                        zohoTaskId: taskData.zohoTaskId,
+                        studioId: studio?.id,
+                        contactId: taskData.contactId,
+                        taskSubject: taskData.taskSubject,
+                        taskStatus: taskData.taskStatus,
+                    },
+                });
+            }
+            return;
+        }
+
+        // If no contact, create placeholder for cron job
+        if (!contact) {
+            console.log('No contact - creating placeholder for cron job');
+            await prisma.message.create({
+                data: {
+                    contactId: null,
+                    studioId: null,
+                    fromNumber: formatMobile(from),
+                    toNumber: formatMobile(to),
+                    isFollowUpMessage: true,
+                },
+            });
+            return;
+        }
+
+        // Contact is a new lead - proceed with follow-up
+        // First check if there's an existing unsent follow-up (from cron retry)
+        let message = await prisma.message.findFirst({
+            where: {
+                twilioMessageId: { equals: null },
+                toNumber: formatMobile(to),
+                isFollowUpMessage: true,
+            },
+            orderBy: { createdAt: 'desc' }
+        });
 
         if (!message) {
-            return;
+            message = await prisma.message.create({
+                data: {
+                    contactId: contact?.id,
+                    studioId: studio?.id,
+                    fromNumber: formatMobile(studio.smsPhone),
+                    toNumber: formatMobile(contact.Mobile),
+                    isFollowUpMessage: true,
+                },
+            });
         }
 
         const taskData = await createTask({
@@ -47,9 +108,7 @@ export async function sendFollowUp({ contact = null, studio = null, from = null,
             });
         }
 
-
         const southLake = await studioIsSouthlake(from);
-
         const richmond = await studioIsRichmond(contact.Owner);
 
         await sendMessage({
@@ -60,7 +119,6 @@ export async function sendFollowUp({ contact = null, studio = null, from = null,
             contact,
             messageId: message.id,
         });
-
 
         if (!southLake) {
             await updateStatus({ studio, contact });
@@ -98,50 +156,4 @@ const contactIsLead = (contact) => {
     } catch (error) {
         return false
     }
-}
-
-const findOrCreateMessage = async ({ contact, studio, from, to }) => {
-    // Otherwise, we check if the contact has already received a follow up message
-    const message = await prisma.message.findFirst({
-        where: {
-            twilioMessageId: {
-                equals: null
-            },
-            toNumber: to,
-            isFollowUpMessage: true,
-        },
-        orderBy: {
-            createdAt: 'desc'
-        }
-    });
-
-    if (!message) {
-        if (!contact) {
-            console.log('creating no contact follow up message')
-            await prisma.message.create({
-                data: {
-                    contactId: null,
-                    studioId: null,
-                    fromNumber: formatMobile(from),
-                    toNumber: formatMobile(to),
-                    isFollowUpMessage: true,
-                },
-            });
-            return null;
-        }
-        if (contactIsLead(contact)) {
-            console.log('creating lead follow up message')
-            return await prisma.message.create({
-                data: {
-                    contactId: contact?.id,
-                    studioId: studio?.id,
-                    fromNumber: formatMobile(studio.smsPhone),
-                    toNumber: formatMobile(contact.Mobile),
-                    isFollowUpMessage: true,
-                },
-            });
-        }
-    }
-    return message;
-
 }
