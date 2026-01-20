@@ -21,6 +21,8 @@ import { prisma } from '~/utils/prisma';
 // If the message is stop, we opt out of SMS
 // If the message is not yes or stop, we create a task and update the message in the database
 export async function POST(request) {
+  let messageId = null;
+
   try {
     const body = await parseRequest(request);
     let { to, from, msg } = body;
@@ -28,7 +30,9 @@ export async function POST(request) {
     // Get the studio of the number messaged
     let studio = await getStudioFromPhoneNumber(to);
 
-
+    // FIX #1: Save message IMMEDIATELY - before any Zoho calls
+    // This ensures we never lose incoming messages even if contact lookup fails
+    messageId = await createMessage({ body, studio });
 
     // Find the contact, studioId is used for account.accessToken
     const contact = await lookupContact({
@@ -37,14 +41,10 @@ export async function POST(request) {
     });
 
     if (!contact) {
-      // if (isYesMessage(msg)) {
-      //   sendFollowUp({ to: from, from: to });
-      // }
+      // Message is now saved! Return 500 for Twilio retry.
+      // On retry, contact should be indexable in Zoho.
       return new Response('contact not found', { status: 500, headers: { 'Retry-After': '60' } });
     }
-
-    // Create the message record
-    const messageId = await createMessage({ body, studio });
 
     // If to is Admin number then we need to use the contacts owner as the studio
     if (isAdminNumber(to)) {
@@ -52,6 +52,9 @@ export async function POST(request) {
       studio = await getStudioFromZohoId(contact.Owner?.id);
     }
 
+    // FIX #2: Update message with studioId/contactId IMMEDIATELY after contact lookup
+    // This ensures ALL messages (including yes messages) get proper attribution
+    await updateMessage({ messageId, studio, contact });
 
     // If the message is yes, we need to update the status of the lead and send a follow up message
     if (isYesMessage(msg) && !(await hasReceivedFollowUpMessage(contact))) {
@@ -65,15 +68,12 @@ export async function POST(request) {
       return new Response(null, { status: 200 });
     }
 
-
     const taskData = await createTask({
       studioId: studio?.id,
       zohoId: studio?.zohoId,
       contact,
       message: { to, from, msg },
     });
-
-    await updateMessage({ messageId, studio, contact });
 
     // Store the ZohoTask record if task was created successfully
     if (taskData?.zohoTaskId) {
@@ -89,16 +89,19 @@ export async function POST(request) {
       });
     }
 
+    return new Response(null, { status: 200 });
+
   } catch (error) {
     console.error(error);
     logError({
       message: 'Error in Twilio Webhook:',
       error,
       level: 'error',
-      data: {},
+      data: { messageId },
     });
+    // FIX #4: Return 500 for transient errors so Twilio retries
+    return new Response('Internal error', { status: 500, headers: { 'Retry-After': '120' } });
   }
-  return new Response(null, { status: 200 });
 }
 
 export async function parseRequest(request) {
