@@ -104,6 +104,7 @@ model Message {
   twilioMessageId   String?         @unique
   isWelcomeMessage  Boolean         @default(false)
   isFollowUpMessage Boolean         @default(false)
+  retryCount        Int             @default(0)
   createdAt         DateTime        @default(now()) @map("created_at")
   updatedAt         DateTime        @default(now()) @updatedAt @map("updated_at")
   provider          MessageProvider @default(twilio)
@@ -133,6 +134,18 @@ model ZohoTask {
 
   @@index([messageId])
   @@index([studioId])
+}
+
+model CronRun {
+  id                String    @id @default(cuid())
+  startedAt         DateTime  @default(now())
+  completedAt       DateTime?
+  messagesFound     Int       @default(0)
+  messagesProcessed Int       @default(0)
+  tasksCreated      Int       @default(0)
+  tasksLinked       Int       @default(0)
+  errors            Int       @default(0)
+  errorDetails      String?
 }
 
 enum MessageProvider {
