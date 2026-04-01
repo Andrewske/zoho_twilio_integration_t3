@@ -10,7 +10,9 @@
     "test": "jest --watch",
     "db:push": "prisma db push",
     "cleanup:duplicates": "node scripts/cleanup-duplicate-messages.js",
-    "cleanup:duplicates:dry": "node scripts/cleanup-duplicate-messages.js --dry-run"
+    "cleanup:duplicates:dry": "node scripts/cleanup-duplicate-messages.js --dry-run",
+    "backfill:tasks": "node --import tsx/esm scripts/backfill-orphaned-tasks.js --dry-run",
+    "backfill:tasks:execute": "node --import tsx/esm scripts/backfill-orphaned-tasks.js --execute"
   },
   "dependencies": {
     "@next/bundle-analyzer": "^14.1.0",
