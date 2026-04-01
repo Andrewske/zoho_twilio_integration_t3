@@ -30,7 +30,7 @@ export const createTaskData = ({ zohoId, message, contact }) => {
 export const postTaskToZoho = async ({ apiDomain, accessToken, taskData }) => {
   const url = `${apiDomain}/crm/v5/Tasks`;
   const headers = {
-    Authorization: 'Bearer ' + accessToken,
+    Authorization: `Zoho-oauthtoken ${accessToken}`,
     'Content-Type': 'application/json',
   };
 
@@ -42,9 +42,13 @@ export const postTaskToZoho = async ({ apiDomain, accessToken, taskData }) => {
     });
 
     if (!response.ok) {
-      const text = await response.json();
-      console.log(text.data)
-      throw new Error(`Error posting task ${response.status}, ${text}`);
+      const errorBody = await response.json();
+      console.error('Zoho task creation failed:', {
+        status: response.status,
+        statusText: response.statusText,
+        errorBody,
+      });
+      throw new Error(`Error posting task to Zoho: ${response.status} ${response.statusText} - ${JSON.stringify(errorBody)}`);
     }
 
     const responseBody = await response.json();
@@ -79,6 +83,48 @@ export const createTask = async ({ studioId, zohoId, contact, message }) => {
       message: 'Error creating task:',
       error,
       data: { studioId, zohoId, contactId: contact?.id },
+    });
+    throw error;
+  }
+};
+
+export const createUnlinkedTask = async ({ studio, message }) => {
+  try {
+    const { apiDomain, accessToken } = await getZohoAccount({ studioId: studio.id });
+    const phone = message.fromNumber;
+    const last4 = phone.slice(-4);
+
+    const taskData = {
+      Owner: { id: studio.zohoId },
+      Status: 'Not Started',
+      Subject: `UNLINKED SMS: Yes reply from ***${last4}`,
+      Description: `Phone: ${phone}\nMessage: ${message.message}\nStudio: ${studio.name}\nReceived: ${message.createdAt}`,
+      Priority: 'High',
+    };
+
+    const zohoResponse = await postTaskToZoho({ apiDomain, accessToken, taskData });
+
+    if (zohoResponse?.details?.id) {
+      const { prisma } = await import('~/utils/prisma');
+      await prisma.zohoTask.create({
+        data: {
+          zohoTaskId: zohoResponse.details.id,
+          messageId: message.id,
+          studioId: studio.id,
+          contactId: null,
+          taskSubject: taskData.Subject,
+          taskStatus: taskData.Status,
+        },
+      });
+    }
+
+    return zohoResponse;
+  } catch (error) {
+    logError({
+      message: 'Error creating unlinked task',
+      error,
+      level: 'error',
+      data: { studioId: studio?.id, messageId: message?.id },
     });
     throw error;
   }

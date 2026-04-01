@@ -1,0 +1,77 @@
+import { isYesMessage, isStopMessage, isAdminNumber } from '~/utils/messageHelpers';
+
+// isAdminNumber reads process.env.ADMIN_NUMBER — stub it for isolation
+beforeAll(() => {
+  process.env.ADMIN_NUMBER = '+15550000000';
+});
+
+beforeEach(() => jest.clearAllMocks());
+
+// ---------------------------------------------------------------------------
+// isYesMessage
+// ---------------------------------------------------------------------------
+
+describe('isYesMessage', () => {
+  it('matches all 9 accepted yes patterns (including case variations)', () => {
+    const positives = [
+      'yes', 'yes!', 'yes.', 'yes please', 'yeah', 'yep', 'yea', 'sure', 'absolutely',
+      // case variations
+      'YES', 'Yeah', 'SURE', 'Absolutely',
+      // leading/trailing whitespace
+      '  yes  ',
+    ];
+    positives.forEach((msg) => {
+      expect(isYesMessage(msg)).toBe(true);
+    });
+  });
+
+  it('rejects non-yes messages', () => {
+    const negatives = ['no', 'hello', 'yes sir', 'yesterday', ''];
+    negatives.forEach((msg) => {
+      expect(isYesMessage(msg)).toBe(false);
+    });
+  });
+
+  it('handles null and undefined gracefully (returns false, does not throw)', () => {
+    expect(() => isYesMessage(null)).not.toThrow();
+    expect(isYesMessage(null)).toBe(false);
+
+    expect(() => isYesMessage(undefined)).not.toThrow();
+    expect(isYesMessage(undefined)).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// isStopMessage
+// ---------------------------------------------------------------------------
+
+describe('isStopMessage', () => {
+  it('matches "stop" in various cases and trims whitespace', () => {
+    expect(isStopMessage('stop')).toBe(true);
+    expect(isStopMessage('STOP')).toBe(true);
+    expect(isStopMessage('Stop')).toBe(true);
+    expect(isStopMessage(' stop ')).toBe(true);
+  });
+
+  it('rejects partial matches and non-stop messages', () => {
+    expect(isStopMessage('stopping')).toBe(false);
+    expect(isStopMessage("don't stop")).toBe(false);
+    expect(isStopMessage('please stop')).toBe(false);
+    expect(isStopMessage('')).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// isAdminNumber
+// ---------------------------------------------------------------------------
+
+describe('isAdminNumber', () => {
+  it('matches the ADMIN_NUMBER env var', () => {
+    expect(isAdminNumber('+15550000000')).toBe(true);
+  });
+
+  it('rejects other numbers', () => {
+    expect(isAdminNumber('+15551111111')).toBe(false);
+    expect(isAdminNumber(null)).toBe(false);
+  });
+});
