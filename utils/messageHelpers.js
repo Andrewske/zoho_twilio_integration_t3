@@ -7,7 +7,7 @@ export const isYesMessage = (msg) => YES_PATTERNS.includes(msg?.toLowerCase().tr
 
 export const isStopMessage = (msg) => msg?.toLowerCase().trim() === 'stop';
 
-export const isAdminNumber = (to) => to == process.env.ADMIN_NUMBER;
+export const isAdminNumber = (to) => to === process.env.ADMIN_NUMBER;
 
 export const hasReceivedFollowUpMessage = async (contact) => {
   const message = await prisma.message.findFirst({

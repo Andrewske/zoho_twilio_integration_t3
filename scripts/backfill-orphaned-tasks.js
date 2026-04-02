@@ -17,11 +17,7 @@ import { getStudioFromPhoneNumber } from '~/actions/zoho/studio/index.js';
 import { lookupContact } from '~/actions/zoho/contact/lookupContact/index.js';
 import { sendFollowUp } from '~/actions/zoho/sendFollowUp/index.js';
 import { createUnlinkedTask } from '~/actions/zoho/tasks/index.js';
-import { hasReceivedFollowUpMessage } from '~/utils/messageHelpers.js';
-
-const YES_PATTERNS = ['yes', 'yes!', 'yes.', 'yes please', 'yeah', 'yep', 'yea', 'sure', 'absolutely'];
-
-const isYesMessage = (msg) => YES_PATTERNS.includes(msg?.toLowerCase().trim());
+import { hasReceivedFollowUpMessage, isYesMessage } from '~/utils/messageHelpers.js';
 
 const parseArgs = (args) => {
   const execute = args.includes('--execute');

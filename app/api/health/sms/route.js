@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '~/utils/prisma';
 import { logError } from '~/utils/logError';
 
-const ORPHAN_WHERE = {
+const orphanWhere = () => ({
   twilioMessageId: { not: null },
   isWelcomeMessage: false,
   isFollowUpMessage: false,
@@ -10,7 +10,7 @@ const ORPHAN_WHERE = {
   retryCount: { lt: 50 },
   createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
   ZohoTask: { none: {} },
-};
+});
 
 const formatAge = (createdAt) => {
   const minutes = Math.floor((Date.now() - new Date(createdAt).getTime()) / 60_000);
@@ -41,11 +41,12 @@ export async function GET(request) {
   }
 
   try {
+    const where = orphanWhere();
     const [orphanedMessages, unlinkedTasks, lastCronRun, oldestUnprocessed] = await Promise.all([
-      prisma.message.count({ where: ORPHAN_WHERE }),
+      prisma.message.count({ where }),
       prisma.zohoTask.count({ where: { contactId: null } }),
       prisma.cronRun.findFirst({ orderBy: { startedAt: 'desc' } }),
-      prisma.message.findFirst({ where: ORPHAN_WHERE, orderBy: { createdAt: 'asc' } }),
+      prisma.message.findFirst({ where, orderBy: { createdAt: 'asc' } }),
     ]);
 
     return NextResponse.json({

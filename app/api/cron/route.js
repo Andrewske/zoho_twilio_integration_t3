@@ -4,8 +4,7 @@ import { lookupContact } from '~/actions/zoho/contact/lookupContact';
 import { smsOptOut } from '~/actions/zoho/contact/smsOptOut';
 import { sendFollowUp } from '~/actions/zoho/sendFollowUp';
 import { getStudioFromPhoneNumber, getStudioFromZohoId } from '~/actions/zoho/studio';
-import { createTask } from '~/actions/zoho/tasks';
-import { createUnlinkedTask } from '~/actions/zoho/tasks';
+import { createTask, createUnlinkedTask } from '~/actions/zoho/tasks';
 import { logError } from '~/utils/logError';
 import { isYesMessage, isStopMessage, isAdminNumber, hasReceivedFollowUpMessage } from '~/utils/messageHelpers';
 import { notify } from '~/utils/notify';
@@ -147,8 +146,8 @@ async function processMessage(message) {
       }
       await notify({ type: 'CONTACT_NOT_FOUND', data: { phone: message.fromNumber, studio: studio.name, messageId: message.id } });
     }
-    if (message.retryCount >= RETRY_ESCALATE) {
-      await notify({ type: 'RETRY_EXHAUSTED', data: { phone: message.fromNumber, studio: studio.name, messageId: message.id, retryCount: message.retryCount } });
+    if (message.retryCount + 1 >= RETRY_ESCALATE) {
+      await notify({ type: 'RETRY_EXHAUSTED', data: { phone: message.fromNumber, studio: studio.name, messageId: message.id, retryCount: message.retryCount + 1 } });
     }
     return result;
   }
