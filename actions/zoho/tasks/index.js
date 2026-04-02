@@ -1,6 +1,7 @@
 'use server';
 import { getZohoAccount } from '..';
 import { logError } from '~/utils/logError';
+import { prisma } from '~/utils/prisma';
 // import { formatMobile } from '~/utils';
 
 export const createTaskData = ({ zohoId, message, contact }) => {
@@ -105,7 +106,6 @@ export const createUnlinkedTask = async ({ studio, message }) => {
     const zohoResponse = await postTaskToZoho({ apiDomain, accessToken, taskData });
 
     if (zohoResponse?.details?.id) {
-      const { prisma } = await import('~/utils/prisma');
       await prisma.zohoTask.create({
         data: {
           zohoTaskId: zohoResponse.details.id,
