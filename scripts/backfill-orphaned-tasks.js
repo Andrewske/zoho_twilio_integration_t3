@@ -4,11 +4,20 @@
  * Backfill Orphaned Tasks
  * Finds historical "yes" messages that never got a task created and creates them.
  *
+ * Requires tsx to resolve the ~/  path aliases used by action modules.
+ *
  * Usage:
- *   node scripts/backfill-orphaned-tasks.js             # dry-run (default)
- *   node scripts/backfill-orphaned-tasks.js --dry-run   # explicit dry-run
- *   node scripts/backfill-orphaned-tasks.js --execute   # actually create tasks
+ *   node --import tsx/esm scripts/backfill-orphaned-tasks.js             # dry-run (default)
+ *   node --import tsx/esm scripts/backfill-orphaned-tasks.js --dry-run   # explicit dry-run
+ *   node --import tsx/esm scripts/backfill-orphaned-tasks.js --execute   # actually create tasks
  */
+
+import { prisma } from '~/utils/prisma.js';
+import { getStudioFromPhoneNumber } from '~/actions/zoho/studio/index.js';
+import { lookupContact } from '~/actions/zoho/contact/lookupContact/index.js';
+import { sendFollowUp } from '~/actions/zoho/sendFollowUp/index.js';
+import { createUnlinkedTask } from '~/actions/zoho/tasks/index.js';
+import { hasReceivedFollowUpMessage } from '~/utils/messageHelpers.js';
 
 const YES_PATTERNS = ['yes', 'yes!', 'yes.', 'yes please', 'yeah', 'yep', 'yea', 'sure', 'absolutely'];
 
@@ -16,16 +25,15 @@ const isYesMessage = (msg) => YES_PATTERNS.includes(msg?.toLowerCase().trim());
 
 const parseArgs = (args) => {
   const execute = args.includes('--execute');
-  const dryRun = !execute;
-  return { dryRun, execute };
+  return { dryRun: !execute };
 };
 
-const findOrphanedYesMessages = async (prisma) => {
+const findOrphanedYesMessages = async () => {
   // Fetch all inbound messages that:
   //   - have a twilioMessageId (real inbound SMS)
   //   - are not welcome or follow-up messages
   //   - have no linked ZohoTask
-  // No time limit, no retryCount limit — this is a full historical scan.
+  // No time limit, no retryCount limit — full historical scan.
   const candidates = await prisma.message.findMany({
     where: {
       twilioMessageId: { not: null },
@@ -36,11 +44,11 @@ const findOrphanedYesMessages = async (prisma) => {
     orderBy: { createdAt: 'asc' },
   });
 
-  // Filter to only yes-pattern messages in JS (avoids SQL case-insensitive pattern complexity)
+  // Filter to yes-pattern messages in JS (simpler than SQL case-insensitive LIKE)
   return candidates.filter((m) => isYesMessage(m.message));
 };
 
-const processMessage = async (message, { prisma, getStudioFromPhoneNumber, lookupContact, sendFollowUp, createUnlinkedTask, hasReceivedFollowUpMessage, dryRun }) => {
+const processMessage = async (message, dryRun) => {
   const studio = await getStudioFromPhoneNumber(message.toNumber);
 
   if (!studio) {
@@ -51,7 +59,7 @@ const processMessage = async (message, { prisma, getStudioFromPhoneNumber, looku
 
   if (!contact) {
     if (dryRun) {
-      return { status: 'dry-run', action: 'createUnlinkedTask', messageId: message.id, toNumber: message.toNumber };
+      return { status: 'dry-run', action: 'createUnlinkedTask', messageId: message.id, toNumber: message.toNumber, studioName: studio.name };
     }
     await createUnlinkedTask({ studio, message });
     return { status: 'done', action: 'createUnlinkedTask', messageId: message.id };
@@ -59,7 +67,12 @@ const processMessage = async (message, { prisma, getStudioFromPhoneNumber, looku
 
   const alreadyFollowedUp = await hasReceivedFollowUpMessage(contact);
   if (alreadyFollowedUp) {
-    return { status: 'skipped', reason: 'contact already received follow-up', messageId: message.id, contactId: contact.id };
+    return {
+      status: 'skipped',
+      reason: 'contact already received follow-up',
+      messageId: message.id,
+      contactId: contact.id,
+    };
   }
 
   if (dryRun) {
@@ -77,25 +90,16 @@ const processMessage = async (message, { prisma, getStudioFromPhoneNumber, looku
   return { status: 'done', action: 'sendFollowUp', messageId: message.id, contactId: contact.id };
 };
 
-const run = async () => {
-  const args = process.argv.slice(2);
-  const { dryRun } = parseArgs(args);
+const main = async () => {
+  const { dryRun } = parseArgs(process.argv.slice(2));
 
   console.log('Backfill Orphaned Tasks');
   console.log('=======================');
   console.log(`Mode: ${dryRun ? 'DRY RUN (no changes will be made)' : 'EXECUTE (tasks will be created)'}`);
   console.log('');
 
-  // Dynamic imports for ESM modules
-  const { prisma } = await import('../utils/prisma.js');
-  const { getStudioFromPhoneNumber } = await import('../actions/zoho/studio/index.js');
-  const { lookupContact } = await import('../actions/zoho/contact/lookupContact/index.js');
-  const { sendFollowUp } = await import('../actions/zoho/sendFollowUp/index.js');
-  const { createUnlinkedTask } = await import('../actions/zoho/tasks/index.js');
-  const { hasReceivedFollowUpMessage } = await import('../utils/messageHelpers.js');
-
   console.log('Querying for orphaned yes messages (no time limit)...');
-  const orphans = await findOrphanedYesMessages(prisma);
+  const orphans = await findOrphanedYesMessages();
   console.log(`Found ${orphans.length} orphaned yes message(s).`);
 
   if (!orphans.length) {
@@ -110,31 +114,20 @@ const run = async () => {
     console.log('\nProcessing...\n');
   }
 
-  const stats = {
-    total: orphans.length,
-    linkedTasksCreated: 0,
-    unlinkedTasksCreated: 0,
-    skipped: 0,
-    errors: 0,
-  };
-
-  const deps = { prisma, getStudioFromPhoneNumber, lookupContact, sendFollowUp, createUnlinkedTask, hasReceivedFollowUpMessage, dryRun };
+  const stats = { total: orphans.length, linkedTasksCreated: 0, unlinkedTasksCreated: 0, skipped: 0, errors: 0 };
 
   for (const message of orphans) {
     try {
-      const result = await processMessage(message, deps);
+      const result = await processMessage(message, dryRun);
 
       if (result.status === 'done' || result.status === 'dry-run') {
+        const prefix = result.status === 'dry-run' ? '[DRY-RUN]' : '[DONE]';
         if (result.action === 'sendFollowUp') {
           stats.linkedTasksCreated++;
-          console.log(
-            `[${result.status.toUpperCase()}] messageId=${result.messageId} -> sendFollowUp` +
-            (result.contactId ? ` (contactId=${result.contactId})` : '') +
-            (result.studioName ? ` (studio=${result.studioName})` : '')
-          );
+          console.log(`${prefix} messageId=${result.messageId} -> sendFollowUp (contactId=${result.contactId}, studio=${result.studioName})`);
         } else if (result.action === 'createUnlinkedTask') {
           stats.unlinkedTasksCreated++;
-          console.log(`[${result.status.toUpperCase()}] messageId=${result.messageId} -> createUnlinkedTask (toNumber=${result.toNumber})`);
+          console.log(`${prefix} messageId=${result.messageId} -> createUnlinkedTask (toNumber=${result.toNumber}, studio=${result.studioName})`);
         }
       } else if (result.status === 'skipped') {
         stats.skipped++;
@@ -146,22 +139,23 @@ const run = async () => {
     }
   }
 
+  const wouldLabel = dryRun ? ' (would create)' : '';
   console.log('\nSummary');
   console.log('-------');
-  console.log(`Total orphans found:          ${stats.total}`);
-  console.log(`Tasks created (linked):       ${stats.linkedTasksCreated}${dryRun ? ' (would create)' : ''}`);
-  console.log(`Tasks created (unlinked):     ${stats.unlinkedTasksCreated}${dryRun ? ' (would create)' : ''}`);
-  console.log(`Skipped:                      ${stats.skipped}`);
-  console.log(`Errors:                       ${stats.errors}`);
+  console.log(`Total orphans found:       ${stats.total}`);
+  console.log(`Tasks created (linked):    ${stats.linkedTasksCreated}${wouldLabel}`);
+  console.log(`Tasks created (unlinked):  ${stats.unlinkedTasksCreated}${wouldLabel}`);
+  console.log(`Skipped:                   ${stats.skipped}`);
+  console.log(`Errors:                    ${stats.errors}`);
 
-  if (dryRun && (stats.linkedTasksCreated + stats.unlinkedTasksCreated) > 0) {
+  if (dryRun && stats.linkedTasksCreated + stats.unlinkedTasksCreated > 0) {
     console.log('\nRun with --execute to actually process these messages.');
   }
 
   await prisma.$disconnect();
 };
 
-run().catch((error) => {
+main().catch((error) => {
   console.error('Fatal error:', error.message);
   console.error(error.stack);
   process.exit(1);
