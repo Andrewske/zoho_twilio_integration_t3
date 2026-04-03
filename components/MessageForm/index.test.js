@@ -9,8 +9,7 @@ import userEvent from '@testing-library/user-event';
 import MessageForm from './index';
 import { sendMessage } from '~/actions/messages/sendMessage';
 import { getMessages } from '~/actions/messages';
-import * as Sentry from '@sentry/react';
-import { sendSuccess, sendError } from '~/utils/toast';
+import { sendError } from '~/utils/toast';
 
 jest.mock('~/actions/messages/sendMessage', () => ({
   sendMessage: jest.fn(),
