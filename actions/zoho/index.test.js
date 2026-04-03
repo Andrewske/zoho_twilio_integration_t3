@@ -1,36 +1,25 @@
-import { getStudioAccounts, getZohoAccountFromAccounts, refreshAndFetchUpdatedAccount } from './account';
-import { isAccessTokenExpired } from './utils';
-
-jest.mock('./account', () => ({
-    getStudioAccounts: jest.fn(),
-    getZohoAccountFromAccounts: jest.fn(),
-    refreshAndFetchUpdatedAccount: jest.fn(),
+jest.mock('~/utils/accountManager', () => ({
+    AccountManager: {
+        getZohoAccount: jest.fn(),
+    }
 }));
 
-jest.mock('./utils', () => ({
-    isAccessTokenExpired: jest.fn(),
-}));
-
+import { AccountManager } from '~/utils/accountManager';
 import { getZohoAccount } from './index';
 
 describe('getZohoAccount', () => {
-    it('returns the Zoho account if the access token is not expired', async () => {
+    it('returns the Zoho account when access token is valid', async () => {
         const account = { platform: 'zoho', accessToken: 'access_token' };
-        getStudioAccounts.mockResolvedValue([{ Account: account }]);
-        getZohoAccountFromAccounts.mockReturnValue(account);
-        isAccessTokenExpired.mockReturnValue(false);
+        AccountManager.getZohoAccount.mockResolvedValue(account);
         const result = await getZohoAccount({ studioId: 'studioId' });
         expect(result).toEqual(account);
+        expect(AccountManager.getZohoAccount).toHaveBeenCalledWith('studioId');
     });
 
-    it('returns the updated Zoho account if the access token is expired', async () => {
-        const account = { platform: 'zoho', accessToken: 'access_token' };
-        const newAccessToken = 'new_access_token';
-        getStudioAccounts.mockResolvedValue([{ Account: account }]);
-        getZohoAccountFromAccounts.mockReturnValue(account);
-        isAccessTokenExpired.mockReturnValue(true);
-        refreshAndFetchUpdatedAccount.mockResolvedValue({ ...account, accessToken: newAccessToken });
+    it('returns a refreshed account when access token is expired', async () => {
+        const refreshedAccount = { platform: 'zoho', accessToken: 'new_access_token' };
+        AccountManager.getZohoAccount.mockResolvedValue(refreshedAccount);
         const result = await getZohoAccount({ studioId: 'studioId' });
-        expect(result.accessToken).toEqual(newAccessToken);
+        expect(result.accessToken).toEqual('new_access_token');
     });
 });

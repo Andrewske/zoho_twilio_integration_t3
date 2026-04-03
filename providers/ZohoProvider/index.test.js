@@ -1,14 +1,18 @@
 import { render } from '@testing-library/react';
 import { ZohoProvider } from './index';
-import { fetchAndSetLeadPhoneNumber } from './fetchAndSetLeadPhoneNumber';
+import { fetchAndSetContact } from './fetchAndSetContact';
 import { fetchAndSetStudioData } from './fetchAndSetStudioData';
 
-jest.mock('./fetchAndSetLeadPhoneNumber', () => ({
-    fetchAndSetLeadPhoneNumber: jest.fn(),
+jest.mock('./fetchAndSetContact', () => ({
+    fetchAndSetContact: jest.fn(),
 }))
 
 jest.mock('./fetchAndSetStudioData', () => ({
     fetchAndSetStudioData: jest.fn(),
+}))
+
+jest.mock('~/utils/toast', () => ({
+    sendSuccess: jest.fn(),
 }))
 
 describe('ZohoProvider', () => {
@@ -21,8 +25,7 @@ describe('ZohoProvider', () => {
         expect(getByText('Test')).toBeInTheDocument();
     });
 
-    it('should set lead phone number and studio data on page load', async () => {
-
+    it('should set contact and studio data on page load', async () => {
         const mockData = { Entity: 'TestEntity', EntityId: 'TestId' };
         const mockZoho = {
             embeddedApp: {
@@ -42,10 +45,10 @@ describe('ZohoProvider', () => {
             </ZohoProvider>
         );
 
-        await expect(fetchAndSetLeadPhoneNumber).toHaveBeenCalledWith({
+        await expect(fetchAndSetContact).toHaveBeenCalledWith({
             entity: mockData.Entity,
             entityId: mockData.EntityId,
-            setLeadPhoneNumber: expect.any(Function),
+            setContact: expect.any(Function),
         });
         await expect(fetchAndSetStudioData).toHaveBeenCalledWith({
             setStudio: expect.any(Function),

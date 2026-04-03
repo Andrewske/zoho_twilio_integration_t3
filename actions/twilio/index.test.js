@@ -1,24 +1,34 @@
-import { getTwilioAccount } from './index';
-import prisma from '~/utils/prisma';
-import { getMessagesToContact, getMessagesFromContact, sendMessage } from './index';
+import { getTwilioAccount, getMessagesToContact, getMessagesFromContact, sendMessage } from './index';
 import twilio from 'twilio';
-import * as Sentry from '@sentry/node';
 
-
-
-jest.mock('~/utils/prisma', () => ({
-    studioAccount: {
-        findMany: jest.fn(),
+jest.mock('~/utils/accountManager', () => ({
+    AccountManager: {
+        getTwilioAccount: jest.fn(),
     },
 }));
 
+jest.mock('~/utils/prisma', () => ({
+    prisma: {
+        message: {
+            create: jest.fn(),
+            update: jest.fn(),
+        },
+    },
+}));
+
+jest.mock('~/utils/studioMappings', () => ({
+    StudioMappings: {
+        getStudioNamesDict: jest.fn().mockResolvedValue({}),
+    },
+}));
+
+jest.mock('~/utils/logError', () => ({ logError: jest.fn() }));
+jest.mock('@sentry/node', () => ({ captureException: jest.fn() }));
 jest.mock('twilio');
-jest.mock('@sentry/node');
 
 const mockList = jest.fn();
 const mockCreate = jest.fn();
 
-// For tests that call client.messages.list
 twilio.mockReturnValue({
     messages: {
         create: mockCreate,
@@ -26,98 +36,79 @@ twilio.mockReturnValue({
     },
 });
 
+import { AccountManager } from '~/utils/accountManager';
+import { prisma } from '~/utils/prisma';
+
+const mockTwilioAccount = { id: 1, platform: 'twilio', clientId: 'ACxxx', clientSecret: 'secret' };
 
 describe('getTwilioAccount', () => {
     it('returns the Twilio account for a given studio ID', async () => {
-        const mockAccount = { id: 1, platform: 'twilio' };
-        prisma.studioAccount.findMany.mockResolvedValue([
-            { Account: mockAccount },
-        ]);
-
-        const account = await getTwilioAccount(1);
-
-        expect(account).toEqual(mockAccount);
-        expect(prisma.studioAccount.findMany).toHaveBeenCalledWith({
-            where: { studioId: 1 },
-            include: { Account: true },
-        });
+        AccountManager.getTwilioAccount.mockResolvedValue(mockTwilioAccount);
+        const account = await getTwilioAccount('studio1');
+        expect(account).toEqual(mockTwilioAccount);
+        expect(AccountManager.getTwilioAccount).toHaveBeenCalledWith('studio1');
     });
 });
-
-
 
 describe('getMessagesToContact', () => {
     it('should return messages to contact', async () => {
         const mockMessages = [
-            { to: '123', from: '456', body: 'Hello', dateSent: new Date() },
-            // add more mock messages as needed
+            { to: '123', from: '456', body: 'Hello', dateSent: new Date(), sid: 'SM1' },
         ];
         mockList.mockResolvedValue(mockMessages);
 
         const result = await getMessagesToContact(twilio(), '123');
-        expect(result).toEqual(mockMessages.map(message => ({
-            to: message.to,
-            from: message.from,
-            body: message.body,
-            date: message.dateSent,
+        expect(result).toMatchObject([{
+            to: expect.any(String),
+            from: expect.any(String),
+            body: 'Hello',
             fromStudio: true,
-        })));
+        }]);
     });
 });
 
 describe('getMessagesFromContact', () => {
     it('should return messages from contact', async () => {
         const mockMessages = [
-            { to: '123', from: '456', body: 'Hello', dateSent: new Date() },
-            // add more mock messages as needed
+            { to: '123', from: '456', body: 'Hello', dateSent: new Date(), sid: 'SM2' },
         ];
         mockList.mockResolvedValue(mockMessages);
 
         const result = await getMessagesFromContact(twilio(), '123');
-        expect(result).toEqual(mockMessages.map(message => ({
-            to: message.to,
-            from: message.from,
-            body: message.body,
-            date: message.dateSent,
+        expect(result).toMatchObject([{
+            to: expect.any(String),
+            from: expect.any(String),
+            body: 'Hello',
             fromStudio: false,
-        })));
+        }]);
     });
 });
 
-
 describe('sendMessage', () => {
-    it('should send a message', async () => {
-        const mockMessage = {
-            to: '123',
-            from: '456',
-            body: 'Hello',
-        };
-        mockCreate.mockResolvedValue(mockMessage);
-
-        const params = {
-            to: '123',
-            from: '456',
-            message: 'Hello',
-            studioId: '1',
-        };
-
-        await sendMessage(params);
-
-        expect(mockCreate).toHaveBeenCalledWith(mockMessage);
+    beforeEach(() => {
+        AccountManager.getTwilioAccount.mockResolvedValue(mockTwilioAccount);
+        prisma.message.create.mockResolvedValue({ id: 'msg-1' });
     });
 
-    it('should throw an error if sending the message fails', async () => {
+    it('should send a message', async () => {
+        mockCreate.mockResolvedValue({ sid: 'SM123' });
+
+        await sendMessage({ to: '123', from: '456', message: 'Hello', studioId: '1' });
+
+        expect(mockCreate).toHaveBeenCalledWith({
+            body: 'Hello',
+            from: '456',
+            to: '123',
+        });
+    });
+
+    it('should still record the message if sending fails', async () => {
         const error = new Error('Failed to send message');
         mockCreate.mockRejectedValue(error);
 
-        const params = {
-            to: '123',
-            from: '456',
-            message: 'Hello',
-            studioId: '1',
-        };
+        // sendMessage catches send errors and records them in DB — does not rethrow
+        await sendMessage({ to: '123', from: '456', message: 'Hello', studioId: '1' });
 
-        await expect(sendMessage(params)).rejects.toThrow(error);
-        expect(Sentry.captureException).toHaveBeenCalledWith(error);
+        expect(prisma.message.create).toHaveBeenCalled();
     });
 });

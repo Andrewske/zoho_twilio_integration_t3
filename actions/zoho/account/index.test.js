@@ -1,19 +1,14 @@
-
-import { getStudioAccounts, getZohoAccountFromAccounts, refreshAndFetchUpdatedAccount } from './index';
+import { getStudioAccounts, getZohoAccountFromAccounts } from './index';
 
 jest.mock('~/utils/prisma.js', () => ({
-    studioAccount: {
-        findMany: jest.fn(),
+    prisma: {
+        studioAccount: {
+            findMany: jest.fn(),
+        },
     },
 }));
 
-
-jest.mock('~/actions/zoho/token', () => ({
-    refreshAccessToken: jest.fn(),
-}));
-
-import prisma from '~/utils/prisma.js';
-import { refreshAccessToken } from '~/actions/zoho/token';
+import { prisma } from '~/utils/prisma.js';
 
 
 describe('getStudioAccounts', () => {
@@ -30,9 +25,9 @@ describe('getStudioAccounts', () => {
 });
 
 describe('getZohoAccountFromAccounts', () => {
-    it('throws an error if no Zoho account is found', () => {
+    it('returns null if no Zoho account is found', () => {
         const studioAccounts = [{ Account: { platform: 'not-zoho' } }];
-        expect(() => getZohoAccountFromAccounts(studioAccounts)).toThrow('No Zoho account found for studio');
+        expect(getZohoAccountFromAccounts(studioAccounts)).toBeNull();
     });
 
     it('returns the Zoho account', () => {
@@ -40,17 +35,5 @@ describe('getZohoAccountFromAccounts', () => {
         const studioAccounts = [{ Account: zohoAccount }];
         const result = getZohoAccountFromAccounts(studioAccounts);
         expect(result).toEqual(zohoAccount);
-    });
-});
-
-describe('refreshAndFetchUpdatedAccount', () => {
-    it('refreshes the access token and fetches the updated account', async () => {
-        const account = { platform: 'zoho', accessToken: 'access_token' };
-        const newAccessToken = 'new_access_token';
-        refreshAccessToken.mockResolvedValue(newAccessToken);
-        const updatedAccounts = [{ Account: { ...account, accessToken: newAccessToken } }];
-        prisma.studioAccount.findMany.mockResolvedValue(updatedAccounts);
-        const result = await refreshAndFetchUpdatedAccount(account, 'studioId');
-        expect(result.accessToken).toEqual(newAccessToken);
     });
 });

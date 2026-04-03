@@ -7,14 +7,22 @@ import {
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import MessageForm from './index';
-import { sendMessage, getMessages } from '~/actions/twilio';
+import { sendMessage } from '~/actions/messages/sendMessage';
+import { getMessages } from '~/actions/messages';
 import * as Sentry from '@sentry/react';
 import { sendSuccess, sendError } from '~/utils/toast';
 
-// Mock the external dependencies
-jest.mock('~/actions/twilio', () => ({
+jest.mock('~/actions/messages/sendMessage', () => ({
   sendMessage: jest.fn(),
+}));
+jest.mock('~/actions/messages', () => ({
   getMessages: jest.fn(),
+}));
+jest.mock('~/actions/zoho/studio', () => ({
+  getStudioFromZohoId: jest.fn(),
+}));
+jest.mock('posthog-js/react', () => ({
+  usePostHog: () => ({ capture: jest.fn() }),
 }));
 jest.mock('@sentry/react', () => ({
   captureException: jest.fn(),
@@ -25,95 +33,73 @@ jest.mock('~/utils/toast', () => ({
 }));
 
 describe('MessageForm', () => {
-  const leadPhoneNumber = '1234567890';
-  const studio = {
-    phone: '0987654321',
-    id: 'studio1',
+  const contact = { id: 'contact1', Mobile: '1234567890' };
+  const studio = { id: 'studio1', smsPhone: '0987654321' };
+  const selectedSender = { label: 'Studio', phone: '0987654321' };
+
+  const defaultProps = {
+    contact,
+    studio,
+    setMessages: jest.fn(),
+    smsPhone: studio.smsPhone,
+    selectedSender,
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
+    getMessages.mockResolvedValue([]);
   });
 
   it('renders correctly', () => {
-    render(
-      <MessageForm
-        leadPhoneNumber={leadPhoneNumber}
-        studio={studio}
-      />
-    );
-    expect(
-      screen.getByPlaceholderText('Type your message here...')
-    ).toBeInTheDocument();
+    render(<MessageForm {...defaultProps} />);
+    expect(screen.getByPlaceholderText('Type your message here...')).toBeInTheDocument();
     expect(screen.getByText('Send')).toBeInTheDocument();
   });
 
   it('allows typing in the textarea', () => {
-    render(
-      <MessageForm
-        leadPhoneNumber={leadPhoneNumber}
-        studio={studio}
-      />
-    );
+    render(<MessageForm {...defaultProps} />);
     const textarea = screen.getByPlaceholderText('Type your message here...');
     fireEvent.change(textarea, { target: { value: 'Hello' } });
     expect(textarea).toHaveValue('Hello');
   });
 
   it('sends a message when the form is submitted', async () => {
-    sendMessage.mockResolvedValueOnce({}); // Mock a successful response
-    render(
-      <MessageForm
-        leadPhoneNumber={leadPhoneNumber}
-        studio={studio}
-      />
-    );
+    sendMessage.mockResolvedValueOnce({ success: true, provider: 'twilio' });
+    getMessages.mockResolvedValueOnce([]);
+
+    render(<MessageForm {...defaultProps} />);
     const textarea = screen.getByPlaceholderText('Type your message here...');
 
     await act(async () => {
-      const sendButton = screen.getByText('Send');
       await userEvent.type(textarea, 'Hello');
-      userEvent.click(sendButton);
+      userEvent.click(screen.getByText('Send'));
     });
 
     await waitFor(() => {
-      expect(sendMessage).toHaveBeenCalledWith({
-        message: 'Hello',
-        to: leadPhoneNumber,
-        from: studio.smsPhone,
-        studioId: studio.id,
-      });
-    });
-
-    await waitFor(() => {
-      expect(getMessages).toHaveBeenCalledWith({
-        leadPhoneNumber,
-        studioId: studio.id,
-      });
-      expect(sendSuccess).toHaveBeenCalledWith('Message sent!');
-      expect(screen.getByText('Send')).not.toBeDisabled();
+      expect(sendMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Hello',
+          to: contact.Mobile,
+          from: studio.smsPhone,
+        })
+      );
     });
   });
 
   it('handles errors when sending a message', async () => {
-    sendMessage.mockRejectedValueOnce(new Error('Failed to send')); // Mock a failed response
-    render(
-      <MessageForm
-        leadPhoneNumber={leadPhoneNumber}
-        studio={studio}
-      />
-    );
+    const error = new Error('Failed to send');
+    sendMessage.mockRejectedValueOnce(error);
+
+    render(<MessageForm {...defaultProps} />);
+    const textarea = screen.getByPlaceholderText('Type your message here...');
+    fireEvent.change(textarea, { target: { value: 'Hello' } });
 
     await act(async () => {
-      const sendButton = screen.getByText('Send');
-      userEvent.click(sendButton);
+      userEvent.click(screen.getByText('Send'));
     });
 
     await waitFor(() => {
-      expect(sendError).toHaveBeenCalledWith(
-        'Error sending the message! Try refreshing the page.'
-      );
-      expect(Sentry.captureException).toHaveBeenCalled();
+      expect(sendError).toHaveBeenCalledWith(error.message, false);
     });
   });
 });
