@@ -1,6 +1,6 @@
 'use server';
 
-export const isAccessTokenExpired = (account) => {
+export const isAccessTokenExpired = async (account) => {
   const { updatedAt, expiresIn } = account;
   const updatedAtDate = new Date(updatedAt);
   updatedAtDate.setTime(updatedAtDate.getTime() + expiresIn * 1000);

@@ -14,7 +14,7 @@ export const getTwilioAccount = async (studioId) => {
   return await AccountManager.getTwilioAccount(studioId);
 };
 
-export const getTwilioClient = ({ clientId, clientSecret }) =>
+export const getTwilioClient = async ({ clientId, clientSecret }) =>
   twilio(clientId, clientSecret, { region: 'US1', edge: 'umatilla' });
 
 const _getMessagesToContact = async (client, contactMobile, studioNames) => {
@@ -48,7 +48,7 @@ const _getMessages = async ({ contactMobile, studioId }) => {
   }
 
   // Extract clientId and clientSecret for Twilio client
-  const client = getTwilioClient({
+  const client = await getTwilioClient({
     clientId: twilioAccount.clientId,
     clientSecret: twilioAccount.clientSecret
   });
@@ -93,7 +93,7 @@ export const sendMessage = async ({
   }
 
   // Initialize Twilio client
-  const client = getTwilioClient({
+  const client = await getTwilioClient({
     clientId: twilioAccount.clientId,
     clientSecret: twilioAccount.clientSecret,
   });

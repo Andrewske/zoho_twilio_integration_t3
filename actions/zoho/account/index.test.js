@@ -25,15 +25,15 @@ describe('getStudioAccounts', () => {
 });
 
 describe('getZohoAccountFromAccounts', () => {
-    it('returns null if no Zoho account is found', () => {
+    it('returns null if no Zoho account is found', async () => {
         const studioAccounts = [{ Account: { platform: 'not-zoho' } }];
-        expect(getZohoAccountFromAccounts(studioAccounts)).toBeNull();
+        expect(await getZohoAccountFromAccounts(studioAccounts)).toBeNull();
     });
 
-    it('returns the Zoho account', () => {
+    it('returns the Zoho account', async () => {
         const zohoAccount = { platform: 'zoho' };
         const studioAccounts = [{ Account: zohoAccount }];
-        const result = getZohoAccountFromAccounts(studioAccounts);
+        const result = await getZohoAccountFromAccounts(studioAccounts);
         expect(result).toEqual(zohoAccount);
     });
 });
