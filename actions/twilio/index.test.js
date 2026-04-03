@@ -23,7 +23,6 @@ jest.mock('~/utils/studioMappings', () => ({
 }));
 
 jest.mock('~/utils/logError', () => ({ logError: jest.fn() }));
-jest.mock('@sentry/node', () => ({ captureException: jest.fn() }));
 jest.mock('twilio');
 
 const mockList = jest.fn();

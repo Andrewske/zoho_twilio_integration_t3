@@ -1,40 +1,10 @@
-// import { PrismaClient } from '@prisma/client/edge';
-import { PrismaClient } from '@prisma/client';
-// import { withAccelerate } from '@prisma/extension-accelerate';
+import { PrismaClient } from '../prisma/generated/prisma/client/client.ts';
+import { PrismaPg } from '@prisma/adapter-pg';
 
-const prisma = new PrismaClient({
-    datasourceUrl: process.env.DATABASE_URL
-})
-// .$extends(withAccelerate());
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL,
+});
 
-async function prismaQueryWrapper(query) {
-    const result = await query;
-    await prisma.$disconnect();
-    return result;
-}
+const prisma = new PrismaClient({ adapter });
 
-export { prisma, prismaQueryWrapper };
-
-
-// utils/prisma.js
-
-// import { PrismaClient } from '@prisma/client';
-
-// let prisma;
-
-// if (process.env.NODE_ENV === 'production') {
-//   prisma = new PrismaClient();
-// } else {
-//   if (!global.prisma) {
-//     global.prisma = new PrismaClient();
-//   }
-//   prisma = global.prisma;
-// }
-
-// async function prismaQueryWrapper(query) {
-//   const result = await query;
-//   await prisma.$disconnect();
-//   return result;
-// }
-
-// export { prisma, prismaQueryWrapper };
+export { prisma };

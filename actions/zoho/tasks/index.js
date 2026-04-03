@@ -4,7 +4,7 @@ import { logError } from '~/utils/logError';
 import { prisma } from '~/utils/prisma';
 // import { formatMobile } from '~/utils';
 
-export const createTaskData = ({ zohoId, message, contact }) => {
+export const createTaskData = async ({ zohoId, message, contact }) => {
   const { to, from, msg } = message;
   const se_module = contact.isLead ? 'Leads' : 'Contacts';
 
@@ -68,7 +68,7 @@ export const postTaskToZoho = async ({ apiDomain, accessToken, taskData }) => {
 export const createTask = async ({ studioId, zohoId, contact, message }) => {
   // if (formatMobile(contact.Mobile) === process.env.KEVIN_MOBILE) return;
   try {
-    const taskData = createTaskData({ zohoId, message, contact });
+    const taskData = await createTaskData({ zohoId, message, contact });
     const { apiDomain, accessToken } = await getZohoAccount({ studioId });
 
     const zohoTaskResponse = await postTaskToZoho({ apiDomain, accessToken, taskData });
