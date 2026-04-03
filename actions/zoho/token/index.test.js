@@ -1,20 +1,24 @@
-import {
-  buildParams,
-  buildUrl,
-  updateAccount,
-  refreshAccessToken,
-} from './index'; // replace 'yourFile' with the actual file name
-import axios from 'axios';
-import prisma from '~/utils/prisma';
+import { buildParams, buildUrl, updateAccount, refreshAccessToken } from './index';
 
-jest.mock('axios');
-jest.mock('@prisma/client', () => ({
-  account: {
-    update: jest.fn(),
+jest.mock('~/utils/prisma.js', () => ({
+  prisma: {
+    account: {
+      update: jest.fn(),
+    },
   },
 }));
 
+import { prisma } from '~/utils/prisma.js';
+
 describe('Zoho token tests', () => {
+  beforeEach(() => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   test('buildParams creates correct parameters', () => {
     const params = buildParams({
       refreshToken: 'refreshToken',
@@ -32,44 +36,33 @@ describe('Zoho token tests', () => {
   });
 
   test('updateAccount updates account correctly', async () => {
-    const mockUpdate = jest.fn();
-    prisma.account.update = mockUpdate;
-    await updateAccount(prisma, {
-      id: 1,
-      access_token: 'access_token',
-      expires_in: 3600,
-    });
-    expect(mockUpdate).toHaveBeenCalledWith({
+    const updated = { id: 1, accessToken: 'access_token', expiresIn: 3600 };
+    prisma.account.update.mockResolvedValue(updated);
+
+    const result = await updateAccount({ id: 1, access_token: 'access_token', expires_in: 3600 });
+
+    expect(prisma.account.update).toHaveBeenCalledWith({
       where: { id: 1 },
-      data: {
-        accessToken: 'access_token',
-        expiresIn: 3600,
-      },
+      data: { accessToken: 'access_token', expiresIn: 3600 },
     });
+    expect(result).toEqual(updated);
   });
 
   test('refreshAccessToken refreshes access token correctly', async () => {
-    axios.post.mockResolvedValue({
-      data: {
-        access_token: 'access_token',
-        expires_in: 3600,
-      },
+    const updated = { id: 1, accessToken: 'new_access_token', expiresIn: 3600 };
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: jest.fn().mockResolvedValue({ access_token: 'new_access_token', expires_in: 3600 }),
     });
-    const mockUpdate = jest.fn();
-    prisma.account.update = mockUpdate;
-    const accessToken = await refreshAccessToken(axios, prisma, {
+    prisma.account.update.mockResolvedValue(updated);
+
+    const result = await refreshAccessToken({
       id: 1,
       refreshToken: 'refreshToken',
       clientId: 'clientId',
       clientSecret: 'clientSecret',
     });
-    expect(accessToken).toBe('access_token');
-    expect(mockUpdate).toHaveBeenCalledWith({
-      where: { id: 1 },
-      data: {
-        accessToken: 'access_token',
-        expiresIn: 3600,
-      },
-    });
+
+    expect(result).toEqual(updated);
   });
 });

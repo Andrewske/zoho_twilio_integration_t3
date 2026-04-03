@@ -17,6 +17,7 @@ describe('getZohoRecord', () => {
         expect(global.ZOHO.CRM.API.getRecord).toHaveBeenCalledWith({
             Entity: entity,
             RecordID: entityId,
+            selectColumns: 'leads(Last Name,Website,Email), contacts(Last Name,Website,Email)',
         });
     });
 });
