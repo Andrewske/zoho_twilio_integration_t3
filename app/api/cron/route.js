@@ -8,6 +8,7 @@ import { createTask, createUnlinkedTask } from '~/actions/zoho/tasks';
 import { logError } from '~/utils/logError';
 import { isYesMessage, isStopMessage, isAdminNumber, hasReceivedFollowUpMessage } from '~/utils/messageHelpers';
 import { notify } from '~/utils/notify';
+import { captureServerEvent } from '~/utils/postHogServer';
 import { prisma } from '~/utils/prisma';
 
 export const maxDuration = 60;
@@ -30,6 +31,9 @@ export async function GET(request) {
     return new Response('Unauthorized', { status: 401 });
   }
 
+  const url = new URL(request.url);
+  const dryRun = process.env.NODE_ENV !== 'production' && url.searchParams.get('dryRun') === 'true';
+
   const cronRun = await prisma.cronRun.create({ data: {} });
   let stats = { found: 0, processed: 0, tasksCreated: 0, tasksLinked: 0, errors: 0, errorDetails: [] };
 
@@ -45,7 +49,7 @@ export async function GET(request) {
     // Process sequentially to avoid concurrent token refresh for same Zoho account
     for (const message of messages) {
       try {
-        const result = await processMessage(message);
+        const result = await processMessage(message, dryRun);
         stats.processed++;
         if (result.taskCreated) stats.tasksCreated++;
         if (result.taskLinked) stats.tasksLinked++;
@@ -58,6 +62,7 @@ export async function GET(request) {
           level: 'error',
           data: { messageId: message.id, fromNumber: `***${message.fromNumber.slice(-4)}` },
         });
+        await captureServerEvent('CRON_ERROR', { messageId: message.id, error: error.message });
         // Increment retryCount even on error so we don't get stuck
         await prisma.message.update({
           where: { id: message.id },
@@ -67,7 +72,7 @@ export async function GET(request) {
     }
 
     await completeCronRun(cronRun.id, stats);
-    return NextResponse.json({ ok: true, cronRunId: cronRun.id, ...stats });
+    return NextResponse.json({ ok: true, cronRunId: cronRun.id, dryRun, ...stats });
   } catch (error) {
     logError({ message: 'Error in cron', error, level: 'error' });
     await completeCronRun(cronRun.id, { ...stats, errors: stats.errors + 1 });
@@ -91,7 +96,7 @@ async function getUnprocessedMessages() {
   });
 }
 
-async function processMessage(message) {
+async function processMessage(message, dryRun = false) {
   const result = { taskCreated: false, taskLinked: false };
 
   // Resolve studio from the number that received the message
@@ -110,6 +115,7 @@ async function processMessage(message) {
   if (!studio) {
     logError({
       message: 'Cron: studio not found for message',
+      error: new Error(`Studio not found for toNumber: ${message.toNumber}`),
       level: 'warn',
       data: { messageId: message.id, toNumber: message.toNumber },
     });
@@ -138,15 +144,17 @@ async function processMessage(message) {
   // Contact not found — handle based on message type
   if (!contact) {
     if (isYesMessage(message.message)) {
-      try {
-        await createUnlinkedTask({ studio, message });
-        result.taskCreated = true;
-      } catch (error) {
-        logError({ message: 'Cron: failed to create unlinked task', error, level: 'error', data: { messageId: message.id } });
+      if (!dryRun) {
+        try {
+          await createUnlinkedTask({ studio, message });
+          result.taskCreated = true;
+        } catch (error) {
+          logError({ message: 'Cron: failed to create unlinked task', error, level: 'error', data: { messageId: message.id } });
+        }
+        await notify({ type: 'CONTACT_NOT_FOUND', data: { phone: message.fromNumber, studio: studio.name, messageId: message.id } });
       }
-      await notify({ type: 'CONTACT_NOT_FOUND', data: { phone: message.fromNumber, studio: studio.name, messageId: message.id } });
     }
-    if (message.retryCount + 1 >= RETRY_ESCALATE) {
+    if (!dryRun && message.retryCount + 1 >= RETRY_ESCALATE) {
       await notify({ type: 'RETRY_EXHAUSTED', data: { phone: message.fromNumber, studio: studio.name, messageId: message.id, retryCount: message.retryCount + 1 } });
     }
     return result;
@@ -154,35 +162,37 @@ async function processMessage(message) {
 
   // Contact found — process based on message type
   if (isYesMessage(message.message)) {
-    if (!(await hasReceivedFollowUpMessage(contact))) {
+    if (!dryRun && !(await hasReceivedFollowUpMessage(contact))) {
       await sendFollowUp({ contact, studio, to: message.fromNumber, from: message.toNumber, msg: message.message });
       result.taskCreated = true;
     }
   } else if (isStopMessage(message.message)) {
     // Stop is already handled by webhook + Twilio's Advanced Opt-Out
     // This catches stop messages where the webhook couldn't find the contact
-    await smsOptOut({ studio, contact });
+    if (!dryRun) await smsOptOut({ studio, contact });
   } else {
     // Regular message — create task
-    const taskData = await createTask({
-      studioId: studio.id,
-      zohoId: studio.zohoId,
-      contact,
-      message: { to: message.toNumber, from: message.fromNumber, msg: message.message },
-    });
-
-    if (taskData?.zohoTaskId) {
-      await prisma.zohoTask.create({
-        data: {
-          zohoTaskId: taskData.zohoTaskId,
-          messageId: message.id,
-          studioId: studio.id,
-          contactId: contact.id,
-          taskSubject: taskData.taskSubject,
-          taskStatus: taskData.taskStatus,
-        },
+    if (!dryRun) {
+      const taskData = await createTask({
+        studioId: studio.id,
+        zohoId: studio.zohoId,
+        contact,
+        message: { to: message.toNumber, from: message.fromNumber, msg: message.message },
       });
-      result.taskCreated = true;
+
+      if (taskData?.zohoTaskId) {
+        await prisma.zohoTask.create({
+          data: {
+            zohoTaskId: taskData.zohoTaskId,
+            messageId: message.id,
+            studioId: studio.id,
+            contactId: contact.id,
+            taskSubject: taskData.taskSubject,
+            taskStatus: taskData.taskStatus,
+          },
+        });
+        result.taskCreated = true;
+      }
     }
   }
 
