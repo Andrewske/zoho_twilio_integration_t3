@@ -8,10 +8,12 @@
  * node scripts/cleanup-duplicate-messages.js [--dry-run] [--customer-number=1234567890]
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../prisma/generated/prisma/client/client.ts';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { identifyDuplicateMessages, getPreferredMessage } from '../utils/messageDeduplication.js';
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const prisma = new PrismaClient({ adapter });
 
 // Parse command line arguments
 const args = process.argv.slice(2);

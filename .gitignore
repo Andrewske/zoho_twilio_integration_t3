@@ -50,3 +50,6 @@ TODO.md
 
 # Audit reports
 audit-reports/
+
+# Prisma generated client
+prisma/generated/

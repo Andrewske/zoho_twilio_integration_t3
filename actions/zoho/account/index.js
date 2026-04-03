@@ -14,7 +14,7 @@ export const getStudioAccounts = async ({ studioId }) => {
 };
 
 
-export const getZohoAccountFromAccounts = (studioAccounts) => {
+export const getZohoAccountFromAccounts = async (studioAccounts) => {
   const account = studioAccounts
     .map(({ Account }) => Account)
     .find(({ platform }) => platform === 'zoho');
