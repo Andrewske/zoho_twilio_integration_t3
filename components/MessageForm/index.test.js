@@ -23,9 +23,6 @@ jest.mock('~/actions/zoho/studio', () => ({
 jest.mock('posthog-js/react', () => ({
   usePostHog: () => ({ capture: jest.fn() }),
 }));
-jest.mock('@sentry/react', () => ({
-  captureException: jest.fn(),
-}));
 jest.mock('~/utils/toast', () => ({
   sendSuccess: jest.fn(),
   sendError: jest.fn(),
@@ -33,7 +30,7 @@ jest.mock('~/utils/toast', () => ({
 
 describe('MessageForm', () => {
   const contact = { id: 'contact1', Mobile: '1234567890' };
-  const studio = { id: 'studio1', smsPhone: '0987654321' };
+  const studio = { id: 'studio1', smsPhone: '0987654321', zohoId: 'non-admin' };
   const selectedSender = { label: 'Studio', phone: '0987654321' };
 
   const defaultProps = {

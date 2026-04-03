@@ -1,7 +1,7 @@
 'use server';
 import { prisma } from '~/utils/prisma';
 
-export const buildParams = ({ refreshToken, clientId, clientSecret }) => {
+export const buildParams = async ({ refreshToken, clientId, clientSecret }) => {
   return new URLSearchParams({
     refresh_token: refreshToken,
     client_id: clientId,
@@ -10,7 +10,7 @@ export const buildParams = ({ refreshToken, clientId, clientSecret }) => {
   });
 };
 
-export const buildUrl = (params) => {
+export const buildUrl = async (params) => {
   return `https://accounts.zoho.com/oauth/v2/token?${params.toString()}`;
 };
 
@@ -46,8 +46,8 @@ export const refreshAccessToken = async ({
 }) => {
   try {
     console.log('refreshAccessToken');
-    const params = buildParams({ refreshToken, clientId, clientSecret });
-    const url = buildUrl(params);
+    const params = await buildParams({ refreshToken, clientId, clientSecret });
+    const url = await buildUrl(params);
 
     const response = await fetch(url, {
       method: 'POST',

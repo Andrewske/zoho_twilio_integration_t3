@@ -19,8 +19,8 @@ describe('Zoho token tests', () => {
     jest.restoreAllMocks();
   });
 
-  test('buildParams creates correct parameters', () => {
-    const params = buildParams({
+  test('buildParams creates correct parameters', async () => {
+    const params = await buildParams({
       refreshToken: 'refreshToken',
       clientId: 'clientId',
       clientSecret: 'clientSecret',
@@ -30,8 +30,8 @@ describe('Zoho token tests', () => {
     );
   });
 
-  test('buildUrl creates correct url', () => {
-    const url = buildUrl(new URLSearchParams('test=test'));
+  test('buildUrl creates correct url', async () => {
+    const url = await buildUrl(new URLSearchParams('test=test'));
     expect(url).toBe('https://accounts.zoho.com/oauth/v2/token?test=test');
   });
 

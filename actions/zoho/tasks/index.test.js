@@ -4,9 +4,9 @@ jest.mock('~/utils/logError', () => ({ logError: jest.fn() }));
 jest.mock('~/actions/zoho', () => ({ getZohoAccount: jest.fn() }));
 
 describe('createTaskData', () => {
-    it('returns the correct task data for a lead', () => {
+    it('returns the correct task data for a lead', async () => {
         const contact = { id: '2', Full_Name: 'Lead Name', isLead: true };
-        const taskData = createTaskData({
+        const taskData = await createTaskData({
             zohoId: '1',
             message: { to: 'to', from: 'from', msg: 'msg' },
             contact,
@@ -23,9 +23,9 @@ describe('createTaskData', () => {
         });
     });
 
-    it('returns the correct task data for a contact', () => {
+    it('returns the correct task data for a contact', async () => {
         const contact = { id: '3', Full_Name: 'Student Name', isLead: false };
-        const taskData = createTaskData({
+        const taskData = await createTaskData({
             zohoId: '1',
             message: { to: 'to', from: 'from', msg: 'msg' },
             contact,
