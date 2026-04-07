@@ -18,7 +18,7 @@ async function resolveStudioId(studioId, selectedSender) {
   }
 
   if (selectedSender.id === 'admin') {
-    const adminStudio = await StudioMappings.getStudioByName('philip_admin');
+    const adminStudio = await StudioMappings.findStudioByPhone(selectedSender.phone);
     return adminStudio?.id;
   }
 

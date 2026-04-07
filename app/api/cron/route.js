@@ -105,7 +105,7 @@ async function processMessage(message, dryRun = false) {
   // Admin number: resolve the real studio from the contact's Owner
   // Cache the contact to avoid a second lookup below
   let contact = null;
-  if (isAdminNumber(message.toNumber)) {
+  if (await isAdminNumber(message.toNumber)) {
     contact = await lookupContact({ mobile: message.fromNumber, studioId: studio?.id });
     if (contact?.Owner?.id) {
       studio = await getStudioFromZohoId(contact.Owner.id);

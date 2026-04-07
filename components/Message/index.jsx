@@ -3,9 +3,7 @@ import { format } from 'date-fns';
 import { useState } from 'react';
 import styles from './styles.module.css';
 
-const adminNumbers = ['3466161442', '4697185726'];
-
-const Message = ({ message, contactName }) => {
+const Message = ({ message, contactName, adminNumbers = [] }) => {
   const [showError, setShowError] = useState(false);
   return (
     <div

@@ -9,9 +9,11 @@ import MessageForm from '../MessageForm';
 import MessageList from '../MessageList';
 import styles from './styles.module.css';
 
-const adminNumbers = ['3466161442', '4697185726'];
-
 const ChatWindow = ({ studioPhones }) => {
+  const adminNumbers = studioPhones
+    .filter((s) => s.isAdmin)
+    .map((s) => s.twilioPhone)
+    .filter(Boolean);
   const { studio, contact } = useContext(ZohoContext);
   const [messages, setMessages] = useState(null);
   const [selectedSender, setSelectedSender] = useState(null);
@@ -79,8 +81,7 @@ const ChatWindow = ({ studioPhones }) => {
       console.log('📞 Building available senders for studio:', studio.name);
       console.log('📞 Studio phones data:', studioPhones);
 
-      const isAdminUser =
-        studio.name === 'philip_admin' || studio.name === 'KevSandbox';
+      const isAdminUser = studio.isAdmin;
       console.log('📞 Is admin user:', isAdminUser);
       let senders = [];
 
@@ -157,8 +158,7 @@ const ChatWindow = ({ studioPhones }) => {
           senders.push({
             id: 'admin',
             label: 'Admin',
-            phone: studioPhones.find((s) => s.name === 'philip_admin')
-              ?.twilioPhone,
+            phone: studio.twilioPhone,
             provider: 'twilio',
           });
         }
@@ -195,8 +195,11 @@ const ChatWindow = ({ studioPhones }) => {
           });
         }
 
-        // Add Admin option
-        const adminStudio = studioPhones.find((s) => s.name === 'philip_admin');
+        // Add Admin option - find the admin whose phone matches this studio's region
+        const matchingAdmin = studioPhones.find(
+          (s) => s.isAdmin && s.twilioPhone === currentStudioPhone?.twilioPhone
+        );
+        const adminStudio = matchingAdmin || studioPhones.find((s) => s.isAdmin);
         console.log('📞 Admin studio data:', adminStudio);
         senders.push({
           id: 'admin',
@@ -303,6 +306,7 @@ const ChatWindow = ({ studioPhones }) => {
         setSelectedSender={setSelectedSender}
         availableSenders={availableSenders}
         setSmsPhone={setSmsPhone}
+        adminNumbers={adminNumbers}
       />
       <MessageForm
         contact={contact}

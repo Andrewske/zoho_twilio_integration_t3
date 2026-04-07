@@ -43,6 +43,7 @@ model Studio {
   smsPhone       String?
   callPhone      String?
   active         Boolean         @default(false)
+  isAdmin        Boolean         @default(false)
   twilioPhone    String?
   zohoVoicePhone String?
   Message        Message[]

@@ -15,7 +15,8 @@ export const PrismaSelectors = {
     basic: {
       id: true,
       name: true,
-      active: true
+      active: true,
+      isAdmin: true
     },
 
     // Studio with phone numbers
@@ -24,7 +25,8 @@ export const PrismaSelectors = {
       name: true,
       twilioPhone: true,
       zohoVoicePhone: true,
-      active: true
+      active: true,
+      isAdmin: true
     },
 
     // Full studio information
@@ -36,7 +38,8 @@ export const PrismaSelectors = {
       twilioPhone: true,
       zohoVoicePhone: true,
       callPhone: true,
-      active: true
+      active: true,
+      isAdmin: true
     },
 
     // Studio for mapping purposes
