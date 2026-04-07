@@ -1,9 +1,11 @@
 import { isYesMessage, isStopMessage, isAdminNumber } from '~/utils/messageHelpers';
+import { prisma } from '~/utils/prisma';
 
-// isAdminNumber reads process.env.ADMIN_NUMBER — stub it for isolation
-beforeAll(() => {
-  process.env.ADMIN_NUMBER = '+15550000000';
-});
+jest.mock('~/utils/prisma', () => ({
+  prisma: {
+    studio: { findFirst: jest.fn() },
+  },
+}));
 
 beforeEach(() => jest.clearAllMocks());
 
@@ -66,12 +68,14 @@ describe('isStopMessage', () => {
 // ---------------------------------------------------------------------------
 
 describe('isAdminNumber', () => {
-  it('matches the ADMIN_NUMBER env var', () => {
-    expect(isAdminNumber('+15550000000')).toBe(true);
+  it('returns true when a matching admin studio exists', async () => {
+    prisma.studio.findFirst.mockResolvedValue({ id: 'admin-1' });
+    expect(await isAdminNumber('+15550000000')).toBe(true);
   });
 
-  it('rejects other numbers', () => {
-    expect(isAdminNumber('+15551111111')).toBe(false);
-    expect(isAdminNumber(null)).toBe(false);
+  it('returns false when no admin studio matches', async () => {
+    prisma.studio.findFirst.mockResolvedValue(null);
+    expect(await isAdminNumber('+15551111111')).toBe(false);
+    expect(await isAdminNumber(null)).toBe(false);
   });
 });

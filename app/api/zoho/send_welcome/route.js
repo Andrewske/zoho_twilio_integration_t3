@@ -12,16 +12,18 @@ export async function POST(request) {
 
     const admin = await prisma.studio.findFirst({
       where: {
-        name: {
-          contains: 'philip_admin'
-        }
+        isAdmin: true,
+        active: true,
+        twilioPhone: studio.twilioPhone,
       },
       select: {
-        smsPhone: true
-      }
-    })
+        smsPhone: true,
+      },
+    });
 
-    const smsPhone = studio.name.includes('Southlake') ? studio.smsPhone : admin.smsPhone;
+    const smsPhone = studio.name.includes('Southlake')
+      ? studio.smsPhone
+      : (admin?.smsPhone ?? studio.smsPhone);
 
     if (!studio.active) return new Response(null, { status: 200 });
 

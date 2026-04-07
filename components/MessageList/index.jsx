@@ -16,6 +16,7 @@ const MessageList = ({
   setSelectedSender,
   availableSenders,
   setSmsPhone,
+  adminNumbers,
 }) => {
   const wrapperRef = useRef(null);
 
@@ -63,6 +64,7 @@ const MessageList = ({
             key={`message-${index}`}
             message={message}
             contactName={contactName}
+            adminNumbers={adminNumbers}
           />
         ))}
     </div>

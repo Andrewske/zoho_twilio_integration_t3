@@ -19,10 +19,3 @@ export async function getStudioIdByName(studioName) {
   }
 }
 
-/**
- * Get philip_admin studio ID
- * @returns {Promise<string|null>} Philip admin studio ID
- */
-export async function getPhilipAdminStudioId() {
-  return await getStudioIdByName('philip_admin');
-}

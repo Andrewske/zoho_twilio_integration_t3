@@ -18,6 +18,7 @@ export default async function Home() {
       twilioPhone: true,
       zohoVoicePhone: true,
       zohoId: true,
+      isAdmin: true,
     },
   });
 

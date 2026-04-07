@@ -7,7 +7,13 @@ export const isYesMessage = (msg) => YES_PATTERNS.includes(msg?.toLowerCase().tr
 
 export const isStopMessage = (msg) => msg?.toLowerCase().trim() === 'stop';
 
-export const isAdminNumber = (to) => to === process.env.ADMIN_NUMBER;
+export const isAdminNumber = async (to) => {
+  const admin = await prisma.studio.findFirst({
+    where: { isAdmin: true, twilioPhone: to, active: true },
+    select: { id: true },
+  });
+  return !!admin;
+};
 
 export const hasReceivedFollowUpMessage = async (contact) => {
   const message = await prisma.message.findFirst({

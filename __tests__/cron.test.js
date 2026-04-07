@@ -117,7 +117,7 @@ beforeEach(() => {
   // Default helper behaviour — individual tests override as needed
   isYesMessage.mockReturnValue(false);
   isStopMessage.mockReturnValue(false);
-  isAdminNumber.mockReturnValue(false);
+  isAdminNumber.mockResolvedValue(false);
   hasReceivedFollowUpMessage.mockResolvedValue(false);
 
   getStudioFromPhoneNumber.mockResolvedValue(STUDIO);
@@ -223,7 +223,7 @@ describe('GET /api/cron', () => {
   it('resolves studio via getStudioFromZohoId when the receiving number is the admin number', async () => {
     const msg = makeMessage({ toNumber: process.env.ADMIN_NUMBER ?? '5550000000' });
     prisma.message.findMany.mockResolvedValue([msg]);
-    isAdminNumber.mockReturnValue(true);
+    isAdminNumber.mockResolvedValue(true);
 
     await GET(makeRequest());
 
