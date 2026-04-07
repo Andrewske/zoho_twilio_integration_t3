@@ -1,5 +1,5 @@
 import { sendMessage } from '~/actions/twilio';
-import { formatMobile } from '~/utils';
+import { formatMobile, PhoneFormatter } from '~/utils';
 import { logError } from '~/utils/logError';
 import { prisma } from '~/utils/prisma';
 
@@ -74,7 +74,7 @@ function createMessage(
     `I would love to get you scheduled for your Introductory Program! ` +
     `We have limited space for new clients. ` +
     `Reply "YES" to book your first lesson! ` +
-    `Or call us at ${callPhone ?? ''}. ` +
+    `Or call us at ${PhoneFormatter.forDisplay(callPhone) || ''}. ` +
     `If you need to opt-out, reply "STOP"`
   ) : (
     `Hi ${first_name}! This is ${managerName} with ` +
@@ -82,7 +82,7 @@ function createMessage(
     `I would love to get you scheduled for your Introductory Program! ` +
     `We have limited space for new clients. ` +
     `Reply "YES" to book your first lesson! ` +
-    `Or call us at ${callPhone ?? ''}. ` +
+    `Or call us at ${PhoneFormatter.forDisplay(callPhone) || ''}. ` +
     `If you need to opt-out, reply "STOP"`
   );
 }
