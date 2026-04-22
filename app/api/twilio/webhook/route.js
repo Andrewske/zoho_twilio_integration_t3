@@ -1,6 +1,6 @@
 import { lookupContact } from '~/actions/zoho/contact/lookupContact';
 import { smsOptOut } from '~/actions/zoho/contact/smsOptOut';
-import { getStudioFromPhoneNumber } from '~/actions/zoho/studio';
+import { findAdminStudioByPhone, getStudioFromPhoneNumber, getStudioFromZohoId } from '~/actions/zoho/studio';
 import { formatMobile } from '~/utils';
 import { logError } from '~/utils/logError';
 import { isStopMessage } from '~/utils/messageHelpers';
@@ -18,10 +18,18 @@ export async function POST(request) {
     messageId = await upsertMessage({ body });
 
     // Stop messages handled immediately (SMS compliance — TCPA requires instant opt-out)
-    // Twilio's Advanced Opt-Out also handles this at the carrier level as a safety net
+    // Twilio's Advanced Opt-Out also handles this at the carrier level as a safety net.
+    // Contact lookup uses the admin studio's Zoho account when available so STOP
+    // replies from shared-phone studios (e.g., Fort Worth/Colleyville) are visible.
     if (isStopMessage(body.msg)) {
-      const studio = await getStudioFromPhoneNumber(body.to);
-      const contact = await lookupContact({ mobile: body.from, studioId: studio?.id });
+      let studio = await getStudioFromPhoneNumber(body.to);
+      const adminStudio = await findAdminStudioByPhone(body.to);
+      const lookupStudioId = adminStudio?.id ?? studio?.id;
+      const contact = await lookupContact({ mobile: body.from, studioId: lookupStudioId });
+      if (contact?.Owner?.id) {
+        const owned = await getStudioFromZohoId(contact.Owner.id);
+        if (owned) studio = owned;
+      }
       if (contact && studio) {
         await smsOptOut({ studio, contact });
         await prisma.message.update({
