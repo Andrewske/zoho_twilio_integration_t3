@@ -51,5 +51,8 @@ TODO.md
 # Audit reports
 audit-reports/
 
+# Issue screenshot dumps (opt-in: remove this line to commit a specific folder)
+docs/issues-*/
+
 # Prisma generated client
 prisma/generated/

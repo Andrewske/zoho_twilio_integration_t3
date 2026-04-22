@@ -14,21 +14,12 @@ export async function getStudioFromZohoId(owner_id) {
 // Shared-phone scenarios (e.g., Dallas studios sharing one Twilio number)
 // would otherwise return a nondeterministic row via findFirst.
 export async function getStudioFromPhoneNumber(number) {
-  const physical = await prisma.studio.findFirst({
-    where: {
-      active: true,
-      isAdmin: false,
-      OR: [{ twilioPhone: number }, { zohoVoicePhone: number }],
-    },
-    select: PrismaSelectors.studio.full,
-  });
-  if (physical) return physical;
-
   return await prisma.studio.findFirst({
     where: {
       active: true,
       OR: [{ twilioPhone: number }, { zohoVoicePhone: number }],
     },
+    orderBy: { isAdmin: 'asc' },
     select: PrismaSelectors.studio.full,
   });
 }
