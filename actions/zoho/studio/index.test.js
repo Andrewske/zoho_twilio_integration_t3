@@ -34,7 +34,7 @@ describe('getStudioFromZohoId', () => {
 });
 
 describe('getStudioFromPhoneNumber', () => {
-    it('prefers a non-admin active studio on the given phone', async () => {
+    it('queries active studios on the phone, ordering non-admin first', async () => {
         const physical = { id: 'physical', isAdmin: false, active: true };
         prisma.studio.findFirst.mockResolvedValueOnce(physical);
 
@@ -44,19 +44,20 @@ describe('getStudioFromPhoneNumber', () => {
         expect(prisma.studio.findFirst).toHaveBeenCalledTimes(1);
         expect(prisma.studio.findFirst).toHaveBeenCalledWith(
             expect.objectContaining({
-                where: expect.objectContaining({ active: true, isAdmin: false }),
+                where: expect.objectContaining({ active: true }),
+                orderBy: { isAdmin: 'asc' },
             })
         );
     });
 
-    it('falls back to any active studio on the phone when no non-admin match exists', async () => {
+    it('returns admin studio when no non-admin match exists (fallback via orderBy)', async () => {
         const adminOnly = { id: 'admin', isAdmin: true, active: true };
-        prisma.studio.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(adminOnly);
+        prisma.studio.findFirst.mockResolvedValueOnce(adminOnly);
 
         const result = await getStudioFromPhoneNumber('5551112222');
 
         expect(result).toEqual(adminOnly);
-        expect(prisma.studio.findFirst).toHaveBeenCalledTimes(2);
+        expect(prisma.studio.findFirst).toHaveBeenCalledTimes(1);
     });
 });
 

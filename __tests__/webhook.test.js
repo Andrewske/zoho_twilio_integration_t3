@@ -128,7 +128,7 @@ describe('POST /api/twilio/webhook', () => {
     const stopBody = { ...validBody, Body: 'STOP', MessageSid: 'SM_STOP_002' };
 
     prisma.message.create.mockResolvedValueOnce({ id: 66 });
-    getStudioFromPhoneNumber.mockResolvedValueOnce(null);
+    getStudioFromPhoneNumber.mockResolvedValueOnce({ id: 'studio-x' });
     lookupContact.mockResolvedValueOnce(null);
 
     const res = await POST(makeRequest(stopBody));
@@ -159,6 +159,45 @@ describe('POST /api/twilio/webhook', () => {
       where: { id: 88 },
       data: { studioId: ownedStudio.id, contactId: contact.id },
     });
+    expect(res.status).toBe(200);
+  });
+
+  it('stop message + admin studio but contact has no Owner — opts out using physical studio', async () => {
+    const stopBody = { ...validBody, Body: 'stop', MessageSid: 'SM_STOP_NO_OWNER_001' };
+    const physicalStudio = { id: 'southlake' };
+    const adminStudio = { id: 'admin-studio', isAdmin: true };
+    const contact = { id: 'contact-no-owner' }; // no Owner field
+
+    prisma.message.create.mockResolvedValueOnce({ id: 99 });
+    getStudioFromPhoneNumber.mockResolvedValueOnce(physicalStudio);
+    findAdminStudioByPhone.mockResolvedValueOnce(adminStudio);
+    lookupContact.mockResolvedValueOnce(contact);
+    prisma.message.update.mockResolvedValueOnce({});
+
+    const res = await POST(makeRequest(stopBody));
+
+    expect(lookupContact).toHaveBeenCalledWith(expect.objectContaining({ studioId: adminStudio.id }));
+    expect(getStudioFromZohoId).not.toHaveBeenCalled();
+    expect(smsOptOut).toHaveBeenCalledWith({ studio: physicalStudio, contact });
+    expect(prisma.message.update).toHaveBeenCalledWith({
+      where: { id: 99 },
+      data: { studioId: physicalStudio.id, contactId: contact.id },
+    });
+    expect(res.status).toBe(200);
+  });
+
+  it('stop message + unknown phone (no studio, no admin) — short-circuits, no lookup, 200', async () => {
+    const stopBody = { ...validBody, Body: 'stop', MessageSid: 'SM_STOP_UNKNOWN_001' };
+
+    prisma.message.create.mockResolvedValueOnce({ id: 111 });
+    getStudioFromPhoneNumber.mockResolvedValueOnce(null);
+    findAdminStudioByPhone.mockResolvedValueOnce(null);
+
+    const res = await POST(makeRequest(stopBody));
+
+    expect(lookupContact).not.toHaveBeenCalled();
+    expect(smsOptOut).not.toHaveBeenCalled();
+    expect(prisma.message.update).not.toHaveBeenCalled();
     expect(res.status).toBe(200);
   });
 

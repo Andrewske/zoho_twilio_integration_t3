@@ -22,8 +22,13 @@ export async function POST(request) {
     // Contact lookup uses the admin studio's Zoho account when available so STOP
     // replies from shared-phone studios (e.g., Fort Worth/Colleyville) are visible.
     if (isStopMessage(body.msg)) {
+      // TODO: unify studio+contact resolution with cron (app/api/cron/route.js).
+      // Both branches do admin-routing but diverge on error handling.
       let studio = await getStudioFromPhoneNumber(body.to);
       const adminStudio = await findAdminStudioByPhone(body.to);
+      if (!studio && !adminStudio) {
+        return new Response(null, { status: 200 });
+      }
       const lookupStudioId = adminStudio?.id ?? studio?.id;
       const contact = await lookupContact({ mobile: body.from, studioId: lookupStudioId });
       if (contact?.Owner?.id) {
