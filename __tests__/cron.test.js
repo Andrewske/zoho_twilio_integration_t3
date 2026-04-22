@@ -38,6 +38,7 @@ jest.mock('~/actions/zoho/sendFollowUp', () => ({
 jest.mock('~/actions/zoho/studio', () => ({
   getStudioFromPhoneNumber: jest.fn(),
   getStudioFromZohoId: jest.fn(),
+  findAdminStudioByPhone: jest.fn(),
 }));
 
 jest.mock('~/actions/zoho/tasks', () => ({
@@ -48,7 +49,6 @@ jest.mock('~/actions/zoho/tasks', () => ({
 jest.mock('~/utils/messageHelpers', () => ({
   isYesMessage: jest.fn(),
   isStopMessage: jest.fn(),
-  isAdminNumber: jest.fn(),
   hasReceivedFollowUpMessage: jest.fn(),
 }));
 
@@ -68,9 +68,9 @@ import { prisma } from '~/utils/prisma';
 import { lookupContact } from '~/actions/zoho/contact/lookupContact';
 import { smsOptOut } from '~/actions/zoho/contact/smsOptOut';
 import { sendFollowUp } from '~/actions/zoho/sendFollowUp';
-import { getStudioFromPhoneNumber, getStudioFromZohoId } from '~/actions/zoho/studio';
+import { findAdminStudioByPhone, getStudioFromPhoneNumber, getStudioFromZohoId } from '~/actions/zoho/studio';
 import { createTask, createUnlinkedTask } from '~/actions/zoho/tasks';
-import { isYesMessage, isStopMessage, isAdminNumber, hasReceivedFollowUpMessage } from '~/utils/messageHelpers';
+import { isYesMessage, isStopMessage, hasReceivedFollowUpMessage } from '~/utils/messageHelpers';
 import { notify } from '~/utils/notify';
 import { logError } from '~/utils/logError';
 
@@ -117,11 +117,11 @@ beforeEach(() => {
   // Default helper behaviour — individual tests override as needed
   isYesMessage.mockReturnValue(false);
   isStopMessage.mockReturnValue(false);
-  isAdminNumber.mockResolvedValue(false);
   hasReceivedFollowUpMessage.mockResolvedValue(false);
 
   getStudioFromPhoneNumber.mockResolvedValue(STUDIO);
   getStudioFromZohoId.mockResolvedValue(STUDIO);
+  findAdminStudioByPhone.mockResolvedValue(null);
   lookupContact.mockResolvedValue(CONTACT);
   createTask.mockResolvedValue({ zohoTaskId: 'zt1', taskSubject: 'SMS from lead', taskStatus: 'Open' });
   createUnlinkedTask.mockResolvedValue({});
@@ -219,14 +219,19 @@ describe('GET /api/cron', () => {
     expect(smsOptOut).toHaveBeenCalledWith(expect.objectContaining({ studio: STUDIO, contact: CONTACT }));
   });
 
-  // 7. Admin number → resolves studio via getStudioFromZohoId using contact's Owner
-  it('resolves studio via getStudioFromZohoId when the receiving number is the admin number', async () => {
-    const msg = makeMessage({ toNumber: process.env.ADMIN_NUMBER ?? '5550000000' });
+  // 7. Admin studio present on phone → lookupContact uses admin studio's account,
+  //    and the owning studio is resolved from the contact's Zoho Owner.id.
+  it('resolves studio via getStudioFromZohoId when an admin studio is attached to the receiving number', async () => {
+    const ADMIN_STUDIO = { id: 'adminStudio1', name: 'southlake_admin', zohoId: 'adminZoho', isAdmin: true };
+    const msg = makeMessage({ toNumber: '5550000000' });
     prisma.message.findMany.mockResolvedValue([msg]);
-    isAdminNumber.mockResolvedValue(true);
+    findAdminStudioByPhone.mockResolvedValue(ADMIN_STUDIO);
 
     await GET(makeRequest());
 
+    expect(lookupContact).toHaveBeenCalledWith(
+      expect.objectContaining({ studioId: ADMIN_STUDIO.id })
+    );
     expect(getStudioFromZohoId).toHaveBeenCalledWith(CONTACT.Owner.id);
   });
 

@@ -3,10 +3,10 @@ import { NextResponse } from 'next/server';
 import { lookupContact } from '~/actions/zoho/contact/lookupContact';
 import { smsOptOut } from '~/actions/zoho/contact/smsOptOut';
 import { sendFollowUp } from '~/actions/zoho/sendFollowUp';
-import { getStudioFromPhoneNumber, getStudioFromZohoId } from '~/actions/zoho/studio';
+import { findAdminStudioByPhone, getStudioFromPhoneNumber, getStudioFromZohoId } from '~/actions/zoho/studio';
 import { createTask, createUnlinkedTask } from '~/actions/zoho/tasks';
 import { logError } from '~/utils/logError';
-import { isYesMessage, isStopMessage, isAdminNumber, hasReceivedFollowUpMessage } from '~/utils/messageHelpers';
+import { isYesMessage, isStopMessage, hasReceivedFollowUpMessage } from '~/utils/messageHelpers';
 import { notify } from '~/utils/notify';
 import { captureServerEvent } from '~/utils/postHogServer';
 import { prisma } from '~/utils/prisma';
@@ -99,16 +99,19 @@ async function getUnprocessedMessages() {
 async function processMessage(message, dryRun = false) {
   const result = { taskCreated: false, taskLinked: false };
 
-  // Resolve studio from the number that received the message
+  // Resolve physical (non-admin) studio from the number that received the message.
+  // On shared-phone setups (multiple studios on one Twilio number) we also grab
+  // the admin studio, which carries a broader-visibility Zoho account used for
+  // contact lookup across all studios behind that phone.
   let studio = await getStudioFromPhoneNumber(message.toNumber);
+  const adminStudio = await findAdminStudioByPhone(message.toNumber);
 
-  // Admin number: resolve the real studio from the contact's Owner
-  // Cache the contact to avoid a second lookup below
   let contact = null;
-  if (await isAdminNumber(message.toNumber)) {
-    contact = await lookupContact({ mobile: message.fromNumber, studioId: studio?.id });
+  if (adminStudio) {
+    contact = await lookupContact({ mobile: message.fromNumber, studioId: adminStudio.id });
     if (contact?.Owner?.id) {
-      studio = await getStudioFromZohoId(contact.Owner.id);
+      const owned = await getStudioFromZohoId(contact.Owner.id);
+      if (owned) studio = owned;
     }
   }
 

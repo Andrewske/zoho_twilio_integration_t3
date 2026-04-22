@@ -27,6 +27,8 @@ jest.mock('~/actions/zoho/contact/smsOptOut', () => ({
 
 jest.mock('~/actions/zoho/studio', () => ({
   getStudioFromPhoneNumber: jest.fn(),
+  getStudioFromZohoId: jest.fn(),
+  findAdminStudioByPhone: jest.fn(),
 }));
 
 jest.mock('~/utils/logError', () => ({
@@ -37,7 +39,7 @@ jest.mock('~/utils/logError', () => ({
 import { prisma } from '~/utils/prisma';
 import { lookupContact } from '~/actions/zoho/contact/lookupContact';
 import { smsOptOut } from '~/actions/zoho/contact/smsOptOut';
-import { getStudioFromPhoneNumber } from '~/actions/zoho/studio';
+import { findAdminStudioByPhone, getStudioFromPhoneNumber, getStudioFromZohoId } from '~/actions/zoho/studio';
 import { logError } from '~/utils/logError';
 
 // ---------------------------------------------------------------------------
@@ -64,7 +66,11 @@ const validBody = {
 // Tests
 // ---------------------------------------------------------------------------
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+  findAdminStudioByPhone.mockResolvedValue(null);
+  getStudioFromZohoId.mockResolvedValue(null);
+});
 
 describe('POST /api/twilio/webhook', () => {
   it('valid request — creates message and returns 200', async () => {
@@ -129,6 +135,30 @@ describe('POST /api/twilio/webhook', () => {
 
     expect(smsOptOut).not.toHaveBeenCalled();
     expect(prisma.message.update).not.toHaveBeenCalled();
+    expect(res.status).toBe(200);
+  });
+
+  it('stop message + admin studio on phone — uses admin for lookup, Owner-resolved studio for opt-out', async () => {
+    const stopBody = { ...validBody, Body: 'stop', MessageSid: 'SM_STOP_ADMIN_001' };
+    const adminStudio = { id: 'admin-studio', isAdmin: true };
+    const ownedStudio = { id: 'colleyville-studio', zohoId: 'ownerZ' };
+    const contact = { id: 'contact-cv', Owner: { id: 'ownerZ' } };
+
+    prisma.message.create.mockResolvedValueOnce({ id: 88 });
+    getStudioFromPhoneNumber.mockResolvedValueOnce({ id: 'southlake' });
+    findAdminStudioByPhone.mockResolvedValueOnce(adminStudio);
+    lookupContact.mockResolvedValueOnce(contact);
+    getStudioFromZohoId.mockResolvedValueOnce(ownedStudio);
+    prisma.message.update.mockResolvedValueOnce({});
+
+    const res = await POST(makeRequest(stopBody));
+
+    expect(lookupContact).toHaveBeenCalledWith(expect.objectContaining({ studioId: adminStudio.id }));
+    expect(smsOptOut).toHaveBeenCalledWith({ studio: ownedStudio, contact });
+    expect(prisma.message.update).toHaveBeenCalledWith({
+      where: { id: 88 },
+      data: { studioId: ownedStudio.id, contactId: contact.id },
+    });
     expect(res.status).toBe(200);
   });
 
