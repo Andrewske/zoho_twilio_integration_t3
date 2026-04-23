@@ -21,14 +21,14 @@ function areMessagesDuplicates(message1, message2) {
     message: message1.message?.trim(),
     fromNumber: normalizePhone(message1.fromNumber || message1.from),
     toNumber: normalizePhone(message1.toNumber || message1.to),
-    createdAt: new Date(message1.createdAt || message1.created_at)
+    createdAt: new Date(message1.createdAt || message1.created_at || message1.submittedTime)
   };
 
   const msg2 = {
     message: message2.message?.trim() || message2.messageContent?.trim(),
     fromNumber: normalizePhone(message2.fromNumber || message2.from || message2.senderId),
     toNumber: normalizePhone(message2.toNumber || message2.to || message2.customerNumber),
-    createdAt: new Date(message2.createdAt || message2.created_at || message2.createdTime)
+    createdAt: new Date(message2.createdAt || message2.created_at || message2.submittedTime || message2.createdTime)
   };
 
   // Check message content match (exact)
@@ -41,10 +41,16 @@ function areMessagesDuplicates(message1, message2) {
     return false;
   }
 
+  // Zoho Voice logs use `submittedTime` (not `createdTime`). If either timestamp is
+  // missing or unparseable, treat as non-match rather than matching on NaN.
+  if (Number.isNaN(msg1.createdAt.getTime()) || Number.isNaN(msg2.createdAt.getTime())) {
+    return false;
+  }
+
   // Check timing proximity (within DUPLICATE_TIME_WINDOW_MINUTES)
   const timeDiffMs = Math.abs(msg1.createdAt - msg2.createdAt);
   const timeDiffMinutes = timeDiffMs / (1000 * 60);
-  
+
   return timeDiffMinutes <= DUPLICATE_TIME_WINDOW_MINUTES;
 }
 
