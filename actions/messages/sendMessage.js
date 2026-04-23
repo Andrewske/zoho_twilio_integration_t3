@@ -83,7 +83,13 @@ async function sendViaZohoVoice({ studioId, to, from, message, contact }) {
     message,
     prisma
   });
-  
+
+  // TEMPORARY DIAGNOSTIC (Bug A, remove after response shape identified):
+  // ~74% of send rows currently save zohoMessageId=null because response.logid
+  // isn't at the top level of the Zoho Voice /sms/send response. Log the full
+  // shape once so we can fix the parse + collapse the variation retry loop.
+  console.log('[BUG-A-DIAG] zoho voice send response:', JSON.stringify(response));
+
   // Create message with zohoMessageId if available from response
   const messageData = {
     studioId,
