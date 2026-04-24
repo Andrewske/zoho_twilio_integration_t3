@@ -36,8 +36,11 @@ jest.mock('~/actions/zoho/sendFollowUp', () => ({
 }));
 
 jest.mock('~/actions/zoho/studio', () => ({
-  getStudioFromPhoneNumber: jest.fn(),
   getStudioFromZohoId: jest.fn(),
+}));
+
+jest.mock('~/utils/studioLookup', () => ({
+  getStudioFromPhoneNumber: jest.fn(),
   findAdminStudioByPhone: jest.fn(),
 }));
 
@@ -68,7 +71,8 @@ import { prisma } from '~/utils/prisma';
 import { lookupContact } from '~/actions/zoho/contact/lookupContact';
 import { smsOptOut } from '~/actions/zoho/contact/smsOptOut';
 import { sendFollowUp } from '~/actions/zoho/sendFollowUp';
-import { findAdminStudioByPhone, getStudioFromPhoneNumber, getStudioFromZohoId } from '~/actions/zoho/studio';
+import { getStudioFromZohoId } from '~/actions/zoho/studio';
+import { findAdminStudioByPhone, getStudioFromPhoneNumber } from '~/utils/studioLookup';
 import { createTask, createUnlinkedTask } from '~/actions/zoho/tasks';
 import { isYesMessage, isStopMessage, hasReceivedFollowUpMessage } from '~/utils/messageHelpers';
 import { notify } from '~/utils/notify';
