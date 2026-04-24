@@ -13,7 +13,7 @@
  */
 
 import { prisma } from '~/utils/prisma.js';
-import { getStudioFromPhoneNumber } from '~/utils/studioLookup.js';
+import { getStudioFromPhoneNumber } from '~/actions/zoho/studio/index.js';
 import { lookupContact } from '~/actions/zoho/contact/lookupContact/index.js';
 import { sendFollowUp } from '~/actions/zoho/sendFollowUp/index.js';
 import { createUnlinkedTask } from '~/actions/zoho/tasks/index.js';
