@@ -26,11 +26,8 @@ jest.mock('~/actions/zoho/contact/smsOptOut', () => ({
 }));
 
 jest.mock('~/actions/zoho/studio', () => ({
-  getStudioFromZohoId: jest.fn(),
-}));
-
-jest.mock('~/utils/studioLookup', () => ({
   getStudioFromPhoneNumber: jest.fn(),
+  getStudioFromZohoId: jest.fn(),
   findAdminStudioByPhone: jest.fn(),
 }));
 
@@ -42,8 +39,7 @@ jest.mock('~/utils/logError', () => ({
 import { prisma } from '~/utils/prisma';
 import { lookupContact } from '~/actions/zoho/contact/lookupContact';
 import { smsOptOut } from '~/actions/zoho/contact/smsOptOut';
-import { getStudioFromZohoId } from '~/actions/zoho/studio';
-import { findAdminStudioByPhone, getStudioFromPhoneNumber } from '~/utils/studioLookup';
+import { findAdminStudioByPhone, getStudioFromPhoneNumber, getStudioFromZohoId } from '~/actions/zoho/studio';
 import { logError } from '~/utils/logError';
 
 // ---------------------------------------------------------------------------

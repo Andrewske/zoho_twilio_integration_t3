@@ -1,6 +1,6 @@
 import { logError } from "~/utils/logError";
 import { formatMobile } from "~/utils";
-import { getStudioFromPhoneNumber } from "~/utils/studioLookup";
+import { getStudioFromPhoneNumber } from "~/actions/zoho/studio";
 
 
 
