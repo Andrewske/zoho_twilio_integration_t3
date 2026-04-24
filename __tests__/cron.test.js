@@ -60,6 +60,10 @@ jest.mock('~/utils/logError', () => ({
   logError: jest.fn(),
 }));
 
+jest.mock('~/utils/postHogServer', () => ({
+  captureServerEvent: jest.fn(),
+}));
+
 // ---------------------------------------------------------------------------
 // Imports (after mocks are set up)
 // ---------------------------------------------------------------------------
