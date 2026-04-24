@@ -175,122 +175,33 @@ async function fetchAndSaveMessages(params) {
 async function sendSms(params) {
     const { accessToken, from, to, message } = params;
 
-    // Format phone numbers for Zoho Voice API (ensure international format)
     const formattedFrom = PhoneFormatter.forZohoVoice(from);
     const formattedTo = PhoneFormatter.forZohoVoice(to);
 
-    // Try different parameter combinations to fix "Extra parameter found" error
-    const requestVariations = [
-        // Variation 1: Try 'text' instead of 'message'
-        {
-            variation: 'text field',
-            contentType: 'application/json',
-            body: {
-                from: formattedFrom,
-                to: formattedTo,
-                text: message
-            }
+    const requestBody = {
+        senderId: formattedFrom,
+        customerNumber: formattedTo,
+        message,
+    };
+
+    const response = await fetch('https://voice.zoho.com/rest/json/v1/sms/send', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
         },
-        // Variation 2: Try different parameter names (like fetchSmsLogs uses)
-        {
-            variation: 'senderId/customerNumber',
-            contentType: 'application/json',
-            body: {
-                senderId: formattedFrom,
-                customerNumber: formattedTo,
-                message: message
-            }
-        },
-        // Variation 3: Try minimal parameters
-        {
-            variation: 'minimal params',
-            contentType: 'application/json',
-            body: {
-                to: formattedTo,
-                message: message
-            }
-        },
-        // Variation 4: Try form data format
-        {
-            variation: 'form data',
-            contentType: 'application/x-www-form-urlencoded',
-            body: new URLSearchParams({
-                from: formattedFrom,
-                to: formattedTo,
-                message: message
-            }).toString()
-        },
-        // Variation 5: Original format (for reference)
-        {
-            variation: 'original',
-            contentType: 'application/json',
-            body: {
-                from: formattedFrom,
-                to: formattedTo,
-                message: message
-            }
-        }
-    ];
+        body: JSON.stringify(requestBody),
+    });
 
-    let lastError = null;
-
-    for (let i = 0; i < requestVariations.length; i++) {
-        const variation = requestVariations[i];
-        const { contentType, body: requestBody } = variation;
-
-        console.log(`📤 Zoho Voice Send Attempt ${i + 1} (${variation.variation}):`, {
-            url: 'https://voice.zoho.com/rest/json/v1/sms/send',
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${accessToken?.substring(0, 20)}...`,
-                'Content-Type': contentType
-            },
-            body: requestBody,
-            originalNumbers: { from, to },
-            formattedNumbers: { from: formattedFrom, to: formattedTo }
-        });
-
-        try {
-            const fetchBody = contentType === 'application/json' ? JSON.stringify(requestBody) : requestBody;
-
-            const response = await fetch('https://voice.zoho.com/rest/json/v1/sms/send', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Content-Type': contentType
-                },
-                body: fetchBody
-            });
-
-            console.log(`📤 Zoho Voice Send Response ${i + 1} (${variation.variation}):`, response.status, response.statusText);
-
-            if (response.ok) {
-                const responseData = await response.json();
-                console.log(`📤 Zoho Voice Send Success (${variation.variation}):`, responseData);
-                return responseData;
-            } else {
-                const errorBody = await response.text();
-                console.error(`📤 Zoho Voice Send Error ${i + 1} (${variation.variation}):`, errorBody);
-                lastError = new Error(`Zoho Voice SMS send error: ${response.status} ${response.statusText} - ${errorBody}`);
-
-                // If this isn't the last attempt, continue to next variation
-                if (i < requestVariations.length - 1) {
-                    console.log(`📤 Trying next parameter variation...`);
-                    continue;
-                }
-            }
-        } catch (fetchError) {
-            console.error(`📤 Fetch error on attempt ${i + 1} (${variation.variation}):`, fetchError);
-            lastError = fetchError;
-            if (i < requestVariations.length - 1) {
-                continue;
-            }
-        }
+    if (!response.ok) {
+        const errorBody = await response.text();
+        console.error('📤 Zoho Voice Send Error:', response.status, response.statusText, errorBody);
+        throw new Error(`Zoho Voice SMS send error: ${response.status} ${response.statusText} - ${errorBody}`);
     }
 
-    // If we get here, all variations failed
-    console.error('📤 All parameter variations failed');
-    throw lastError || new Error('All SMS send attempts failed');
+    const responseData = await response.json();
+    console.log('📤 Zoho Voice Send Success:', { logid: responseData?.send?.logid, status: responseData?.status });
+    return responseData;
 }
 
 /**
