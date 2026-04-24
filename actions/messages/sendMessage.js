@@ -84,13 +84,9 @@ async function sendViaZohoVoice({ studioId, to, from, message, contact }) {
     prisma
   });
 
-  // TEMPORARY DIAGNOSTIC (Bug A, remove after response shape identified):
-  // ~74% of send rows currently save zohoMessageId=null because response.logid
-  // isn't at the top level of the Zoho Voice /sms/send response. Log the full
-  // shape once so we can fix the parse + collapse the variation retry loop.
-  console.log('[BUG-A-DIAG] zoho voice send response:', JSON.stringify(response));
+  // Zoho Voice /sms/send returns { code, status, send: { logid, ... } }.
+  const logid = response?.send?.logid || null;
 
-  // Create message with zohoMessageId if available from response
   const messageData = {
     studioId,
     contactId: contact?.id,
@@ -98,21 +94,21 @@ async function sendViaZohoVoice({ studioId, to, from, message, contact }) {
     toNumber: PhoneFormatter.normalize(to),
     message,
     provider: 'zoho_voice',
-    zohoMessageId: response?.logid || null,
+    zohoMessageId: logid,
   };
 
   const savedMessage = await prisma.message.create({ data: messageData });
-  
+
   console.log('📤 Zoho Voice message saved:', {
     messageId: savedMessage.id,
-    zohoMessageId: response?.logid,
-    hasZohoId: !!response?.logid
+    zohoMessageId: logid,
+    hasZohoId: !!logid
   });
 
   return {
     success: true,
     provider: 'zoho_voice',
-    messageId: response?.logid,
+    messageId: logid,
     dbMessageId: savedMessage.id
   };
 }
