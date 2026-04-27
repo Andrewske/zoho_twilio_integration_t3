@@ -57,4 +57,10 @@ describe('areMessagesDuplicates', () => {
       areMessagesDuplicates(baseDb, { ...baseZohoLog, senderId: '12817584707' })
     ).toBe(true);
   });
+
+  it('matches when both messages are empty strings (regression: || treated "" as falsy)', () => {
+    const emptyDb = { ...baseDb, message: '' };
+    const emptyLog = { ...baseZohoLog, message: '' };
+    expect(areMessagesDuplicates(emptyDb, emptyLog)).toBe(true);
+  });
 });

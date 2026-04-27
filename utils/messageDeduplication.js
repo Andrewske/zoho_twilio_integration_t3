@@ -24,8 +24,10 @@ function areMessagesDuplicates(message1, message2) {
     createdAt: new Date(message1.createdAt || message1.created_at || message1.submittedTime)
   };
 
+  // Use ?? not || so empty-string `message` doesn't fall through to
+  // `messageContent` and produce a false `"" !== undefined` mismatch.
   const msg2 = {
-    message: message2.message?.trim() || message2.messageContent?.trim(),
+    message: message2.message?.trim() ?? message2.messageContent?.trim(),
     fromNumber: normalizePhone(message2.fromNumber || message2.from || message2.senderId),
     toNumber: normalizePhone(message2.toNumber || message2.to || message2.customerNumber),
     createdAt: new Date(message2.createdAt || message2.created_at || message2.submittedTime || message2.createdTime)
