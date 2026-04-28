@@ -1,3 +1,4 @@
+'use server';
 import { sendMessage } from '~/actions/twilio';
 import { formatMobile } from '~/utils';
 import { logError } from '~/utils/logError';
