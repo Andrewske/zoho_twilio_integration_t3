@@ -6,6 +6,17 @@
 import { PhoneFormatter } from './phoneNumber.js';
 
 /**
+ * Normalize Zoho Voice status strings to match Twilio's lowercase convention
+ * (matches `FAILED_STATUSES`/`PENDING_STATUSES` in components/Message).
+ * Returns null for empty/unknown.
+ */
+export function normalizeZohoVoiceStatus(raw) {
+  if (raw == null) return null;
+  const s = String(raw).trim().toLowerCase();
+  return s.length ? s : null;
+}
+
+/**
  * Message transformation utilities
  */
 export const MessageTransformers = {
@@ -51,6 +62,9 @@ export const MessageTransformers = {
    */
   zohoVoiceToDb(smsLog, studioId, contactId) {
     const isIncoming = smsLog.messageType === 'INCOMING';
+    const status = isIncoming
+      ? 'received'
+      : (normalizeZohoVoiceStatus(smsLog.status) || null);
 
     return {
       fromNumber: PhoneFormatter.normalize(isIncoming ? smsLog.customerNumber : smsLog.senderId),
@@ -60,6 +74,7 @@ export const MessageTransformers = {
       message: smsLog.message || '',
       provider: 'zoho_voice',
       zohoMessageId: smsLog.logid,
+      status,
       isWelcomeMessage: false,
       isFollowUpMessage: false,
       createdAt: new Date(smsLog.submittedTime)
@@ -170,6 +185,9 @@ export const MessageTransformers = {
       const isIncoming = log.messageType === 'INCOMING';
       const studioPhone = isIncoming ? log.senderId : log.customerNumber;
       const studio = phoneToStudio[studioPhone];
+      const status = isIncoming
+        ? 'received'
+        : (normalizeZohoVoiceStatus(log.status) || null);
 
       return {
         fromNumber: PhoneFormatter.normalize(isIncoming ? log.customerNumber : log.senderId),
@@ -179,6 +197,7 @@ export const MessageTransformers = {
         message: log.message || '',
         provider: 'zoho_voice',
         zohoMessageId: log.logid,
+        status,
         isWelcomeMessage: false,
         isFollowUpMessage: false,
         createdAt: new Date(log.submittedTime)

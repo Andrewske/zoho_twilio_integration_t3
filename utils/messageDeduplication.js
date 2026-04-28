@@ -1,4 +1,5 @@
 import { PhoneFormatter } from './phoneNumber.js';
+import { normalizeZohoVoiceStatus } from './messageTransformers.js';
 
 /**
  * Time window (in minutes) to consider messages as potentially duplicates
@@ -98,7 +99,8 @@ async function deduplicateZohoVoiceMessages(zohoLogs, prisma, customerNumber) {
       message: true,
       fromNumber: true,
       toNumber: true,
-      createdAt: true
+      createdAt: true,
+      status: true
     }
   });
 
@@ -126,11 +128,22 @@ async function deduplicateZohoVoiceMessages(zohoLogs, prisma, customerNumber) {
     
     if (matchingMessage && !matchingMessage.zohoMessageId) {
       // Found a matching message without zohoMessageId - update it
-      messagesToUpdate.push({
+      const isIncoming = log.messageType === 'INCOMING';
+      const incomingStatus = isIncoming
+        ? 'received'
+        : (normalizeZohoVoiceStatus(log.status) || null);
+      // Only overwrite status if the existing row has none, or the new value
+      // is non-null and differs (ZV log status is more authoritative than the
+      // stale 'sent' written at send time).
+      const update = {
         messageId: matchingMessage.id,
         zohoMessageId: log.logid
-      });
-      console.log(`🔄 Will update message ${matchingMessage.id} with zohoMessageId ${log.logid}`);
+      };
+      if (incomingStatus && incomingStatus !== matchingMessage.status) {
+        update.status = incomingStatus;
+      }
+      messagesToUpdate.push(update);
+      console.log(`🔄 Will update message ${matchingMessage.id} with zohoMessageId ${log.logid}${update.status ? ` and status ${update.status}` : ''}`);
     } else if (!matchingMessage) {
       // No duplicate found - this is a new message
       newMessages.push(log);
