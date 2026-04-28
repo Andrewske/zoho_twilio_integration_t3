@@ -35,12 +35,17 @@ jest.mock('~/utils/logError', () => ({
   logError: jest.fn(),
 }));
 
+jest.mock('~/utils/twilioWebhookAuth', () => ({
+  validateTwilioWebhook: jest.fn(),
+}));
+
 // Import mocked modules so tests can configure return values
 import { prisma } from '~/utils/prisma';
 import { lookupContact } from '~/actions/zoho/contact/lookupContact';
 import { smsOptOut } from '~/actions/zoho/contact/smsOptOut';
 import { findAdminStudioByPhone, getStudioFromPhoneNumber, getStudioFromZohoId } from '~/utils/studio-lookups';
 import { logError } from '~/utils/logError';
+import { validateTwilioWebhook } from '~/utils/twilioWebhookAuth';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -68,6 +73,7 @@ const validBody = {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  validateTwilioWebhook.mockResolvedValue(true);
   findAdminStudioByPhone.mockResolvedValue(null);
   getStudioFromZohoId.mockResolvedValue(null);
 });
@@ -210,5 +216,17 @@ describe('POST /api/twilio/webhook', () => {
     expect(lookupContact).not.toHaveBeenCalled();
     expect(smsOptOut).not.toHaveBeenCalled();
     expect(res.status).toBe(200);
+  });
+
+  it('invalid signature — returns 403 without saving the message', async () => {
+    validateTwilioWebhook.mockResolvedValue(false);
+
+    const res = await POST(makeRequest(validBody));
+
+    expect(prisma.message.create).not.toHaveBeenCalled();
+    expect(logError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'Invalid Twilio Signature on inbound webhook' })
+    );
+    expect(res.status).toBe(403);
   });
 });

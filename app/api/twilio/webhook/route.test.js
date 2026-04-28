@@ -1,6 +1,7 @@
-import { POST, parseRequest } from './route.js';
+import { POST } from './route.js';
 import { prisma } from '~/utils/prisma.js';
 import { isStopMessage } from '~/utils/messageHelpers.js';
+import { validateTwilioWebhook } from '~/utils/twilioWebhookAuth';
 
 jest.mock('~/utils/prisma.js', () => ({
   prisma: {
@@ -34,12 +35,23 @@ jest.mock('~/utils/logError', () => ({
   logError: jest.fn(),
 }));
 
+jest.mock('~/utils/twilioWebhookAuth', () => ({
+  validateTwilioWebhook: jest.fn(),
+}));
+
 global.Response = function (body, init) {
   return { body, status: init?.status };
 };
 
+const buildRequest = (form, signature = 'sig') => ({
+  text: jest.fn().mockResolvedValue(form),
+  headers: { get: (k) => (k.toLowerCase() === 'x-twilio-signature' ? signature : null) },
+});
+
 describe('POST function', () => {
   beforeEach(() => {
+    jest.clearAllMocks();
+    validateTwilioWebhook.mockResolvedValue(true);
     jest.spyOn(console, 'log').mockImplementation(() => {});
     jest.spyOn(console, 'error').mockImplementation(() => {});
   });
@@ -49,28 +61,20 @@ describe('POST function', () => {
   });
 
   it('should save message and return 200 for valid requests', async () => {
-    const mockRequest = {
-      text: jest.fn().mockResolvedValue(
-        'To=%2B11234567890&From=%2B19876543210&Body=Hello%21&MessageSid=SM123'
-      ),
-    };
+    const req = buildRequest('To=%2B11234567890&From=%2B19876543210&Body=Hello%21&MessageSid=SM123');
     prisma.message.create.mockResolvedValue({ id: 'message-id' });
     isStopMessage.mockReturnValue(false);
 
-    const response = await POST(mockRequest);
+    const response = await POST(req);
     expect(response.status).toBe(200);
   });
 
   it('writes status: received on inbound message', async () => {
-    const mockRequest = {
-      text: jest.fn().mockResolvedValue(
-        'To=%2B11234567890&From=%2B19876543210&Body=Hi&MessageSid=SM456'
-      ),
-    };
+    const req = buildRequest('To=%2B11234567890&From=%2B19876543210&Body=Hi&MessageSid=SM456');
     prisma.message.create.mockResolvedValue({ id: 'm-id' });
     isStopMessage.mockReturnValue(false);
 
-    await POST(mockRequest);
+    await POST(req);
     expect(prisma.message.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ status: 'received', twilioMessageId: 'SM456' }),
@@ -79,35 +83,19 @@ describe('POST function', () => {
   });
 
   it('should return 500 when message cannot be saved', async () => {
-    const mockRequest = {
-      // Missing To and MessageSid — parseRequest will throw, messageId stays null
-      text: jest.fn().mockResolvedValue('From=%2B987654321&Body=Hello%21'),
-    };
+    // Missing To and MessageSid — parseBody throws, messageId stays null
+    const req = buildRequest('From=%2B987654321&Body=Hello%21');
 
-    const response = await POST(mockRequest);
+    const response = await POST(req);
     expect(response.status).toBe(500);
   });
-});
 
-describe('parseRequest function', () => {
-  it('should parse URL-encoded form data correctly', async () => {
-    const mockBody = 'To=%2B11234567890&From=%2B19876543210&Body=Hello%21&MessageSid=SM123';
-    const mockRequest = { text: jest.fn().mockResolvedValue(mockBody) };
+  it('returns 403 on invalid signature without writing message', async () => {
+    validateTwilioWebhook.mockResolvedValue(false);
+    const req = buildRequest('To=%2B11234567890&From=%2B19876543210&Body=Hi&MessageSid=SMfake');
 
-    const result = await parseRequest(mockRequest);
-    expect(mockRequest.text).toHaveBeenCalled();
-    expect(result).toMatchObject({
-      to: expect.any(String),
-      from: expect.any(String),
-      msg: 'Hello!',
-      twilioMessageId: 'SM123',
-    });
-  });
-
-  it('should throw on missing required fields', async () => {
-    const mockRequest = {
-      text: jest.fn().mockResolvedValue('From=%2B987654321&Body=Hello%21'),
-    };
-    await expect(parseRequest(mockRequest)).rejects.toThrow('Invalid Twilio Webhook Message');
+    const response = await POST(req);
+    expect(response.status).toBe(403);
+    expect(prisma.message.create).not.toHaveBeenCalled();
   });
 });

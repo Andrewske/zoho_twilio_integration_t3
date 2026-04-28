@@ -1,6 +1,6 @@
-import twilio from 'twilio';
 import { logError } from '~/utils/logError';
 import { prisma } from '~/utils/prisma';
+import { validateTwilioWebhook } from '~/utils/twilioWebhookAuth';
 
 // Ordinal map prevents out-of-order callbacks from demoting terminal state.
 // queued < sending < sent < (delivered | undelivered | failed).
@@ -27,15 +27,11 @@ export async function POST(request) {
     const rawBody = await request.text();
     const params = new URLSearchParams(rawBody);
 
-    const signature = request.headers.get('x-twilio-signature') || '';
-    const url = `${process.env.APP_URL}/api/twilio/webhook/status`;
-    const authToken = process.env.TWILIO_AUTH_TOKEN || '';
-
-    // Object.fromEntries collapses repeat keys to last value. Safe for Twilio
-    // MessageStatus webhook (documented flat single-value payload). If signature
-    // failures spike, switch to array-aware loop — Twilio SDK supports both.
-    const paramsObj = Object.fromEntries(params.entries());
-    const valid = twilio.validateRequest(authToken, signature, url, paramsObj);
+    const valid = await validateTwilioWebhook({
+      request,
+      params,
+      pathname: '/api/twilio/webhook/status',
+    });
     if (!valid) {
       return new Response('invalid signature', { status: 403 });
     }

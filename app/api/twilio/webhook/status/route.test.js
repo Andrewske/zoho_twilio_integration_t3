@@ -1,6 +1,6 @@
 import { POST } from './route.js';
 import { prisma } from '~/utils/prisma.js';
-import twilio from 'twilio';
+import { validateTwilioWebhook } from '~/utils/twilioWebhookAuth';
 
 jest.mock('~/utils/prisma.js', () => ({
   prisma: {
@@ -15,10 +15,8 @@ jest.mock('~/utils/logError', () => ({
   logError: jest.fn(),
 }));
 
-jest.mock('twilio', () => ({
-  __esModule: true,
-  default: { validateRequest: jest.fn() },
-  validateRequest: jest.fn(),
+jest.mock('~/utils/twilioWebhookAuth', () => ({
+  validateTwilioWebhook: jest.fn(),
 }));
 
 global.Response = function (body, init) {
@@ -33,8 +31,7 @@ const buildRequest = (params, signature = 'sig') => ({
 describe('POST /api/twilio/webhook/status', () => {
   beforeEach(() => {
     process.env.APP_URL = 'https://example.com';
-    process.env.TWILIO_AUTH_TOKEN = 'token';
-    twilio.validateRequest.mockReset();
+    validateTwilioWebhook.mockReset();
     prisma.message.findUnique.mockReset();
     prisma.message.update.mockReset();
     jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -45,7 +42,7 @@ describe('POST /api/twilio/webhook/status', () => {
   });
 
   it('updates Message and returns 200 on valid terminal status', async () => {
-    twilio.validateRequest.mockReturnValue(true);
+    validateTwilioWebhook.mockResolvedValue(true);
     prisma.message.findUnique.mockResolvedValue({ status: 'sent' });
     prisma.message.update.mockResolvedValue({});
 
@@ -63,7 +60,7 @@ describe('POST /api/twilio/webhook/status', () => {
   });
 
   it('parses errorCode and errorMessage when present', async () => {
-    twilio.validateRequest.mockReturnValue(true);
+    validateTwilioWebhook.mockResolvedValue(true);
     prisma.message.findUnique.mockResolvedValue({ status: 'sent' });
     prisma.message.update.mockResolvedValue({});
 
@@ -86,7 +83,7 @@ describe('POST /api/twilio/webhook/status', () => {
   });
 
   it('skips update on state regression (sent after delivered)', async () => {
-    twilio.validateRequest.mockReturnValue(true);
+    validateTwilioWebhook.mockResolvedValue(true);
     prisma.message.findUnique.mockResolvedValue({ status: 'delivered' });
 
     const req = buildRequest({
@@ -100,7 +97,7 @@ describe('POST /api/twilio/webhook/status', () => {
   });
 
   it('returns 403 on invalid signature', async () => {
-    twilio.validateRequest.mockReturnValue(false);
+    validateTwilioWebhook.mockResolvedValue(false);
 
     const req = buildRequest({ MessageSid: 'SMabc', MessageStatus: 'delivered' });
     const res = await POST(req);
@@ -109,7 +106,7 @@ describe('POST /api/twilio/webhook/status', () => {
   });
 
   it('returns 200 and warns on unknown SID', async () => {
-    twilio.validateRequest.mockReturnValue(true);
+    validateTwilioWebhook.mockResolvedValue(true);
     prisma.message.findUnique.mockResolvedValue(null);
 
     const req = buildRequest({ MessageSid: 'SMghost', MessageStatus: 'delivered' });
@@ -119,7 +116,7 @@ describe('POST /api/twilio/webhook/status', () => {
   });
 
   it('returns 200 on malformed body without writes', async () => {
-    twilio.validateRequest.mockReturnValue(true);
+    validateTwilioWebhook.mockResolvedValue(true);
 
     const req = buildRequest({ Foo: 'bar' });
     const res = await POST(req);
