@@ -31,6 +31,7 @@ jest.mock('~/utils/logError', () => ({
 // ---------------------------------------------------------------------------
 
 import { prisma } from '~/utils/prisma';
+// eslint-disable-next-line no-unused-vars
 import { logError } from '~/utils/logError';
 
 // ---------------------------------------------------------------------------

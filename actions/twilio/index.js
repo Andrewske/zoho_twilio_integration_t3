@@ -155,20 +155,21 @@ export const sendMessage = async ({
       level: 'error',
       data: { to, from, message, studioId },
     });
-  } finally {
-    // Always record the message attempt in the database
-
-    if (messageId) {
-      await prisma.message.update({
-        where: { id: messageId },
-        data: newMessage,
-      });
-    } else {
-      await prisma.message.create({
-        data: newMessage,
-      });
-    }
-
-    return newMessage
   }
+
+  // Always record the message attempt in the database, whether send
+  // succeeded or threw. Do this outside `finally` so a return inside
+  // finally cannot swallow an exception from the try block.
+  if (messageId) {
+    await prisma.message.update({
+      where: { id: messageId },
+      data: newMessage,
+    });
+  } else {
+    await prisma.message.create({
+      data: newMessage,
+    });
+  }
+
+  return newMessage;
 };

@@ -22,7 +22,7 @@ export function PostHogProvider({ children }) {
                     capture_console_errors: false // We'll handle these manually for better control
                 },
                 // Additional error handling configuration
-                loaded: (posthog) => {
+                loaded: (_posthog) => {
                     console.log('PostHog loaded successfully', { 
                         isProduction, 
                         enableDev,

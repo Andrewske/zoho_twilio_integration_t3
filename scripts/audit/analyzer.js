@@ -147,18 +147,20 @@ const applyAutomationRules = (messages, contactTasks) => {
     // Task exists without follow-up → Non-new lead path
     expectedPath = 'non_new_lead';
     automationFired = true;
+  } else if (hasWelcome && hasInbound && !hasFollowUp && !hasTask) {
+    // Got welcome + response back, but no follow-up/task triggered.
+    // Check this *before* the broader hasInbound branch below, otherwise
+    // every "got a reply" case collapses into 'no_action_or_optout'.
+    expectedPath = 'response_no_automation';
+    automationFired = false;
   } else if (hasInbound && !hasTask && !hasFollowUp) {
-    // Inbound message, no task, no follow-up → Either opt-out or failed
+    // Inbound message with no welcome, task, or follow-up → opt-out or failed
     expectedPath = 'no_action_or_optout';
     automationFired = false; // Can't determine without more context
   } else if (hasWelcome && !hasInbound) {
     // Welcome sent, no response yet
     expectedPath = 'awaiting_response';
     automationFired = true; // Welcome was sent correctly
-  } else if (hasWelcome && hasInbound && !hasFollowUp && !hasTask) {
-    // Got response but no automation triggered
-    expectedPath = 'response_no_automation';
-    automationFired = false;
   }
 
   return {
@@ -185,7 +187,7 @@ const determineVerdict = (messages, crossReference, automationPath, zohoData) =>
     return 'NEEDS REVIEW';
   }
 
-  const { expectedPath, automationFired, hasInbound, hasFollowUp, hasTask } = automationPath;
+  const { expectedPath, automationFired, hasFollowUp, hasTask } = automationPath;
 
   // Paths that don't expect automation
   if (expectedPath === 'awaiting_response') {

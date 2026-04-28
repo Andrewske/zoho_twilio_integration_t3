@@ -115,7 +115,7 @@ export const MessageTransformers = {
    * @param {boolean} fromStudio - Whether message is from studio
    * @returns {Object} Database-formatted message
    */
-  twilioToDb(twilioMessage, studioId, contactId, fromStudio = true) {
+  twilioToDb(twilioMessage, studioId, contactId, _fromStudio = true) {
     return {
       fromNumber: PhoneFormatter.normalize(twilioMessage.from),
       toNumber: PhoneFormatter.normalize(twilioMessage.to),

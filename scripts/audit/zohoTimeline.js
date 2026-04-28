@@ -96,7 +96,7 @@ const searchZohoModule = async (mobile, accessToken, apiDomain, zohoModule) => {
         try {
           const errorBody = await response.json();
           errorMessage += ` - ${errorBody.message || errorBody.code || JSON.stringify(errorBody)}`;
-        } catch (e) {
+        } catch (_e) {
           // If we can't parse error JSON, just use status
         }
       }
@@ -284,7 +284,7 @@ export const fetchContactTimeline = async (contactId, isLead, accessToken, apiDo
         try {
           const errorBody = await response.json();
           errorMessage += ` - ${errorBody.message || errorBody.code || JSON.stringify(errorBody)}`;
-        } catch (e) {
+        } catch (_e) {
           // Fallback to text if JSON parsing fails
           const errorText = await response.text();
           if (errorText) {

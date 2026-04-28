@@ -1,6 +1,6 @@
 'use client';
 import { usePostHog } from 'posthog-js/react';
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 import { Comment } from 'react-loader-spinner';
 import { getMessages } from '~/actions/messages';
 import { ZohoContext } from '~/providers/ZohoProvider';
@@ -10,10 +10,14 @@ import MessageList from '../MessageList';
 import styles from './styles.module.css';
 
 const ChatWindow = ({ studioPhones }) => {
-  const adminNumbers = studioPhones
-    .filter((s) => s.isAdmin)
-    .map((s) => s.twilioPhone)
-    .filter(Boolean);
+  const adminNumbers = useMemo(
+    () =>
+      studioPhones
+        .filter((s) => s.isAdmin)
+        .map((s) => s.twilioPhone)
+        .filter(Boolean),
+    [studioPhones]
+  );
   const { studio, contact } = useContext(ZohoContext);
   const [messages, setMessages] = useState(null);
   const [selectedSender, setSelectedSender] = useState(null);
@@ -266,7 +270,7 @@ const ChatWindow = ({ studioPhones }) => {
     };
 
     buildAvailableSenders();
-  }, [studio, studioPhones, messages, contact]);
+  }, [studio, studioPhones, messages, contact, adminNumbers]);
 
   useEffect(() => {
     if (studio && !studio?.active) {

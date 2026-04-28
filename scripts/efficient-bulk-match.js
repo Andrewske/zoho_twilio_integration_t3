@@ -52,6 +52,7 @@ function normalizeForMatching(text) {
   
   // Replace any character above ASCII range (which includes emojis) with ?
   // This catches emojis, special symbols, and other Unicode characters that Zoho converts to ?
+  // eslint-disable-next-line no-control-regex
   return text.replace(/[^\x00-\x7F]/g, '?');
 }
 
@@ -101,6 +102,7 @@ function stringSimilarity(str1, str2) {
  * Find best matching message using similarity scoring
  * Returns the best match if similarity is above threshold, null otherwise
  */
+// eslint-disable-next-line no-unused-vars
 function findBestMatch(taskMsg, candidateMessages, threshold = 0.8) {
   let bestMatch = null;
   let bestScore = 0;
@@ -211,8 +213,6 @@ async function efficientBulkMatch(tasks) {
   const zohoVoiceNumbers = zohoVoice.map(studio => studio.zohoVoicePhone);
 
   const matchedMessages = [];
-
-  const multipleMessages = [];
 
   const noMatch = [];
 

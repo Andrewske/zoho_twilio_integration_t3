@@ -143,13 +143,12 @@ export const withRetry = (operation, options = {}) => {
 };
 
 /**
- * Safe async operation wrapper that never throws
- * Useful for operations where you want to continue on failure
+ * Safe async operation wrapper that never throws.
+ * Returns `null` on error; logs at warning level.
  * @param {Function} operation - Operation to make safe
- * @param {*} defaultValue - Default value to return on error
  * @returns {Function} Safe wrapped function
  */
-export const makeSafe = (operation, defaultValue = null) => {
+export const makeSafe = (operation) => {
   return withErrorHandling(operation, {
     context: `safe ${operation.name || 'operation'}`,
     level: 'warning',
