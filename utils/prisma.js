@@ -1,10 +1,13 @@
+import 'server-only';
 import { PrismaClient } from '../prisma/generated/prisma/client/client.ts';
 import { PrismaPg } from '@prisma/adapter-pg';
 
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL,
-});
+const globalForPrisma = globalThis;
 
-const prisma = new PrismaClient({ adapter });
+export const prisma =
+  globalForPrisma.__prisma ??
+  new PrismaClient({
+    adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+  });
 
-export { prisma };
+if (process.env.NODE_ENV !== 'production') globalForPrisma.__prisma = prisma;

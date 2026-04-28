@@ -24,7 +24,7 @@ jest.mock('~/actions/zoho/contact/smsOptOut', () => ({
   smsOptOut: jest.fn(),
 }));
 
-jest.mock('~/actions/zoho/studio', () => ({
+jest.mock('~/utils/studio-lookups', () => ({
   getStudioFromPhoneNumber: jest.fn(),
   getStudioFromZohoId: jest.fn(),
   findAdminStudioByPhone: jest.fn(),

@@ -1,33 +1,25 @@
 import { getStudioFromZohoId } from './index';
+import { getStudioFromZohoId as helperGetStudioFromZohoId } from '~/utils/studio-lookups';
 
-jest.mock('~/utils/prisma.js', () => ({
-    prisma: {
-        studio: {
-            findFirst: jest.fn(),
-        },
-    },
+jest.mock('~/utils/studio-lookups', () => ({
+    getStudioFromZohoId: jest.fn(),
 }));
-
-jest.mock('~/utils/prismaSelectors.js', () => ({
-    PrismaSelectors: {
-        studio: { full: {} },
-    },
-}));
-
-import { prisma } from '~/utils/prisma.js';
 
 beforeEach(() => jest.clearAllMocks());
 
-describe('getStudioFromZohoId', () => {
-    it('returns the studio data if it exists', async () => {
+describe('getStudioFromZohoId (action wrapper)', () => {
+    it('delegates to the studio-lookups helper and returns its value', async () => {
         const studioData = { id: 1, name: 'Studio' };
-        prisma.studio.findFirst.mockResolvedValue(studioData);
+        helperGetStudioFromZohoId.mockResolvedValue(studioData);
+
         const result = await getStudioFromZohoId('zohoId');
+
+        expect(helperGetStudioFromZohoId).toHaveBeenCalledWith('zohoId');
         expect(result).toEqual(studioData);
     });
 
-    it('returns null if the studio data does not exist', async () => {
-        prisma.studio.findFirst.mockResolvedValue(null);
+    it('passes null through from the helper', async () => {
+        helperGetStudioFromZohoId.mockResolvedValue(null);
         const result = await getStudioFromZohoId('zohoId');
         expect(result).toBeNull();
     });

@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { lookupContact } from '~/actions/zoho/contact/lookupContact';
 import { smsOptOut } from '~/actions/zoho/contact/smsOptOut';
 import { sendFollowUp } from '~/actions/zoho/sendFollowUp';
-import { findAdminStudioByPhone, getStudioFromPhoneNumber, getStudioFromZohoId } from '~/actions/zoho/studio';
+import { findAdminStudioByPhone, getStudioFromPhoneNumber, getStudioFromZohoId } from '~/utils/studio-lookups';
 import { createTask, createUnlinkedTask } from '~/actions/zoho/tasks';
 import { logError } from '~/utils/logError';
 import { isYesMessage, isStopMessage, hasReceivedFollowUpMessage } from '~/utils/messageHelpers';

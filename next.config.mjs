@@ -7,6 +7,7 @@ const withBundleAnalyzer = bundleAnalyzer({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // output: 'export',
+  serverExternalPackages: ['@prisma/client', '@prisma/adapter-pg', 'pg', 'pgpass'],
   rewrites: async () => [
     {
       source: '/index',

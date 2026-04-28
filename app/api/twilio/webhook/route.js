@@ -1,6 +1,6 @@
 import { lookupContact } from '~/actions/zoho/contact/lookupContact';
 import { smsOptOut } from '~/actions/zoho/contact/smsOptOut';
-import { findAdminStudioByPhone, getStudioFromPhoneNumber, getStudioFromZohoId } from '~/actions/zoho/studio';
+import { findAdminStudioByPhone, getStudioFromPhoneNumber, getStudioFromZohoId } from '~/utils/studio-lookups';
 import { formatMobile } from '~/utils';
 import { logError } from '~/utils/logError';
 import { isStopMessage } from '~/utils/messageHelpers';
