@@ -3,7 +3,7 @@ export function register() {
   // No-op for initialization
 }
 
-export const onRequestError = async (err, request, context) => {
+export const onRequestError = async (err, request, _context) => {
   // Only run in Node.js runtime (not Edge)
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     try {

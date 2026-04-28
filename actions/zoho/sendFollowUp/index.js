@@ -154,7 +154,7 @@ const studioIsSouthlake = async (from) => {
 const contactIsLead = (contact) => {
     try {
         return contact?.isLead && contact?.Lead_Status == 'New';
-    } catch (error) {
+    } catch (_error) {
         return false
     }
 }

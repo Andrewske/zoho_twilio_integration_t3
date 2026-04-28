@@ -28,7 +28,6 @@ export default function RootLayout({ children }) {
             {children}
           </ZohoProvider>
         </PostHogProvider>
-        {/* eslint-disable-next-line @next/next/no-before-interactive-script-outside-document */}
         <Script
           src={zohoSDKurl}
           strategy='beforeInteractive'

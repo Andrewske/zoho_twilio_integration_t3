@@ -48,7 +48,7 @@ const getContactFromModules = async ({ mobile, account, studioId, modules }) => 
   for (const zohoModule of modules) {
     try {
       contact = await getContact({ mobile, account, studioId, zohoModule });
-    } catch (error) {
+    } catch (_error) {
       console.info(
         `getContactFromModules: Contact ${mobile} not found in module ${zohoModule}`
       );

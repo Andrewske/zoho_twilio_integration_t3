@@ -142,8 +142,8 @@ const getMissingMessages = async () => {
         // console.log(`Found ${messagesToUpdate.length} out of ${messagesWithErrors.length} messages to update`);
 
 
-    } catch (error) {
-        // console.error(error)
+    } catch (_error) {
+        // console.error(_error)
     }
 
     return {}

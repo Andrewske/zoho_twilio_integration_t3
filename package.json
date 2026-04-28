@@ -7,7 +7,7 @@
     "dev": "next dev --experimental-https",
     "build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
-    "lint": "next lint .",
+    "lint": "eslint .",
     "test": "jest --watch",
     "db:push": "prisma generate && prisma db push",
     "cleanup:duplicates": "node scripts/cleanup-duplicate-messages.js",
@@ -42,11 +42,12 @@
     "twilio": "^4.19.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.5.1",
     "autoprefixer": "^10.4.27",
-    "eslint": "^8",
+    "eslint": "^9.39.4",
     "eslint-config-next": "16.2.2",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
