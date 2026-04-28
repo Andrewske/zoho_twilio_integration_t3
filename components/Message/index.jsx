@@ -20,7 +20,6 @@ const Message = ({ message, contactName, adminNumbers = [] }) => {
       data-testid="message"
     >
       <span
-        to={message.to}
         className={`${
           adminNumbers.includes(message.to) ||
           adminNumbers.includes(message.from)
@@ -68,8 +67,8 @@ const Message = ({ message, contactName, adminNumbers = [] }) => {
         className={`${styles.subText} ${message.fromStudio ? styles.to : ''}`}
       >
         <span
-          onClick={() => setShowError(!showError)}
-          className={`cursor-pointer ${statusClass(message.status)}`}
+          onClick={message.errorMessage ? () => setShowError(!showError) : undefined}
+          className={`${message.errorMessage ? 'cursor-pointer' : ''} ${statusClass(message.status)}`}
         >
           {message.status}
         </span>

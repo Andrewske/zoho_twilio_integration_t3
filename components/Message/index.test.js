@@ -38,4 +38,26 @@ describe('Message', () => {
     const { container } = render(<Message message={mockMessageStudio} />);
     expect(container.querySelector('.to')).toBeInTheDocument();
   });
+
+  it('omits cursor-pointer on status when there is no errorMessage', () => {
+    const { container } = render(
+      <Message message={{ ...mockMessage, status: 'delivered', errorMessage: null }} />
+    );
+    const statusEl = container.querySelector(`.${'cursor-pointer'.replace(/:/g, '\\:')}`);
+    expect(statusEl).toBeNull();
+  });
+
+  it('keeps cursor-pointer on status when errorMessage is present', () => {
+    const { container } = render(
+      <Message
+        message={{
+          ...mockMessage,
+          status: 'undelivered',
+          errorMessage: 'Landline',
+          errorCode: 30006,
+        }}
+      />
+    );
+    expect(container.querySelector('.cursor-pointer')).toBeInTheDocument();
+  });
 });
