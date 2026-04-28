@@ -34,23 +34,66 @@ const SLEEP_MS = Math.ceil(60_000 / RATE_LIMIT_PER_MIN); // 600ms = 100/min
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// Pull distinct STOPs (both providers, all-time) with earliest timestamp.
-const stops = await prisma.message.findMany({
+// Pull all studio inbound numbers so we can filter to true inbound STOPs.
+const studios = await prisma.studio.findMany({
+  select: { twilioPhone: true, zohoVoicePhone: true },
+});
+const studioPhones = new Set();
+for (const s of studios) {
+  if (s.twilioPhone) studioPhones.add(s.twilioPhone);
+  if (s.zohoVoicePhone) studioPhones.add(s.zohoVoicePhone);
+}
+
+// Pull broadly, filter STOP body in JS to handle whitespace + case variants
+// that Prisma's `equals` / `mode: insensitive` skips (e.g. 'Stop ', ' STOP').
+// Direction filter: lead → studio (toNumber in studio inbound phones).
+// Exclude SMtest synthetic messages (test injections, not real STOPs).
+const candidates = await prisma.message.findMany({
   where: {
-    message: { mode: 'insensitive', equals: 'stop' },
+    toNumber: { in: [...studioPhones] },
+    message: { contains: 'top', mode: 'insensitive' }, // narrows; final filter in JS
   },
-  select: { fromNumber: true, createdAt: true },
+  select: { fromNumber: true, message: true, createdAt: true, twilioMessageId: true },
   orderBy: { createdAt: 'asc' },
 });
 
 const firstStopByPhone = new Map();
-for (const s of stops) {
-  if (!firstStopByPhone.has(s.fromNumber)) {
-    firstStopByPhone.set(s.fromNumber, s.createdAt);
+for (const r of candidates) {
+  if (r.twilioMessageId?.startsWith('SMtest')) continue;
+  if (r.message?.toLowerCase().trim() !== 'stop') continue;
+  if (!firstStopByPhone.has(r.fromNumber)) {
+    firstStopByPhone.set(r.fromNumber, r.createdAt);
   }
 }
 
-console.log(`distinct stop-repliers: ${firstStopByPhone.size}`);
+console.log(`distinct stop-repliers (inbound, real, whitespace-tolerant): ${firstStopByPhone.size}`);
+
+// Safety filter: drop phones that re-opted-in via START / YES / UNSTOP keyword
+// AFTER their first STOP. Prisma equals doesn't trim, so pull all candidate
+// messages from these phones and filter in JS to handle whitespace variants
+// like "Start " (trailing space).
+const candidateInbound = await prisma.message.findMany({
+  where: {
+    fromNumber: { in: [...firstStopByPhone.keys()] },
+  },
+  select: { fromNumber: true, message: true, createdAt: true },
+});
+const REOPT_IN_KEYWORDS = new Set(['start', 'unstop', 'yes']);
+const reoptInByPhone = new Map();
+for (const r of candidateInbound) {
+  const normalized = r.message?.toLowerCase().trim();
+  if (!REOPT_IN_KEYWORDS.has(normalized)) continue;
+  const stoppedAt = firstStopByPhone.get(r.fromNumber);
+  if (stoppedAt && r.createdAt > stoppedAt) {
+    if (!reoptInByPhone.has(r.fromNumber) || reoptInByPhone.get(r.fromNumber) < r.createdAt) {
+      reoptInByPhone.set(r.fromNumber, r.createdAt);
+    }
+  }
+}
+console.log(`re-opt-ins detected (skipping): ${reoptInByPhone.size}`);
+
+for (const phone of reoptInByPhone.keys()) firstStopByPhone.delete(phone);
+console.log(`final phones to push: ${firstStopByPhone.size}`);
 console.log(`sender accounts: ${TWILIO_OPTOUT_SENDER_ACCOUNTS.length}`);
 console.log(`mode: ${dryRun ? 'DRY RUN' : 'LIVE'}`);
 
