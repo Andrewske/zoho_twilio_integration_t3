@@ -285,6 +285,43 @@ describe('GET /api/cron', () => {
     expect(prisma.message.update).toHaveBeenCalledTimes(20);
   });
 
+  // 11a. Admin override fired (resolved studio ≠ phone-owner) → createTask
+  //      gets apiAccountStudioId = adminStudio.id so the API call uses the
+  //      admin's broader-visibility Zoho creds. Otherwise the studio's own
+  //      creds may lack read permission on the lead and Zoho rejects the
+  //      POST with INVALID_DATA on $.data[0].What_Id.id.
+  it('passes apiAccountStudioId to createTask when admin override changes the studio', async () => {
+    const ADMIN_STUDIO = { id: 'adminStudio1', name: 'southlake_admin', zohoId: 'adminZoho', isAdmin: true };
+    const PHONE_STUDIO = { id: 'phoneStudio', name: 'Southlake', zohoId: 'phoneZoho' };
+    const OWNED_STUDIO = { id: 'ownedStudio', name: 'Colleyville', zohoId: 'ownedZoho' };
+
+    getStudioFromPhoneNumber.mockResolvedValue(PHONE_STUDIO);
+    findAdminStudioByPhone.mockResolvedValue(ADMIN_STUDIO);
+    getStudioFromZohoId.mockResolvedValue(OWNED_STUDIO);
+    prisma.message.findMany.mockResolvedValue([makeMessage()]);
+
+    await GET(makeRequest());
+
+    expect(createTask).toHaveBeenCalledWith(
+      expect.objectContaining({
+        studioId: OWNED_STUDIO.id,
+        apiAccountStudioId: ADMIN_STUDIO.id,
+      })
+    );
+  });
+
+  // 11b. No admin override (resolved studio == phone-owner OR no admin) →
+  //      apiAccountStudioId is undefined, createTask falls back to studioId.
+  it('omits apiAccountStudioId when admin override does not fire', async () => {
+    prisma.message.findMany.mockResolvedValue([makeMessage()]);
+
+    await GET(makeRequest());
+
+    const call = createTask.mock.calls[0][0];
+    expect(call.studioId).toBe(STUDIO.id);
+    expect(call.apiAccountStudioId).toBeUndefined();
+  });
+
   // 11. Error in processMessage → caught, logged, retryCount still incremented
   it('catches per-message errors, logs them, and increments retryCount without halting the batch', async () => {
     const msg = makeMessage({ id: 'msg-err' });

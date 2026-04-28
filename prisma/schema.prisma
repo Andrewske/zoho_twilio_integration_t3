@@ -20,6 +20,9 @@ model Account {
   expiresIn     Int?
   scope         String?
   apiDomain     String?
+  lastRefreshAt      DateTime? @map("last_refresh_at")
+  lastRefreshError   String?   @map("last_refresh_error")
+  lastRefreshErrorAt DateTime? @map("last_refresh_error_at")
   StudioAccount StudioAccount[]
   TokenRefresh  TokenRefresh[]
 }

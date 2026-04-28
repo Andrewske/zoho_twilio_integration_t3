@@ -16,44 +16,81 @@ export const AccountManager = {
    * @param {string} platform - Platform name ('zoho', 'twilio', etc.)
    * @returns {Promise<Object|null>} Account object or null if not found
    */
-  async getAccountByPlatform(studioId, platform) {
+  // List a studio's accounts for a platform, sorted by health.
+  // 1. Healthy (no recent refresh error) first.
+  // 2. Most-recently-refreshed (lastRefreshAt only bumps on success).
+  async listStudioAccountsByPlatform(studioId, platform) {
     const studioAccounts = await prisma.studioAccount.findMany({
-      where: { studioId },
-      include: { Account: true }
+      where: { studioId, Account: { platform } },
+      include: { Account: true },
     });
-
-    const account = studioAccounts
+    return studioAccounts
       .map(sa => sa.Account)
-      .find(account => account.platform === platform);
+      .sort((a, b) => {
+        const aErr = a.lastRefreshErrorAt ? 1 : 0;
+        const bErr = b.lastRefreshErrorAt ? 1 : 0;
+        if (aErr !== bErr) return aErr - bErr;
+        const aAt = a.lastRefreshAt ? new Date(a.lastRefreshAt).getTime() : 0;
+        const bAt = b.lastRefreshAt ? new Date(b.lastRefreshAt).getTime() : 0;
+        return bAt - aAt;
+      });
+  },
 
-    if (!account) {
+  async getAccountByPlatform(studioId, platform, excludeIds = new Set()) {
+    const candidates = (await this.listStudioAccountsByPlatform(studioId, platform))
+      .filter(a => !excludeIds.has(a.id));
+
+    if (candidates.length === 0) {
       throw createTypedError(
         ErrorTypes.NOT_FOUND,
-        `No ${platform} account found for studio ${studioId}`,
-        { studioId, platform }
+        `No usable ${platform} account for studio ${studioId}`,
+        { studioId, platform, excluded: [...excludeIds] }
       );
     }
-
-    return account;
+    return candidates[0];
   },
 
   /**
-   * Get Zoho account for a studio with token refresh handling
-   * @param {string} studioId - Studio ID
-   * @returns {Promise<Object>} Zoho account with valid access token
+   * Get Zoho account for a studio with token refresh handling.
+   * If the first candidate's refresh fails, fall through to the next
+   * candidate. Throws AUTHENTICATION when all candidates have been tried.
    */
   async getZohoAccount(studioId) {
-    const account = await this.getAccountByPlatform(studioId, 'zoho');
-    
-    // Check if access token is expired and refresh if needed
-    if (this.isAccessTokenExpired(account)) {
-      console.log('Access token is expired, refreshing...');
-      // Import refreshAccessToken here to avoid circular dependencies
-      const { refreshAccessToken } = await import('../actions/zoho/token/index.js');
-      return await refreshAccessToken(account);
+    const all = await this.listStudioAccountsByPlatform(studioId, 'zoho');
+    if (all.length === 0) {
+      throw createTypedError(
+        ErrorTypes.NOT_FOUND,
+        `No zoho account found for studio ${studioId}`,
+        { studioId, platform: 'zoho' }
+      );
     }
-    
-    return account;
+
+    const tried = new Set();
+    let lastErr;
+
+    // Hard cap = number of candidates; one attempt per account, no retry.
+    for (let i = 0; i < all.length; i++) {
+      const account = await this.getAccountByPlatform(studioId, 'zoho', tried);
+      tried.add(account.id);
+
+      try {
+        if (this.isAccessTokenExpired(account)) {
+          // Import refreshAccessToken here to avoid circular dependencies
+          const { refreshAccessToken } = await import('../actions/zoho/token/index.js');
+          return await refreshAccessToken(account);
+        }
+        return account;
+      } catch (err) {
+        lastErr = err;
+        // Loop tries the next candidate.
+      }
+    }
+
+    throw createTypedError(
+      ErrorTypes.AUTHENTICATION,
+      `All zoho accounts failed for studio ${studioId}`,
+      { studioId, lastError: lastErr?.message }
+    );
   },
 
   /**
@@ -111,14 +148,16 @@ export const AccountManager = {
    * @returns {boolean} True if token is expired
    */
   isAccessTokenExpired(account) {
-    if (!account?.updatedAt || !account?.expiresIn) {
+    // Use lastRefreshAt (success-only timestamp) over updatedAt — markAccountFailure
+    // also bumps Prisma's @updatedAt, which would otherwise make a freshly-failed
+    // account look "fresh" and skip a needed refresh. Fall back to updatedAt for
+    // legacy rows that predate the lastRefreshAt column.
+    const refreshedAt = account?.lastRefreshAt || account?.updatedAt;
+    if (!refreshedAt || !account?.expiresIn) {
       return true; // Consider expired if missing required fields
     }
-
-    const { updatedAt, expiresIn } = account;
-    const updatedAtDate = new Date(updatedAt);
-    updatedAtDate.setTime(updatedAtDate.getTime() + expiresIn * 1000);
-    return updatedAtDate < new Date(Date.now());
+    const exp = new Date(refreshedAt).getTime() + account.expiresIn * 1000;
+    return exp < Date.now();
   },
 
   /**
