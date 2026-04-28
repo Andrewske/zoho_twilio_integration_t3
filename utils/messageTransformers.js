@@ -36,7 +36,8 @@ export const MessageTransformers = {
       isWelcomeMessage: dbMessage.isWelcomeMessage || false,
       isFollowUpMessage: dbMessage.isFollowUpMessage || false,
       errorMessage: dbMessage.errorMessage || null,
-      status: dbMessage.status || 'delivered',
+      errorCode: dbMessage.errorCode ?? null,
+      status: dbMessage.status || 'unknown',
     };
   },
 

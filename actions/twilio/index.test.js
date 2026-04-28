@@ -90,6 +90,8 @@ describe('sendMessage', () => {
     });
 
     it('should send a message', async () => {
+        const prevAppUrl = process.env.APP_URL;
+        delete process.env.APP_URL;
         mockCreate.mockResolvedValue({ sid: 'SM123' });
 
         await sendMessage({ to: '123', from: '456', message: 'Hello', studioId: '1' });
@@ -99,6 +101,38 @@ describe('sendMessage', () => {
             from: '456',
             to: '123',
         });
+        if (prevAppUrl !== undefined) process.env.APP_URL = prevAppUrl;
+    });
+
+    it('passes statusCallback when APP_URL is set', async () => {
+        const prevAppUrl = process.env.APP_URL;
+        process.env.APP_URL = 'https://example.com';
+        mockCreate.mockResolvedValue({ sid: 'SM123' });
+
+        await sendMessage({ to: '123', from: '456', message: 'Hello', studioId: '1' });
+
+        expect(mockCreate).toHaveBeenCalledWith({
+            body: 'Hello',
+            from: '456',
+            to: '123',
+            statusCallback: 'https://example.com/api/twilio/webhook/status',
+        });
+
+        if (prevAppUrl === undefined) delete process.env.APP_URL;
+        else process.env.APP_URL = prevAppUrl;
+    });
+
+    it('omits statusCallback when APP_URL is unset', async () => {
+        const prevAppUrl = process.env.APP_URL;
+        delete process.env.APP_URL;
+        mockCreate.mockResolvedValue({ sid: 'SM123' });
+
+        await sendMessage({ to: '123', from: '456', message: 'Hello', studioId: '1' });
+
+        const args = mockCreate.mock.calls[mockCreate.mock.calls.length - 1][0];
+        expect(args).not.toHaveProperty('statusCallback');
+
+        if (prevAppUrl !== undefined) process.env.APP_URL = prevAppUrl;
     });
 
     it('should still record the message if sending fails', async () => {

@@ -61,6 +61,23 @@ describe('POST function', () => {
     expect(response.status).toBe(200);
   });
 
+  it('writes status: received on inbound message', async () => {
+    const mockRequest = {
+      text: jest.fn().mockResolvedValue(
+        'To=%2B11234567890&From=%2B19876543210&Body=Hi&MessageSid=SM456'
+      ),
+    };
+    prisma.message.create.mockResolvedValue({ id: 'm-id' });
+    isStopMessage.mockReturnValue(false);
+
+    await POST(mockRequest);
+    expect(prisma.message.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ status: 'received', twilioMessageId: 'SM456' }),
+      })
+    );
+  });
+
   it('should return 500 when message cannot be saved', async () => {
     const mockRequest = {
       // Missing To and MessageSid — parseRequest will throw, messageId stays null

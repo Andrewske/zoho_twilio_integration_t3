@@ -86,6 +86,7 @@ const upsertMessage = async ({ body }) => {
         toNumber: formatMobile(to),
         message: msg,
         twilioMessageId,
+        status: 'received',
       },
       select: { id: true },
     });
