@@ -3,6 +3,15 @@ import { format } from 'date-fns';
 import { useState } from 'react';
 import styles from './styles.module.css';
 
+const FAILED_STATUSES = new Set(['failed', 'undelivered']);
+const PENDING_STATUSES = new Set(['unknown', 'queued', 'sending', 'received']);
+
+const statusClass = (status) => {
+  if (FAILED_STATUSES.has(status)) return 'text-red-600';
+  if (PENDING_STATUSES.has(status)) return 'text-gray-500';
+  return '';
+};
+
 const Message = ({ message, contactName, adminNumbers = [] }) => {
   const [showError, setShowError] = useState(false);
   return (
@@ -51,7 +60,7 @@ const Message = ({ message, contactName, adminNumbers = [] }) => {
         </span>
         {message.errorMessage && showError && (
           <span className="text-xs flex items-center gap-1">
-            {message.errorMessage}
+            {message.errorCode ? `[${message.errorCode}] ` : ''}{message.errorMessage}
           </span>
         )}
       </span>
@@ -60,7 +69,7 @@ const Message = ({ message, contactName, adminNumbers = [] }) => {
       >
         <span
           onClick={() => setShowError(!showError)}
-          className="cursor-pointer"
+          className={`cursor-pointer ${statusClass(message.status)}`}
         >
           {message.status}
         </span>

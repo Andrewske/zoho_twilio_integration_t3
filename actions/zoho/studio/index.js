@@ -14,6 +14,7 @@ export async function getStudioFromZohoId(owner_id) {
 // Shared-phone scenarios (e.g., Dallas studios sharing one Twilio number)
 // would otherwise return a nondeterministic row via findFirst.
 export async function getStudioFromPhoneNumber(number) {
+  'use server';
   return await prisma.studio.findFirst({
     where: {
       active: true,
@@ -28,6 +29,7 @@ export async function getStudioFromPhoneNumber(number) {
 // Admin studios route inbound lookups through a broader-visibility Zoho account
 // (e.g., a CEO-level login) when multiple physical studios share a number.
 export async function findAdminStudioByPhone(number) {
+  'use server';
   return await prisma.studio.findFirst({
     where: {
       isAdmin: true,

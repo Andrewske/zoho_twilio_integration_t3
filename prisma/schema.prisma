@@ -110,7 +110,7 @@ model Message {
   updatedAt         DateTime        @default(now()) @updatedAt @map("updated_at")
   provider          MessageProvider @default(twilio)
   zohoMessageId     String?
-  status            String?         @default("delivered")
+  status            String?
   errorCode         Int?
   errorMessage      String?
   Studio            Studio?         @relation(fields: [studioId], references: [id])

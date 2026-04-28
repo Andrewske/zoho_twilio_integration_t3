@@ -114,12 +114,12 @@ export const sendMessage = async ({
 
 
   try {
+    const sendArgs = { body: message, from, to };
+    if (process.env.APP_URL) {
+      sendArgs.statusCallback = `${process.env.APP_URL}/api/twilio/webhook/status`;
+    }
     // Attempt to send the message via Twilio
-    const sendRecord = await client.messages.create({
-      body: message,
-      from,
-      to,
-    });
+    const sendRecord = await client.messages.create(sendArgs);
 
     newMessage.twilioMessageId = sendRecord.sid;
   } catch (error) {
