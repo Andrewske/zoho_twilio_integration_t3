@@ -118,9 +118,19 @@ export const runAudit = async ({ fromDate, toDate, studioFilter, verbose }) => {
         }
       }
 
-      // Correlate tasks with this contact
+      // Correlate tasks with this contact. We have to consider three IDs
+      // because a Lead converted to a Contact in Zoho gets a fresh ID, but
+      // older tasks were stamped with the original Lead ID. Match against:
+      //   1. Zoho's *current* contact ID (post-conversion)
+      //   2. Any contactId stored on this contact's Message rows (covers
+      //      historical tasks linked to the pre-conversion Lead)
+      //   3. The task's messageId pointing at one of our messages
+      const messageContactIds = new Set(
+        contactMessages.map(m => m.contactId).filter(Boolean)
+      );
       const contactTasks = tasks.filter(t =>
         t.contactId === zohoData.contact?.id ||
+        (t.contactId && messageContactIds.has(t.contactId)) ||
         contactMessages.some(m => m.id === t.messageId)
       );
 
