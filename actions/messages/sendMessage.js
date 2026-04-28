@@ -3,6 +3,7 @@ import { withMessageErrorHandling } from '~/utils/errorHandling';
 import { PhoneFormatter } from '~/utils/phoneNumber';
 import { prisma } from '~/utils/prisma';
 import { StudioMappings } from '~/utils/studioMappings';
+import { normalizeZohoVoiceStatus } from '~/utils/messageTransformers';
 import { sendMessage as sendTwilioMessage } from '../twilio';
 import { sendSmsWithRetry as sendZohoVoiceMessage } from '../zoho/voice/index.js';
 
@@ -84,8 +85,12 @@ async function sendViaZohoVoice({ studioId, to, from, message, contact }) {
     prisma
   });
 
-  // Zoho Voice /sms/send returns { code, status, send: { logid, ... } }.
+  // Zoho Voice /sms/send returns { code, status, send: { logid, status, ... } }.
+  // Top-level `status` is API call status ('success'); `send.status` is the
+  // SMS submission status. ZV does not deliver async callbacks, so this is
+  // the final knowable state at send time.
   const logid = response?.send?.logid || null;
+  const sendStatus = normalizeZohoVoiceStatus(response?.send?.status) || 'sent';
 
   const messageData = {
     studioId,
@@ -95,6 +100,7 @@ async function sendViaZohoVoice({ studioId, to, from, message, contact }) {
     message,
     provider: 'zoho_voice',
     zohoMessageId: logid,
+    status: sendStatus,
   };
 
   const savedMessage = await prisma.message.create({ data: messageData });
@@ -102,14 +108,16 @@ async function sendViaZohoVoice({ studioId, to, from, message, contact }) {
   console.log('📤 Zoho Voice message saved:', {
     messageId: savedMessage.id,
     zohoMessageId: logid,
-    hasZohoId: !!logid
+    hasZohoId: !!logid,
+    status: sendStatus
   });
 
   return {
     success: true,
     provider: 'zoho_voice',
     messageId: logid,
-    dbMessageId: savedMessage.id
+    dbMessageId: savedMessage.id,
+    status: sendStatus
   };
 }
 

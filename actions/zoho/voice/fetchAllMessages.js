@@ -34,14 +34,16 @@ async function fetchAndSaveZohoVoiceMessages(params) {
             customerNumber
         );
 
-        // Update existing messages with zohoMessageId if found
+        // Update existing messages with zohoMessageId (and status when ZV log has one)
         if (messagesToUpdate.length > 0) {
             console.log(`🔄 Updating ${messagesToUpdate.length} existing messages with zohoMessageId`);
 
             for (const update of messagesToUpdate) {
+                const data = { zohoMessageId: update.zohoMessageId };
+                if (update.status) data.status = update.status;
                 await prisma.message.update({
                     where: { id: update.messageId },
-                    data: { zohoMessageId: update.zohoMessageId }
+                    data
                 });
             }
         }
