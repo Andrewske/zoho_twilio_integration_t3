@@ -10,7 +10,11 @@ const dryRun = args.includes('--dry-run');
 const limitIdx = args.indexOf('--limit');
 const limit = limitIdx >= 0 ? Number.parseInt(args[limitIdx + 1], 10) : Infinity;
 
-const { prisma } = await import('../utils/prisma.js');
+const { PrismaClient } = await import('../prisma/generated/prisma/client/client.ts');
+const { PrismaPg } = await import('@prisma/adapter-pg');
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+});
 const twilioMod = await import('twilio');
 const twilio = twilioMod.default;
 const getTwilioClient = ({ clientId, clientSecret }) =>
@@ -21,7 +25,15 @@ const dateSentAfter = new Date(Date.now() - THIRTEEN_MONTHS_MS);
 
 const adminStudios = await prisma.studio.findMany({
   where: { isAdmin: true, twilioPhone: { not: null } },
-  include: { StudioAccount: { include: { Account: true } } },
+  include: {
+    StudioAccount: {
+      include: {
+        Account: {
+          select: { id: true, platform: true, clientId: true, clientSecret: true },
+        },
+      },
+    },
+  },
 });
 
 console.log(`admin studios with twilioPhone: ${adminStudios.length}`);
@@ -76,7 +88,7 @@ for (const studio of adminStudios) {
     where: {
       provider: 'twilio',
       twilioMessageId: { in: sids },
-      OR: [{ status: null }, { status: 'delivered' }],
+      OR: [{ status: null }, { status: 'delivered' }, { status: 'sending' }],
     },
     select: { id: true, twilioMessageId: true, status: true },
   });
