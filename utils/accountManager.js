@@ -65,14 +65,11 @@ export const AccountManager = {
       );
     }
 
-    const tried = new Set();
     let lastErr;
 
-    // Hard cap = number of candidates; one attempt per account, no retry.
-    for (let i = 0; i < all.length; i++) {
-      const account = await this.getAccountByPlatform(studioId, 'zoho', tried);
-      tried.add(account.id);
-
+    // One attempt per candidate, in health-sorted order. No retry.
+    // Reuses the single fetch above — no per-iteration DB roundtrip.
+    for (const account of all) {
       try {
         if (this.isAccessTokenExpired(account)) {
           // Import refreshAccessToken here to avoid circular dependencies

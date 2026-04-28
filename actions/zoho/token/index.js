@@ -43,7 +43,9 @@ export const markAccountFailure = async (id, reason) => {
       where: { id },
       data: { lastRefreshError: reason, lastRefreshErrorAt: new Date() },
     });
-    if (!before?.lastRefreshError) {
+    // Require row existed and was previously healthy. If `before` is null
+    // (account vanished mid-flight), skip notify — orphan write isn't an outage.
+    if (before && !before.lastRefreshError) {
       try {
         await notify({ type: 'ZOHO_REFRESH_FAILED', data: { accountId: id, reason } });
       } catch (notifyErr) {

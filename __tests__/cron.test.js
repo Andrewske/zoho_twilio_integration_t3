@@ -255,9 +255,10 @@ describe('GET /api/cron', () => {
     );
   });
 
-  // 9. retryCount >= 10 → notify RETRY_EXHAUSTED
+  // 9. retryCount transitions to RETRY_ESCALATE → notify RETRY_EXHAUSTED (one-shot)
   it('sends RETRY_EXHAUSTED notification when retryCount reaches the escalation threshold', async () => {
-    const msg = makeMessage({ retryCount: 10 });
+    // retryCount + 1 === RETRY_ESCALATE (10) → seed at 9, becomes 10 after this run.
+    const msg = makeMessage({ retryCount: 9 });
     prisma.message.findMany.mockResolvedValue([msg]);
     lookupContact.mockResolvedValue(null);
     isYesMessage.mockReturnValue(false); // not a yes, just a plain message

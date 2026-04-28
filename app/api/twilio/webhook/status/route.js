@@ -31,6 +31,9 @@ export async function POST(request) {
     const url = `${process.env.APP_URL}/api/twilio/webhook/status`;
     const authToken = process.env.TWILIO_AUTH_TOKEN || '';
 
+    // Object.fromEntries collapses repeat keys to last value. Safe for Twilio
+    // MessageStatus webhook (documented flat single-value payload). If signature
+    // failures spike, switch to array-aware loop — Twilio SDK supports both.
     const paramsObj = Object.fromEntries(params.entries());
     const valid = twilio.validateRequest(authToken, signature, url, paramsObj);
     if (!valid) {

@@ -5,7 +5,7 @@ jest.mock('~/utils/logError', () => ({ logError: jest.fn() }));
 const mockFetch = jest.fn();
 global.fetch = mockFetch;
 
-const account = { id: 'acct_test', clientId: 'ACxxxx', clientSecret: 'secret' };
+const account = { id: 'acct_test', platform: 'twilio', clientId: 'ACxxxx', clientSecret: 'secret' };
 const senderId = '+13466161442';
 
 const okResponse = (status = 200) => ({
