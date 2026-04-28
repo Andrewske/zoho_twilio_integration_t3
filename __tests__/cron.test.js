@@ -167,7 +167,7 @@ describe('GET /api/cron', () => {
     expect(body.ok).toBe(true);
     expect(sendFollowUp).toHaveBeenCalledTimes(1);
     expect(sendFollowUp).toHaveBeenCalledWith(
-      expect.objectContaining({ contact: CONTACT, studio: STUDIO })
+      expect.objectContaining({ contact: CONTACT, studio: STUDIO, messageId: msg.id })
     );
   });
 
