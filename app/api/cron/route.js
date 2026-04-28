@@ -162,7 +162,7 @@ async function processMessage(message, dryRun = false) {
         await notify({ type: 'CONTACT_NOT_FOUND', data: { phone: message.fromNumber, studio: studio.name, messageId: message.id } });
       }
     }
-    if (!dryRun && message.retryCount + 1 >= RETRY_ESCALATE) {
+    if (!dryRun && message.retryCount + 1 === RETRY_ESCALATE) {
       await notify({ type: 'RETRY_EXHAUSTED', data: { phone: message.fromNumber, studio: studio.name, messageId: message.id, retryCount: message.retryCount + 1 } });
     }
     return result;

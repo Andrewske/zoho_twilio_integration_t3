@@ -34,6 +34,12 @@ export const addToTwilioOptOut = async ({ phone, account, senderId, dateOfConsen
     logOutcome({ outcome: 'skipped', reason: 'missing_inputs', sender_id: senderId, account_id: account?.id });
     return { skipped: true };
   }
+  // Defensive: caller bug could pass non-Twilio account → leak Zoho creds as
+  // Basic auth to twilio.com. Reject anything not explicitly platform=twilio.
+  if (account.platform !== 'twilio') {
+    logOutcome({ outcome: 'skipped', reason: 'wrong_platform', platform: account.platform, sender_id: senderId, account_id: account.id });
+    return { skipped: true };
+  }
 
   const correlation_id = `consent-${normalizedPhone}-${senderId}`;
   const body = {
