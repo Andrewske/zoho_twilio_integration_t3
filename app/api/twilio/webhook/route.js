@@ -5,6 +5,7 @@ import { formatMobile } from '~/utils';
 import { logError } from '~/utils/logError';
 import { isStopMessage } from '~/utils/messageHelpers';
 import { prisma } from '~/utils/prisma';
+import { validateTwilioWebhook } from '~/utils/twilioWebhookAuth';
 
 // POST /api/twilio/webhook
 // Receives inbound SMS from Twilio. Saves immediately, returns 200.
@@ -14,7 +15,24 @@ export async function POST(request) {
   let messageId = null;
 
   try {
-    const body = await parseRequest(request);
+    const rawBody = await request.text();
+    const params = new URLSearchParams(rawBody);
+
+    const valid = await validateTwilioWebhook({
+      request,
+      params,
+      pathname: '/api/twilio/webhook',
+    });
+    if (!valid) {
+      logError({
+        message: 'Invalid Twilio Signature on inbound webhook',
+        level: 'warn',
+        data: { MessageSid: params.get('MessageSid'), AccountSid: params.get('AccountSid') },
+      });
+      return new Response('invalid signature', { status: 403 });
+    }
+
+    const body = parseBody(params);
     messageId = await upsertMessage({ body });
 
     // Stop messages handled immediately (SMS compliance — TCPA requires instant opt-out)
@@ -59,13 +77,11 @@ export async function POST(request) {
   }
 }
 
-export const parseRequest = async (request) => {
-  const text = await request.text();
-  const body = new URLSearchParams(text);
-  const to = formatMobile(body.get('To'));
-  const from = formatMobile(body.get('From'));
-  const msg = body.get('Body');
-  const twilioMessageId = body.get('MessageSid');
+const parseBody = (params) => {
+  const to = formatMobile(params.get('To'));
+  const from = formatMobile(params.get('From'));
+  const msg = params.get('Body');
+  const twilioMessageId = params.get('MessageSid');
 
   if (!to || !from || !msg || !twilioMessageId) {
     throw new Error('Invalid Twilio Webhook Message');
