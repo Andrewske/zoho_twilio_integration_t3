@@ -6,7 +6,7 @@
  * imports (like ~/ aliases) that don't work in direct node execution.
  */
 
-import { prisma } from '../../utils/prisma.js';
+import { prisma } from '../lib/prisma.js';
 
 const ZOHO_API_DELAY = 2000; // 2 second delay between API calls
 
