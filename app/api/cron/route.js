@@ -103,15 +103,20 @@ async function processMessage(message, dryRun = false) {
   // On shared-phone setups (multiple studios on one Twilio number) we also grab
   // the admin studio, which carries a broader-visibility Zoho account used for
   // contact lookup across all studios behind that phone.
-  let studio = await getStudioFromPhoneNumber(message.toNumber);
+  const phoneStudio = await getStudioFromPhoneNumber(message.toNumber);
+  let studio = phoneStudio;
   const adminStudio = await findAdminStudioByPhone(message.toNumber);
+  let overrideFromAdmin = false;
 
   let contact = null;
   if (adminStudio) {
     contact = await lookupContact({ mobile: message.fromNumber, studioId: adminStudio.id });
     if (contact?.Owner?.id) {
       const owned = await getStudioFromZohoId(contact.Owner.id);
-      if (owned) studio = owned;
+      if (owned && owned.id !== phoneStudio?.id) {
+        studio = owned;
+        overrideFromAdmin = true;
+      }
     }
   }
 
@@ -176,11 +181,16 @@ async function processMessage(message, dryRun = false) {
   } else {
     // Regular message — create task
     if (!dryRun) {
+      // When the contact came from a cross-studio admin lookup (override
+      // fired), use the admin studio's Zoho creds for the API call. The
+      // owning studio's own creds may not have read permission on the
+      // lead, which Zoho rejects as INVALID_DATA on $.data[0].What_Id.id.
       const taskData = await createTask({
         studioId: studio.id,
         zohoId: studio.zohoId,
         contact,
         message: { to: message.toNumber, from: message.fromNumber, msg: message.message },
+        apiAccountStudioId: overrideFromAdmin ? adminStudio.id : undefined,
       });
 
       if (taskData?.zohoTaskId) {

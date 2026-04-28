@@ -17,6 +17,9 @@ export const createTaskData = async ({ zohoId, message, contact }) => {
       }`,
   };
 
+  // Zoho v5 Tasks API quirk: Lead-shaped tasks attach via What_Id +
+  // $se_module=Leads. Contact-shaped tasks use Who_Id + $se_module=Contacts.
+  // Verified empirically — Who_Id with a Lead id is rejected as INVALID_DATA.
   if (se_module === 'Leads') {
     taskData['What_Id'] = { id: contact?.id, name: contact?.Full_Name };
   }
@@ -65,14 +68,22 @@ export const postTaskToZoho = async ({ apiDomain, accessToken, taskData }) => {
   }
 };
 
-export const createTask = async ({ studioId, zohoId, contact, message }) => {
+// `studioId` = the studio that OWNS the task (sets Owner field).
+// `apiAccountStudioId` = the studio whose Zoho creds authorize the API call.
+//   Defaults to studioId. When the contact came from a cross-studio admin
+//   lookup (e.g. southlake_admin's Alex Dane account finding a Colleyville
+//   lead), the owning studio's own creds may lack read permission on the
+//   lead and Zoho rejects the POST with INVALID_DATA on $.data[0].What_Id.id
+//   even though the lead exists. Pass the admin studio's id here to use
+//   its broader-visibility account for the create call.
+export const createTask = async ({ studioId, zohoId, contact, message, apiAccountStudioId }) => {
   // if (formatMobile(contact.Mobile) === process.env.KEVIN_MOBILE) return;
   try {
     const taskData = await createTaskData({ zohoId, message, contact });
-    const { apiDomain, accessToken } = await getZohoAccount({ studioId });
+    const { apiDomain, accessToken } = await getZohoAccount({ studioId: apiAccountStudioId || studioId });
 
     const zohoTaskResponse = await postTaskToZoho({ apiDomain, accessToken, taskData });
-    
+
     return {
       zohoTaskId: zohoTaskResponse?.details?.id,
       taskSubject: taskData.Subject,
@@ -83,7 +94,7 @@ export const createTask = async ({ studioId, zohoId, contact, message }) => {
     logError({
       message: 'Error creating task:',
       error,
-      data: { studioId, zohoId, contactId: contact?.id },
+      data: { studioId, apiAccountStudioId, zohoId, contactId: contact?.id },
     });
     throw error;
   }

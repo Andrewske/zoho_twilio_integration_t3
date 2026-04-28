@@ -1,7 +1,9 @@
-import { createTaskData, postTaskToZoho } from './index';
+import { createTaskData, postTaskToZoho, createTask } from './index';
 
 jest.mock('~/utils/logError', () => ({ logError: jest.fn() }));
 jest.mock('~/actions/zoho', () => ({ getZohoAccount: jest.fn() }));
+
+import { getZohoAccount } from '~/actions/zoho';
 
 describe('createTaskData', () => {
     it('returns the correct task data for a lead', async () => {
@@ -35,6 +37,43 @@ describe('createTaskData', () => {
             $se_module: 'Contacts',
             Who_Id: { id: '3', name: 'Student Name' },
         });
+    });
+});
+
+describe('createTask account selection', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+        global.fetch = jest.fn().mockResolvedValue({
+            ok: true,
+            json: jest.fn().mockResolvedValue({ data: [{ details: { id: 'new-task-id' } }] }),
+        });
+    });
+
+    it('uses studioId for the API call by default', async () => {
+        getZohoAccount.mockResolvedValue({ apiDomain: 'https://api.zoho.com', accessToken: 'studio-token' });
+
+        await createTask({
+            studioId: 'colleyville',
+            zohoId: 'colleyville-user',
+            contact: { id: 'lead-1', Full_Name: 'X', isLead: true },
+            message: { to: 't', from: 'f', msg: 'm' },
+        });
+
+        expect(getZohoAccount).toHaveBeenCalledWith({ studioId: 'colleyville' });
+    });
+
+    it('uses apiAccountStudioId for the API call when provided (admin override)', async () => {
+        getZohoAccount.mockResolvedValue({ apiDomain: 'https://api.zoho.com', accessToken: 'admin-token' });
+
+        await createTask({
+            studioId: 'colleyville',           // task is OWNED by Colleyville
+            zohoId: 'colleyville-user',
+            contact: { id: 'lead-1', Full_Name: 'X', isLead: true },
+            message: { to: 't', from: 'f', msg: 'm' },
+            apiAccountStudioId: 'southlake_admin', // but POSTed via admin's account
+        });
+
+        expect(getZohoAccount).toHaveBeenCalledWith({ studioId: 'southlake_admin' });
     });
 });
 
