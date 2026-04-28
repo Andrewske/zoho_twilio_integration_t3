@@ -3,7 +3,7 @@
  * Wires all modules together into a cohesive audit flow
  */
 
-import { prisma } from '../../utils/prisma.js';
+import { prisma } from '../lib/prisma.js';
 import {
   getMessagesInDateRange,
   getTasksInDateRange,

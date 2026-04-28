@@ -3,7 +3,7 @@
  * Query messages and tasks for audit processing
  */
 
-import { prisma } from '../../utils/prisma.js';
+import { prisma } from '../lib/prisma.js';
 
 /**
  * Get messages within specified date range
