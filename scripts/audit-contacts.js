@@ -59,6 +59,12 @@ const validateDate = (dateStr, label) => {
     console.error('Expected format: YYYY-MM-DD (e.g., 2026-01-15)');
     process.exit(1);
   }
+  // YYYY-MM-DD parses as UTC midnight. For an inclusive --to bound, push
+  // it to end-of-day so same-day records (tasks created at 15:18 UTC etc.)
+  // are not silently excluded.
+  if (label === 'to' && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    date.setUTCHours(23, 59, 59, 999);
+  }
   return date;
 };
 

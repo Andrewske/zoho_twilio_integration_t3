@@ -36,6 +36,7 @@ export const buildContactProfile = (contactMessages, zohoData, contactTasks) => 
       timestamp: msg.createdAt,
       direction: inferMessageDirection(msg),
       content: msg.message || '',
+      provider: msg.provider || 'twilio',
       isWelcome: msg.isWelcomeMessage || false,
       isFollowUp: msg.isFollowUpMessage || false,
       linkedTaskId: linkedTask?.zohoTaskId || null,
@@ -135,9 +136,30 @@ const applyAutomationRules = (messages, contactTasks) => {
   const hasInbound = messages.some(m => m.direction === 'in');
   const hasTask = contactTasks.length > 0;
 
+  // Inbound replies that arrived only via Zoho Voice are handled by Zoho's
+  // own automation (we have no inbound webhook for ZV — see remaining-work
+  // doc). Treat ZV-only inbound as expected non-trigger so the audit does
+  // not flag every ZV reply as `response_no_automation`.
+  const inboundMessages = messages.filter(m => m.direction === 'in');
+  const inboundProviderIsZvOnly =
+    inboundMessages.length > 0 &&
+    inboundMessages.every(m => m.provider === 'zoho_voice');
+
   // Determine expected automation path
   let expectedPath = 'unknown';
   let automationFired = false;
+
+  if (inboundProviderIsZvOnly && !hasFollowUp) {
+    // ZV inbound never reaches our cron pipeline. Zoho handles it natively.
+    return {
+      expectedPath: 'zv_handled_externally',
+      automationFired: true,
+      hasWelcome,
+      hasFollowUp,
+      hasInbound,
+      hasTask,
+    };
+  }
 
   if (hasFollowUp) {
     // "Yes" was detected → Follow-up sent + Task created expected
@@ -191,6 +213,11 @@ const determineVerdict = (messages, crossReference, automationPath, zohoData) =>
 
   // Paths that don't expect automation
   if (expectedPath === 'awaiting_response') {
+    return 'OK - NO ACTION EXPECTED';
+  }
+
+  // ZV-only inbound is handled by Zoho natively; we have no automation to verify
+  if (expectedPath === 'zv_handled_externally') {
     return 'OK - NO ACTION EXPECTED';
   }
 
