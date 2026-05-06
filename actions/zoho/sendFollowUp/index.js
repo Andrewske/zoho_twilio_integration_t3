@@ -19,7 +19,7 @@ const followUpMessageSouthlake = 'Great! We have a limited number spots for new 
 // If there is a contact, we check if the contact has already received a follow up message
 // If the contact has not received a follow up message and the contact is a lead, we send a follow up message
 // Then update the contact's status to 'Contacted - Not Booked'
-export async function sendFollowUp({ contact = null, studio = null, from = null, to = null, msg = null, messageId = null }) {
+export async function sendFollowUp({ contact = null, studio = null, from = null, to = null, msg = null, messageId = null, apiAccountStudioId = null }) {
     try {
         // Determine what actions to take
         const shouldSendFollowUp = contact && contactIsLead(contact);
@@ -35,6 +35,7 @@ export async function sendFollowUp({ contact = null, studio = null, from = null,
                 zohoId: studio?.zohoId,
                 contact,
                 message: { from: to, to: from, msg },
+                apiAccountStudioId,
             });
 
             if (taskData?.zohoTaskId) {
@@ -95,6 +96,7 @@ export async function sendFollowUp({ contact = null, studio = null, from = null,
             zohoId: studio?.zohoId,
             contact,
             message: { from: to, to: from, msg },
+            apiAccountStudioId,
         });
 
         if (taskData?.zohoTaskId) {
