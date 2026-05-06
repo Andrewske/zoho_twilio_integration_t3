@@ -171,7 +171,7 @@ async function processMessage(message, dryRun = false) {
   // Contact found — process based on message type
   if (isYesMessage(message.message)) {
     if (!dryRun && !(await hasReceivedFollowUpMessage(contact))) {
-      await sendFollowUp({ contact, studio, to: message.fromNumber, from: message.toNumber, msg: message.message, messageId: message.id });
+      await sendFollowUp({ contact, studio, to: message.fromNumber, from: message.toNumber, msg: message.message, messageId: message.id, apiAccountStudioId: overrideFromAdmin ? adminStudio.id : undefined });
       result.taskCreated = true;
     }
   } else if (isStopMessage(message.message)) {
