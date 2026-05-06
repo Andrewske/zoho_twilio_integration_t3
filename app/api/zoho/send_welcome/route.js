@@ -1,29 +1,42 @@
 import { sendMessage } from '~/actions/twilio';
 import { formatMobile, PhoneFormatter } from '~/utils';
 import { logError } from '~/utils/logError';
+import { notify } from '~/utils/notify';
 import { prisma } from '~/utils/prisma';
+import { findAdminStudioForStudio } from '~/utils/studio-lookups';
 
 export async function POST(request) {
   try {
     const { leadId, ownerId, mobile, firstName } = await parseRequest(request);
     const studio = await getStudioFromZohoId(ownerId);
 
-    if (!studio.active) return new Response(null, { status: 200 });
+    if (!studio?.active) return new Response(null, { status: 200 });
 
-    const admin = await prisma.studio.findFirst({
-      where: {
-        isAdmin: true,
-        active: true,
-        twilioPhone: studio.twilioPhone,
-      },
-      select: {
-        smsPhone: true,
-      },
-    });
+    const admin = await findAdminStudioForStudio(studio.id);
 
-    const smsPhone = studio.name.includes('Southlake')
-      ? studio.smsPhone
-      : (admin?.smsPhone ?? studio.smsPhone);
+    // For sub-studios, admin lookup MUST resolve. Silent fallback would
+    // regress to per-studio numbers (the bug commit 8a6f7cb introduced).
+    if (!studio.isAdmin && !admin) {
+      const err = new Error(
+        `welcome.admin_lookup_failed: no admin studio for non-admin studio ` +
+        `${studio.name} (id=${studio.id}). Check StudioAccount join to twilio Account.`
+      );
+      await notify({
+        type: 'welcome.admin_lookup_failed',
+        data: { studioId: studio.id, studioName: studio.name, ownerId, leadId },
+      });
+      logError({
+        message: 'welcome.admin_lookup_failed',
+        error: err,
+        level: 'error',
+        data: { studioId: studio.id, studioName: studio.name },
+      });
+      throw err;
+    }
+
+    // Admins call themselves via the join (philip_admin / southlake_admin
+    // self-link). Standalone admins fall through to studio.smsPhone.
+    const smsPhone = admin?.smsPhone ?? studio.smsPhone;
 
     const contact = {
       id: leadId,
@@ -144,6 +157,7 @@ export async function getStudioFromZohoId(owner_id) {
         name: true,
         managerName: true,
         active: true,
+        isAdmin: true,
         twilioPhone: true,
       },
     });
