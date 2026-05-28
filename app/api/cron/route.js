@@ -108,16 +108,12 @@ async function processMessage(message, dryRun = false) {
   const adminStudio = await findAdminStudioByPhone(message.toNumber);
   let overrideFromAdmin = false;
 
+  // On shared-phone setups, look the contact up through the admin studio's
+  // broader-visibility Zoho account. Owner-driven studio override happens below,
+  // once the contact is fully resolved (see note there).
   let contact = null;
   if (adminStudio) {
     contact = await lookupContact({ mobile: message.fromNumber, studioId: adminStudio.id });
-    if (contact?.Owner?.id) {
-      const owned = await getStudioFromZohoId(contact.Owner.id);
-      if (owned && owned.id !== phoneStudio?.id) {
-        studio = owned;
-        overrideFromAdmin = true;
-      }
-    }
   }
 
   if (!studio) {
@@ -137,6 +133,20 @@ async function processMessage(message, dryRun = false) {
   // Reuse cached contact from admin-number lookup, or do a fresh lookup
   if (!contact) {
     contact = await lookupContact({ mobile: message.fromNumber, studioId: studio.id });
+  }
+
+  // Owner-driven studio resolution. Run AFTER the contact is fully resolved
+  // (from either lookup) so a transient failure of the first admin-account
+  // lookup can't leak the admin studio into task ownership: lookupContact
+  // swallows errors and returns null, which would otherwise skip the override
+  // above and leave `studio` = admin (wrong task Owner). The lead's Zoho Owner
+  // always wins.
+  if (contact?.Owner?.id) {
+    const owned = await getStudioFromZohoId(contact.Owner.id);
+    if (owned && owned.id !== studio?.id) {
+      studio = owned;
+      overrideFromAdmin = !!adminStudio;
+    }
   }
 
   // Update message with studio/contact attribution + increment retryCount
