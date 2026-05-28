@@ -21,6 +21,8 @@ describe('isYesMessage', () => {
       'YES', 'Yeah', 'SURE', 'Absolutely',
       // leading/trailing whitespace
       '  yes  ',
+      // surrounding quotes: straight and iOS smart quotes
+      '"YES"', "'yes'", '“YES”', '‘yes’', '"yes please"', '  "Yes"  ',
     ];
     positives.forEach((msg) => {
       expect(isYesMessage(msg)).toBe(true);
@@ -53,6 +55,10 @@ describe('isStopMessage', () => {
     expect(isStopMessage('STOP')).toBe(true);
     expect(isStopMessage('Stop')).toBe(true);
     expect(isStopMessage(' stop ')).toBe(true);
+    // surrounding quotes: straight and iOS smart quotes (TCPA opt-out must still fire)
+    expect(isStopMessage('"STOP"')).toBe(true);
+    expect(isStopMessage("'stop'")).toBe(true);
+    expect(isStopMessage('“Stop”')).toBe(true);
   });
 
   it('rejects partial matches and non-stop messages', () => {
