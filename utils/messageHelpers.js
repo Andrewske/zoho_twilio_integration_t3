@@ -3,9 +3,16 @@ import { prisma } from '~/utils/prisma';
 
 const YES_PATTERNS = ['yes', 'yes!', 'yes.', 'yes please', 'yeah', 'yep', 'yea', 'sure', 'absolutely'];
 
-export const isYesMessage = (msg) => YES_PATTERNS.includes(msg?.toLowerCase().trim());
+// Strip surrounding quotes (straight + iOS smart quotes) so a lead who replies
+// `"YES"` or “STOP” still matches. Without this they fall through silently:
+// a quoted YES creates a plain task instead of the follow-up, and a quoted STOP
+// fails to opt out (TCPA risk).
+const normalize = (msg) =>
+  msg?.toLowerCase().trim().replace(/^["'“”‘’]+|["'“”‘’]+$/g, '').trim();
 
-export const isStopMessage = (msg) => msg?.toLowerCase().trim() === 'stop';
+export const isYesMessage = (msg) => YES_PATTERNS.includes(normalize(msg));
+
+export const isStopMessage = (msg) => normalize(msg) === 'stop';
 
 export const isAdminNumber = async (to) => {
   const admin = await prisma.studio.findFirst({
