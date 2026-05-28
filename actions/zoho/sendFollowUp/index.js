@@ -12,7 +12,7 @@ const followUpMessage =
 
 const followUpMessageRichmond = 'Great! We have a limited number spots for new clients each week. What day of the week Tuesday to Saturday works best for you?';
 
-const followUpMessageSouthlake = 'Great! We have a limited number spots for new clients each week. What day of the week Monday to Saturday works best for you?';
+const followUpMessageSouthlake = 'Great! We have a limited number spots for new clients each week. What day of the week Tuesday to Saturday works best for you?';
 
 // Checks if there is a contact
 // If there is not a contact, we create a message that will be picked up by the cron job
