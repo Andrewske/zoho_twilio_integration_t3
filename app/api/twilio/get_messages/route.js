@@ -1,6 +1,7 @@
 import { getTwilioAccount, getTwilioClient } from "~/actions/twilio";
 import { getZohoAccount } from "~/actions/zoho";
 import { logError } from "~/utils/logError";
+import { captureServerEvent } from "~/utils/postHogServer";
 import { uploadMessagesToZoho } from "~/utils/zohoAnalytics";
 
 
@@ -21,6 +22,11 @@ export async function GET(request) {
 
         const account = await getZohoAccount({ studioId: process.env.ADMIN_STUDIO_ID });
         await uploadMessagesToZoho(messages, { accessToken: account.accessToken });
+
+        // Heartbeat for the absence alert: if no ANALYTICS_IMPORT_OK lands in a
+        // 25h window, PostHog pages us — catches both upload failure AND the cron
+        // silently not firing (the failure mode that hid this bug for ~63 days).
+        await captureServerEvent('ANALYTICS_IMPORT_OK', { count: messages.length });
 
         return new Response('OK', {
             status: 200,
