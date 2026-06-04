@@ -24,7 +24,7 @@ export async function GET(request) {
 
     } catch (error) {
         console.error(error);
-        logError({
+        await logError({
             message: 'Error in Updating Analytics:',
             error,
             level: 'error',

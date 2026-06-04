@@ -113,7 +113,7 @@ export async function GET(request) {
     await maybeAlert(stats);
     return NextResponse.json({ ok: true, ...stats });
   } catch (error) {
-    logError({ message: 'sync-twilio-optouts: fatal', error, level: 'error' });
+    await logError({ message: 'sync-twilio-optouts: fatal', error, level: 'error' });
     await notify({ type: 'OPTOUT_SYNC_FATAL', data: { error: error.message } });
     return NextResponse.json({ ok: false, error: error.message, ...stats }, { status: 500 });
   }
