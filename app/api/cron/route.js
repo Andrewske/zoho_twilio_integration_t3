@@ -74,7 +74,7 @@ export async function GET(request) {
     await completeCronRun(cronRun.id, stats);
     return NextResponse.json({ ok: true, cronRunId: cronRun.id, dryRun, ...stats });
   } catch (error) {
-    logError({ message: 'Error in cron', error, level: 'error' });
+    await logError({ message: 'Error in cron', error, level: 'error' });
     await completeCronRun(cronRun.id, { ...stats, errors: stats.errors + 1 });
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   }

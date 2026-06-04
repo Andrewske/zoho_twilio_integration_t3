@@ -57,7 +57,7 @@ export async function GET(request) {
       status: deriveStatus(orphanedMessages, lastCronRun),
     });
   } catch (error) {
-    logError({ error, location: 'GET /api/health/sms', context: 'health check query failed' });
+    await logError({ message: 'health check query failed', error, level: 'error', data: { location: 'GET /api/health/sms' } });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

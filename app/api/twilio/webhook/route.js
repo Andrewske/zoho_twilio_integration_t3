@@ -64,7 +64,7 @@ export async function POST(request) {
 
     return new Response(null, { status: 200 });
   } catch (error) {
-    logError({
+    await logError({
       message: 'Error in Twilio Webhook',
       error,
       level: 'error',
