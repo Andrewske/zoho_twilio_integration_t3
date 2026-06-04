@@ -1,5 +1,4 @@
 import posthog from 'posthog-js';
-import { captureServerException } from '~/utils/postHogServer';
 
 /**
  * Logs an error message and details, and reports it to PostHog.
@@ -47,7 +46,10 @@ function logToConsole(timestamp, message, errorData, error) {
 
 async function reportToPostHog(error, level, data, message) {
     // Server: no window. Route through the posthog-node sink (otherwise silent).
+    // Dynamic import keeps posthog-node (node:fs) out of client bundles — a static
+    // import poisons any 'use client' module that touches logError.
     if (typeof window === 'undefined') {
+        const { captureServerException } = await import('~/utils/postHogServer');
         await captureServerException(error, null, { level, message, extra_data: data });
         return;
     }
