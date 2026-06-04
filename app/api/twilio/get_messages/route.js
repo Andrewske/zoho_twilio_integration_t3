@@ -1,7 +1,8 @@
 import { getTwilioAccount, getTwilioClient } from "~/actions/twilio";
-import axios from "axios";
 import { getZohoAccount } from "~/actions/zoho";
 import { logError } from "~/utils/logError";
+import { captureServerEvent } from "~/utils/postHogServer";
+import { uploadMessagesToZoho } from "~/utils/zohoAnalytics";
 
 
 export async function GET(request) {
@@ -19,7 +20,13 @@ export async function GET(request) {
     try {
         const messages = await getLastWeekOfMessages();
 
-        await uploadMessagesToZoho(messages)
+        const account = await getZohoAccount({ studioId: process.env.ADMIN_STUDIO_ID });
+        await uploadMessagesToZoho(messages, { accessToken: account.accessToken });
+
+        // Heartbeat for the absence alert: if no ANALYTICS_IMPORT_OK lands in a
+        // 25h window, PostHog pages us — catches both upload failure AND the cron
+        // silently not firing (the failure mode that hid this bug for ~63 days).
+        await captureServerEvent('ANALYTICS_IMPORT_OK', { count: messages.length });
 
         return new Response('OK', {
             status: 200,
@@ -27,7 +34,7 @@ export async function GET(request) {
 
     } catch (error) {
         console.error(error);
-        logError({
+        await logError({
             message: 'Error in Updating Analytics:',
             error,
             level: 'error',
@@ -71,52 +78,6 @@ const getLastWeekOfMessages = async () => {
     return messages
 }
 
-
-const uploadMessagesToZoho = async (messages) => {
-    const account = await getZohoAccount({ studioId: process.env.ADMIN_STUDIO_ID });
-
-    const config = {
-        importType: 'updateadd', // or 'truncateadd', 'updateadd'
-        fileType: 'json', // or 'csv', 'autoIdentify'
-        autoIdentify: 'true',
-        onError: 'abort', // or 'skiprow', 'setcolumnempty'
-        matchingColumns: ['sid'], // Only needed for 'updateadd'
-        // selectedColumns: ['column1', 'column2'],
-        // Additional configuration options...
-    };
-
-    const workspaceId = '2511121000000015263'
-    const viewId = '2511121000004625031'
-    const orgId = '770600067'
-    const apiUrl = `https://analyticsapi.zoho.com/restapi/v2/workspaces/${workspaceId}/views/${viewId}/data`
-
-    const payload = JSON.stringify(messages);
-
-    const formData = new FormData();
-
-    formData.append('DATA', payload);
-
-    formData.append('CONFIG', JSON.stringify(config));
-
-    // Axios POST request
-    // Axios POST request
-    axios.post(apiUrl, formData, {
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${account.accessToken}`, // Replace with actual token
-            'oauthscope': 'ZohoAnalytics.data.create',
-            'ZANALYTICS-ORGID': orgId,
-            ...formData.getHeaders(),
-        },
-    })
-        .then(response => {
-            console.log('Data imported successfully:', response.data);
-        })
-        .catch(error => {
-            console.error('Error importing data:', error.response ? error.response.data : error.message);
-            logError({ message: 'Error uploading to Zoho', error, level: 'error' })
-        });
-}
 
 function formatDate(date) {
     const year = date.getFullYear();
