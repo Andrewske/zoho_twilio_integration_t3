@@ -42,9 +42,11 @@ export async function captureServerException(error, distinctId = null, propertie
       timestamp: new Date().toISOString(),
       ...properties
     });
-    
-    // Ensure the event is sent before continuing
-    await posthog.shutdown();
+
+    // Flush (not shutdown) so the event is sent while keeping the shared
+    // singleton alive. shutdown() stops the client, after which getPostHogServer()
+    // returns a dead instance and all later server captures silently fail.
+    await posthog.flush();
   } catch (captureError) {
     console.error('Failed to capture server exception:', captureError);
   }
@@ -69,8 +71,8 @@ export async function captureServerEvent(event, properties = {}, distinctId = nu
         ...properties
       }
     });
-    
-    await posthog.shutdown();
+
+    await posthog.flush();
   } catch (captureError) {
     console.error('Failed to capture server event:', captureError);
   }
