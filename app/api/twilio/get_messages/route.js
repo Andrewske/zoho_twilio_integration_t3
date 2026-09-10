@@ -61,7 +61,7 @@ const getLastWeekOfMessages = async () => {
     // // Get all the messages from Twilio
     const twilioAccount = await getTwilioAccount(process.env.ADMIN_STUDIO_ID);
 
-    const client = getTwilioClient(twilioAccount);
+    const client = await getTwilioClient(twilioAccount);
 
     const messages = await client.messages.list({ dateSentAfter: oneWeekAgo }).then(messages => messages.map(message => {
         return {
