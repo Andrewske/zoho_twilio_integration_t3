@@ -57,3 +57,6 @@ docs/issues-*/
 # Prisma generated client
 prisma/generated/
 backups/
+
+# Claude Code: per-machine approvals stay local
+.claude/settings.local.json
