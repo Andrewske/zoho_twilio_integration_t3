@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(git status *)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git show *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git checkout *)",
+      "Bash(git switch *)",
+      "Bash(git branch *)",
+      "Bash(git stash *)",
+      "Bash(git fetch *)",
+      "Bash(git worktree *)",
+      "Bash(git mv *)",
+      "Bash(git ls-files *)",
+      "Bash(git remote -v)",
+      "Bash(git push -u origin *)",
+      "Bash(git push origin *)",
+      "Bash(pnpm lint *)",
+      "Bash(pnpm test *)",
+      "Bash(pnpm build *)",
+      "Bash(npx prisma generate *)",
+      "Bash(npx prisma validate *)",
+      "Bash(vercel ls *)",
+      "Bash(vercel whoami *)",
+      "Bash(gh pr view *)",
+      "Bash(gh pr list *)"
+    ],
+    "ask": [
+      "Bash(pnpm db:push *)",
+      "Bash(npx prisma db *)",
+      "Bash(npx prisma migrate *)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(!.env.example)",
+      "Bash(git push)",
+      "Bash(git push * main)",
+      "Bash(git push * main *)",
+      "Bash(git push * HEAD:main*)",
+      "Bash(git push * *:main*)",
+      "Bash(git push * +main*)",
+      "Bash(git push --force*)",
+      "Bash(git push * --force*)",
+      "Bash(git push -f *)",
+      "Bash(git push * -f *)",
+      "Bash(git push * -f)",
+      "Bash(vercel --prod*)",
+      "Bash(vercel deploy*)",
+      "Bash(vercel * --prod*)",
+      "Bash(vercel promote*)"
+    ]
+  }
+}
