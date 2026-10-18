@@ -23,16 +23,16 @@
     "ask": [
       "Bash(pnpm db:push *)",
       "Bash(npx prisma db *)",
-      "Bash(npx prisma migrate *)"
-    ],
-    "deny": [
-      "Read(./.env)",
-      "Read(./.env.*)",
-      "Read(!.env.example)",
+      "Bash(npx prisma migrate *)",
       "Bash(vercel --prod*)",
       "Bash(vercel deploy*)",
       "Bash(vercel * --prod*)",
       "Bash(vercel promote*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(!.env.example)"
     ]
   },
   "hooks": {
