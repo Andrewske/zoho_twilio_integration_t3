@@ -9,25 +9,16 @@
       "Bash(git add *)",
       "Bash(git commit *)",
       "Bash(git checkout *)",
-      "Bash(git switch *)",
       "Bash(git branch *)",
       "Bash(git stash *)",
       "Bash(git fetch *)",
       "Bash(git worktree *)",
-      "Bash(git mv *)",
       "Bash(git ls-files *)",
-      "Bash(git remote -v)",
-      "Bash(git push -u origin *)",
-      "Bash(git push origin *)",
-      "Bash(pnpm lint *)",
-      "Bash(pnpm test *)",
-      "Bash(pnpm build *)",
+      "Bash(git push *)",
       "Bash(npx prisma generate *)",
       "Bash(npx prisma validate *)",
       "Bash(vercel ls *)",
-      "Bash(vercel whoami *)",
-      "Bash(gh pr view *)",
-      "Bash(gh pr list *)"
+      "Bash(vercel whoami *)"
     ],
     "ask": [
       "Bash(pnpm db:push *)",
@@ -38,21 +29,23 @@
       "Read(./.env)",
       "Read(./.env.*)",
       "Read(!.env.example)",
-      "Bash(git push)",
-      "Bash(git push * main)",
-      "Bash(git push * main *)",
-      "Bash(git push * HEAD:main*)",
-      "Bash(git push * *:main*)",
-      "Bash(git push * +main*)",
-      "Bash(git push --force*)",
-      "Bash(git push * --force*)",
-      "Bash(git push -f *)",
-      "Bash(git push * -f *)",
-      "Bash(git push * -f)",
       "Bash(vercel --prod*)",
       "Bash(vercel deploy*)",
       "Bash(vercel * --prod*)",
       "Bash(vercel promote*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=~/.claude/hooks/bash-guard.py; [ ! -f \"$f\" ] || exec python3 -I \"$f\""
+          }
+        ]
+      }
     ]
   }
 }
