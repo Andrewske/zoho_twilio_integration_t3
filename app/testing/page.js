@@ -9,7 +9,6 @@ import { ZohoContext } from '~/providers/ZohoProvider';
 // import { sendError } from '~/utils/toast';
 import { toast } from 'react-toastify';
 import { sendMessage } from '~/actions/messages/sendMessage';
-import { printDatabaseURL } from '~/actions/testing_server';
 import { lookupContact } from '~/actions/zoho/contact/lookupContact';
 import { createTask } from '~/actions/zoho/tasks';
 import ToastContainer from '~/components/ToastContainer';
@@ -136,7 +135,6 @@ export default function Page() {
                 <button className={styles.button} onClick={() => handleLookupContactClick()}>Lookup Contact</button>
                 <button className={styles.button} onClick={() => handleCreateTask()}>Create Task</button>
                 <button className={styles.button} onClick={() => handleSendWelcomeMessage()}>Send Welcome Message</button>
-                <button className={styles.button} onClick={() => printDatabaseURL()}>Print DB URL</button>
                 <button className={styles.button} onClick={() => handleHitWebhook()}>Hit Webhook</button>
                 <button className={styles.button} onClick={() => handleCronJob()}>CronJob</button>
             </div>
